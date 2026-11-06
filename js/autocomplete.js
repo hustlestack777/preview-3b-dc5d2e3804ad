@@ -259,6 +259,10 @@
           e.preventDefault(); // keep focus; avoid blur race
           selectIndex(i);
         });
+        li.addEventListener("click", (e) => {
+          e.preventDefault();
+          selectIndex(i);
+        });
         listEl.appendChild(li);
       });
       placeList();

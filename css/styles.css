@@ -572,8 +572,9 @@ button, input { font: inherit; }
 .map-hint-overlay {
   position: absolute;
   left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  top: auto;
+  bottom: 12px;
+  transform: translate(-50%, 0);
   z-index: 5;
   pointer-events: none;
 }
@@ -658,3 +659,64 @@ button, input { font: inherit; }
   }
   .addr-opt { padding: .8rem .9rem; font-size: .95rem; }
 }
+
+
+/* Nov 6 — address ready, parcel, tree picker */
+.btn.is-ready {
+  box-shadow: 0 0 0 4px rgba(63,191,106,.4);
+  animation: readypulse 1.6s ease-in-out infinite;
+}
+@keyframes readypulse {
+  0%, 100% { box-shadow: 0 0 0 3px rgba(63,191,106,.35); }
+  50% { box-shadow: 0 0 0 6px rgba(63,191,106,.18); }
+}
+.map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .55rem 1rem;
+  list-style: none;
+  margin: 0 .75rem .55rem;
+  padding: 0;
+  color: var(--muted);
+  font-size: .78rem;
+  font-weight: 600;
+}
+.map-legend li { display: flex; align-items: center; gap: .35rem; }
+.lg {
+  width: 12px; height: 12px; border-radius: 50%;
+  display: inline-block; border: 2px solid currentColor;
+}
+.lg-tree { color: #3fbf6a; background: rgba(63,191,106,.25); }
+.lg-stump { color: #e8c15a; background: rgba(232,193,90,.25); }
+.lg-lot { border-radius: 2px; color: #ff8a2b; background: rgba(255,138,43,.15); }
+.storm-toggle {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  margin: .4rem 0 1rem;
+  padding: .75rem .9rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.03);
+  font-weight: 600;
+  cursor: pointer;
+}
+.notes-mini {
+  display: grid;
+  gap: .3rem;
+  margin-top: .55rem;
+  font-size: .78rem;
+  color: var(--muted);
+}
+.notes-mini input[type="text"] {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: rgba(0,0,0,.25);
+  color: var(--ink);
+  padding: .45rem .55rem;
+}
+.sat-sharp {
+  image-rendering: auto;
+}
+#parcel-caption { color: #ffc089; }
