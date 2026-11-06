@@ -1,14 +1,8 @@
 (() => {
-  const JOBS = {
-    smallTrim: { label: "Trim / pruning", hint: "Light canopy work", low: 400, high: 900 },
-    mediumRemoval: { label: "Standard removal", hint: "Typical yard tree", low: 700, high: 1900 },
-    largeRemoval: { label: "Large / near-structure", hint: "Complex access possible", low: 1500, high: 3500 },
-    stormEmergency: { label: "Storm / emergency", hint: "Downed or leaning", low: 560, high: 3290 },
-    stumpOnly: { label: "Stump grinding", hint: "Per stump", low: 150, high: 450 }
-  };
-
   const defaults = window.SITE_DEFAULTS || {};
   const variants = window.SITE_VARIANTS || {};
+  const pricing = window.TREE_PRICING;
+  const Eng = window.TreeEngine;
 
   function readParams() {
     const q = new URLSearchParams(location.search);
@@ -19,146 +13,313 @@
     const src = (q.get("src") || defaults.source || "lrl").toLowerCase();
     let v = (q.get("v") || defaults.variant || "a").toLowerCase();
     if (!variants[v]) v = defaults.variant || "a";
-    return { src, v, utm, raw: q };
+    return { src, v, utm };
   }
-
   const params = readParams();
-  const variant = variants[params.v] || variants.a || {
-    id: params.v,
-    headline: "Get a tree-work estimate.",
-    subline: "Enter your property address to get started.",
-    cta: "Get started",
-    heroImage: "img/hero.jpg"
-  };
+  const variant = variants[params.v] || variants.a || {};
 
-  function trackingQuery(extra) {
+  function trackingQuery() {
     const out = new URLSearchParams();
     out.set("src", params.src);
     out.set("v", params.v);
     Object.entries(params.utm).forEach(([k, val]) => out.set(k, val));
-    if (extra) Object.entries(extra).forEach(([k, val]) => { if (val != null && val !== "") out.set(k, String(val)); });
     return out.toString();
   }
-
   function blakeUrl(path) {
-    const base = defaults.blakeSite || "https://www.3bstreeremoval.com/";
-    const u = new URL(path || "", base);
-    const t = new URLSearchParams(trackingQuery());
-    t.forEach((val, key) => u.searchParams.set(key, val));
+    const u = new URL(path || "", defaults.blakeSite || "https://www.3bstreeremoval.com/");
+    new URLSearchParams(trackingQuery()).forEach((val, key) => u.searchParams.set(key, val));
     return u.toString();
   }
 
-  /* Apply variant to hero */
-  const h1 = document.querySelector(".hero h1");
-  const sub = document.querySelector(".hero .sub");
-  const cta = document.querySelector("#btn-start");
-  const heroImg = document.querySelector(".hero-bg");
-  if (h1 && variant.headline) h1.textContent = variant.headline;
-  if (sub && variant.subline) sub.textContent = variant.subline;
-  if (cta && variant.cta) cta.textContent = variant.cta;
-  if (heroImg && variant.heroImage) heroImg.src = variant.heroImage;
+  const $ = (s, r = document) => r.querySelector(s);
+  const money = (n) =>
+    new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 
-  /* Tag outbound Blake links */
+  /* Variant + Blake links */
+  if (variant.headline) $(".hero h1").textContent = variant.headline;
+  if (variant.subline) $(".hero .sub").textContent = variant.subline;
+  if (variant.cta) $("#btn-start").textContent = variant.cta;
   document.querySelectorAll("[data-blake-link]").forEach((a) => {
     a.href = blakeUrl(a.getAttribute("data-blake-path") || "/");
   });
+
+  /* Services list */
+  const svcList = $("#services-list");
+  if (svcList && window.BLAKE_SERVICES) {
+    svcList.innerHTML = "";
+    window.BLAKE_SERVICES.forEach((s) => {
+      const li = document.createElement("li");
+      li.className = s.live ? "" : "off";
+      li.innerHTML = s.live
+        ? s.label
+        : `${s.label} <span class="ask-blake">(${s.note || "ask Blake"})</span>`;
+      svcList.appendChild(li);
+    });
+  }
 
   const state = {
     address: "",
     lat: null,
     lon: null,
     displayName: "",
-    job: "mediumRemoval",
-    photos: 0,
-    name: "",
-    phone: ""
+    context: { buildings: [], power: [] },
+    marks: [],
+    tool: "tree",
+    map: null,
+    layerGroup: null,
+    storms: null
   };
 
-  const $ = (s, r = document) => r.querySelector(s);
-  const money = (n) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
+  let markSeq = 0;
 
-  const chips = $("#job-chips");
-  Object.entries(JOBS).forEach(([key, job]) => {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.className = "chip" + (key === state.job ? " is-on" : "");
-    b.innerHTML = `<strong>${job.label}</strong><span>${job.hint}</span>`;
-    b.addEventListener("click", () => {
-      state.job = key;
-      chips.querySelectorAll(".chip").forEach((c) => c.classList.remove("is-on"));
-      b.classList.add("is-on");
+  function setTool(tool) {
+    state.tool = tool;
+    document.querySelectorAll(".tool[data-tool]").forEach((b) => {
+      b.classList.toggle("is-on", b.getAttribute("data-tool") === tool);
     });
-    chips.appendChild(b);
+  }
+  document.querySelectorAll(".tool[data-tool]").forEach((b) => {
+    b.addEventListener("click", () => setTool(b.getAttribute("data-tool")));
+  });
+  $("#btn-clear-marks").addEventListener("click", () => {
+    state.marks = [];
+    if (state.layerGroup) state.layerGroup.clearLayers();
+    renderMarks();
   });
 
-  $("#photos").addEventListener("change", (e) => {
-    const files = Array.from(e.target.files || []).slice(0, 6);
-    state.photos = files.length;
-    const prev = $("#photo-prev");
-    prev.innerHTML = "";
-    files.forEach((f) => {
-      const img = document.createElement("img");
-      img.src = URL.createObjectURL(f);
-      img.alt = f.name;
-      prev.appendChild(img);
-    });
-  });
-
-  async function geocode(address) {
-    const tries = [
-      async () => {
-        const res = await fetch("https://photon.komoot.io/api/?limit=1&q=" + encodeURIComponent(address));
-        if (!res.ok) throw new Error("photon");
-        const data = await res.json();
-        const f = data.features && data.features[0];
-        if (!f) throw new Error("not found");
-        const [lon, lat] = f.geometry.coordinates;
-        const p = f.properties || {};
-        return {
-          lat: Number(lat),
-          lon: Number(lon),
-          displayName: [p.name, p.street, p.city || p.town || p.village, p.state].filter(Boolean).join(", ") || address
-        };
-      },
-      async () => {
-        const res = await fetch(
-          "https://geocoding-api.open-meteo.com/v1/search?count=1&language=en&format=json&name=" +
-            encodeURIComponent(address)
-        );
-        if (!res.ok) throw new Error("meteo");
-        const data = await res.json();
-        const r = data.results && data.results[0];
-        if (!r) throw new Error("not found");
-        return { lat: r.latitude, lon: r.longitude, displayName: [r.name, r.admin1, r.country].filter(Boolean).join(", ") };
-      }
-    ];
-    let last;
-    for (const fn of tries) {
-      try { return await fn(); } catch (e) { last = e; }
+  function initMap(lat, lon) {
+    const el = $("#leaflet-map");
+    if (state.map) {
+      state.map.setView([lat, lon], 19);
+      return;
     }
-    throw last || new Error("geocode failed");
+    state.map = L.map(el, { zoomControl: true, attributionControl: true }).setView([lat, lon], 19);
+    L.tileLayer(
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      {
+        maxZoom: 19,
+        attribution: "Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community"
+      }
+    ).addTo(state.map);
+    state.layerGroup = L.layerGroup().addTo(state.map);
+    L.circleMarker([lat, lon], {
+      radius: 6,
+      color: "#fff",
+      weight: 2,
+      fillColor: "#3fbf6a",
+      fillOpacity: 1
+    }).addTo(state.map).bindTooltip("Property pin", { permanent: false });
+
+    state.map.on("click", (e) => {
+      addMark(e.latlng.lat, e.latlng.lng, state.tool);
+    });
+    setTimeout(() => state.map.invalidateSize(), 200);
   }
 
-  function showMap(lat, lon) {
-    const delta = 0.008;
-    const bbox = [lon - delta, lat - delta, lon + delta, lat + delta].join("%2C");
-    const src =
-      "https://www.openstreetmap.org/export/embed.html?bbox=" +
-      bbox +
-      "&layer=mapnik&marker=" +
-      encodeURIComponent(lat + "," + lon);
-    const frame = $("#map-frame");
-    const fb = $("#map-fallback");
-    frame.src = src;
-    frame.hidden = false;
-    fb.style.display = "none";
+  function addMark(lat, lon, kind) {
+    markSeq += 1;
+    const origin = { lat: state.lat, lon: state.lon };
+    const pt = { lat, lon };
+    const distHouse = Eng.nearestM(pt, state.context.buildings);
+    const distLines = Eng.nearestM(pt, state.context.power);
+    const nearHouse = distHouse != null ? distHouse < 8 : false; // ~25 ft
+    const nearLines = distLines != null ? distLines < 12 : false;
+
+    const mark = {
+      id: markSeq,
+      kind,
+      lat,
+      lon,
+      species: "unknown",
+      canopyFt: kind === "tree" ? 28 : 0,
+      heightFt: kind === "tree" ? Eng.estimateHeightFt(28, "unknown") : 0,
+      diameterIn: kind === "stump" ? 18 : 0,
+      nearHouse,
+      nearLines,
+      haulOff: $("#opt-haul-default").checked,
+      grind: kind === "tree",
+      haulMulch: false,
+      distHouseM: distHouse,
+      distLinesM: distLines
+    };
+    state.marks.push(mark);
+
+    const color = kind === "tree" ? "#3fbf6a" : "#e8a15a";
+    const marker = L.circleMarker([lat, lon], {
+      radius: 9,
+      color: "#fff",
+      weight: 2,
+      fillColor: color,
+      fillOpacity: 0.95
+    }).addTo(state.layerGroup);
+    marker.bindTooltip(kind === "tree" ? `Tree #${mark.id}` : `Stump #${mark.id}`);
+    mark._leaflet = marker;
+    renderMarks();
   }
 
-  function openQuote() {
-    const quote = $("#quote");
-    quote.hidden = false;
+  function removeMark(id) {
+    const idx = state.marks.findIndex((m) => m.id === id);
+    if (idx < 0) return;
+    const m = state.marks[idx];
+    if (m._leaflet) state.layerGroup.removeLayer(m._leaflet);
+    state.marks.splice(idx, 1);
+    renderMarks();
+  }
+
+  function computeTotals() {
+    const emergency = $("#opt-emergency").checked;
+    let low = 0;
+    let high = 0;
+    const lines = [];
+    state.marks.forEach((m) => {
+      if (m.kind === "tree") {
+        const p = Eng.priceTree(m, pricing, { emergency });
+        low += p.low;
+        high += p.high;
+        lines.push({
+          label: `Tree #${m.id} · ${m.species} · ~${m.heightFt} ft · ${p.band}`,
+          low: p.low,
+          high: p.high
+        });
+      } else {
+        const p = Eng.priceStump(m, pricing);
+        low += p.low;
+        high += p.high;
+        lines.push({
+          label: `Stump #${m.id} · ${m.diameterIn}" grind`,
+          low: p.low,
+          high: p.high
+        });
+      }
+    });
+    return { low, high, lines };
+  }
+
+  function renderMarks() {
+    const root = $("#marks-list");
+    root.innerHTML = "";
+    if (!state.marks.length) {
+      root.innerHTML = `<p class="hint">No marks yet — tap the map to add a tree or stump.</p>`;
+      $("#running-total").hidden = true;
+      return;
+    }
+    state.marks.forEach((m) => {
+      const card = document.createElement("div");
+      card.className = "mark-card";
+      if (m.kind === "tree") {
+        card.innerHTML = `
+          <header><span>Tree #${m.id}</span><button type="button" class="x" data-rm="${m.id}">Remove</button></header>
+          <div class="row">
+            <label>Species
+              <select data-f="species" data-id="${m.id}">
+                ${["unknown","oak","pine","cypress","pecan","sweetgum"].map((s) =>
+                  `<option value="${s}" ${m.species===s?"selected":""}>${s}</option>`).join("")}
+              </select>
+            </label>
+            <label>Canopy Ø (ft)
+              <input type="number" min="6" max="80" data-f="canopyFt" data-id="${m.id}" value="${m.canopyFt}" />
+            </label>
+            <label>Est. height (ft)
+              <input type="number" min="8" max="140" data-f="heightFt" data-id="${m.id}" value="${m.heightFt}" />
+            </label>
+            <label>Dist. house
+              <input type="text" disabled value="${m.distHouseM==null?'?':Math.round(m.distHouseM*3.281)+' ft'}" />
+            </label>
+          </div>
+          <div class="checks">
+            <label><input type="checkbox" data-f="nearHouse" data-id="${m.id}" ${m.nearHouse?"checked":""}/> Near house</label>
+            <label><input type="checkbox" data-f="nearLines" data-id="${m.id}" ${m.nearLines?"checked":""}/> Near lines</label>
+            <label><input type="checkbox" data-f="haulOff" data-id="${m.id}" ${m.haulOff?"checked":""}/> Haul-off</label>
+            <label><input type="checkbox" data-f="grind" data-id="${m.id}" ${m.grind?"checked":""}/> Grind stump</label>
+          </div>
+          <div class="mini" data-price="${m.id}"></div>`;
+      } else {
+        card.innerHTML = `
+          <header><span>Stump #${m.id}</span><button type="button" class="x" data-rm="${m.id}">Remove</button></header>
+          <div class="row">
+            <label>Diameter (in)
+              <input type="number" min="4" max="72" data-f="diameterIn" data-id="${m.id}" value="${m.diameterIn}" />
+            </label>
+            <label>Dist. house
+              <input type="text" disabled value="${m.distHouseM==null?'?':Math.round(m.distHouseM*3.281)+' ft'}" />
+            </label>
+          </div>
+          <div class="checks">
+            <label><input type="checkbox" data-f="haulMulch" data-id="${m.id}" ${m.haulMulch?"checked":""}/> Haul mulch</label>
+            <label><input type="checkbox" data-f="nearLines" data-id="${m.id}" ${m.nearLines?"checked":""}/> Near lines</label>
+          </div>
+          <div class="mini" data-price="${m.id}"></div>`;
+      }
+      root.appendChild(card);
+    });
+
+    root.querySelectorAll("[data-rm]").forEach((b) =>
+      b.addEventListener("click", () => removeMark(Number(b.getAttribute("data-rm"))))
+    );
+    root.querySelectorAll("[data-f]").forEach((el) => {
+      el.addEventListener("change", () => {
+        const id = Number(el.getAttribute("data-id"));
+        const f = el.getAttribute("data-f");
+        const m = state.marks.find((x) => x.id === id);
+        if (!m) return;
+        if (el.type === "checkbox") m[f] = el.checked;
+        else if (f === "species") {
+          m.species = el.value;
+          m.heightFt = Eng.estimateHeightFt(m.canopyFt, m.species);
+        } else {
+          m[f] = Number(el.value);
+          if (f === "canopyFt") m.heightFt = Eng.estimateHeightFt(m.canopyFt, m.species);
+        }
+        renderMarks();
+      });
+    });
+
+    const totals = computeTotals();
+    state.marks.forEach((m) => {
+      const el = root.querySelector(`[data-price="${m.id}"]`);
+      if (!el) return;
+      const p =
+        m.kind === "tree"
+          ? Eng.priceTree(m, pricing, { emergency: $("#opt-emergency").checked })
+          : Eng.priceStump(m, pricing);
+      el.textContent = `${money(p.low)} – ${money(p.high)} (placeholder)`;
+    });
+    $("#running-total").hidden = false;
+    $("#running-price").textContent = `${money(totals.low)} – ${money(totals.high)}`;
+  }
+
+  ["opt-emergency", "opt-haul-default"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener("change", () => renderMarks());
+  });
+
+  async function openQuote() {
+    $("#quote").hidden = false;
     $("#addr-chip").textContent = state.displayName || state.address;
-    quote.scrollIntoView({ behavior: "smooth", block: "start" });
+    $("#sat-img").src = Eng.esriExportUrl(state.lat, state.lon, 640, 70);
+    $("#quote").scrollIntoView({ behavior: "smooth", block: "start" });
+
+    initMap(state.lat, state.lon);
+
+    $("#context-note").textContent = "Scanning nearby buildings & power lines (OpenStreetMap)…";
+    state.context = await Eng.overpassContext(state.lat, state.lon, 90);
+    const b = state.context.buildings.length;
+    const p = state.context.power.length;
+    $("#context-note").textContent = state.context.error
+      ? "Map context unavailable — mark trees manually. Distances can be edited."
+      : `Found ${b} building footprint(s) and ${p} power feature(s) nearby (OSM).`;
+
+    Eng.stormAlertsForPoint(state.lat, state.lon).then((storms) => {
+      state.storms = storms;
+      const banner = $("#storm-banner");
+      if (storms.flag) {
+        banner.hidden = false;
+        const events = storms.nws.map((n) => n.event).slice(0, 3).join(", ") || "Recent SPC storm reports nearby";
+        banner.innerHTML = `<strong>Storm desk:</strong> ${events}. Good window to quote tree work. <em>HD imagery pull queued for later.</em>`;
+      } else {
+        banner.hidden = true;
+      }
+    });
   }
 
   $("#addr-form").addEventListener("submit", async (e) => {
@@ -175,44 +336,31 @@
     status.className = "form-status";
     $("#btn-start").disabled = true;
     try {
-      const geo = await geocode(address);
+      const geo = await Eng.geocode(address);
       state.lat = geo.lat;
       state.lon = geo.lon;
       state.displayName = geo.displayName;
-      status.textContent = "Found — continue below.";
+      status.textContent = "Found — mark trees on the map below.";
       status.className = "form-status ok";
-      openQuote();
-      showMap(geo.lat, geo.lon);
+      await openQuote();
     } catch (_) {
-      state.lat = null;
-      state.lon = null;
-      state.displayName = address;
-      status.textContent = "Address saved — continue below. We’ll verify on-site.";
-      status.className = "form-status ok";
-      openQuote();
-      $("#map-fallback").textContent = "Map unavailable for this address. We’ll verify on-site.";
+      status.textContent = "Could not find that address. Try a fuller street + city + ZIP.";
+      status.className = "form-status err";
     } finally {
       $("#btn-start").disabled = false;
     }
   });
 
-  $("#btn-job").addEventListener("click", () => {
-    document.querySelector('[data-q="job"]').classList.remove("is-on");
-    document.querySelector('[data-q="result"]').classList.add("is-on");
-    if (state.lat != null) showMap(state.lat, state.lon);
-    $("#quote-card").scrollIntoView({ behavior: "smooth", block: "start" });
-  });
-
   $("#btn-range").addEventListener("click", () => {
     const status = $("#result-status");
-    state.name = $("#name").value.trim();
-    state.phone = $("#phone").value.trim();
-    if (state.name.length < 2) {
+    const name = $("#name").value.trim();
+    const phone = $("#phone").value.trim();
+    if (name.length < 2) {
       status.textContent = "Enter your name.";
       status.className = "form-status err";
       return;
     }
-    if (state.phone.replace(/\D/g, "").length < 10) {
+    if (phone.replace(/\D/g, "").length < 10) {
       status.textContent = "Enter a valid mobile number.";
       status.className = "form-status err";
       return;
@@ -222,24 +370,32 @@
       status.className = "form-status err";
       return;
     }
-    const job = JOBS[state.job];
+    if (!state.marks.length) {
+      status.textContent = "Mark at least one tree or stump on the map.";
+      status.className = "form-status err";
+      return;
+    }
+
+    const totals = computeTotals();
     const payload = {
       business: "3 B's Tree Removal",
       to: defaults.leadEmailTo || "shaun.brasher@gmail.com",
-      name: state.name,
-      phone: state.phone,
+      name,
+      phone,
       address: state.address,
       geocode: state.displayName,
       lat: state.lat,
       lon: state.lon,
-      job: state.job,
-      photos: state.photos,
-      rangeLow: job.low,
-      rangeHigh: job.high,
+      marks: state.marks.map(({ _leaflet, ...rest }) => rest),
+      rangeLow: totals.low,
+      rangeHigh: totals.high,
+      breakdown: totals.lines,
+      storms: state.storms,
       source: params.src,
       variant: params.v,
       utm: params.utm,
-      pageUrl: location.href,
+      imagery: "esri_world_imagery",
+      context: "osm_overpass",
       blakeContinueUrl: blakeUrl("/"),
       createdAt: new Date().toISOString()
     };
@@ -251,14 +407,19 @@
     } catch (_) {}
 
     $("#range").hidden = false;
-    $("#range-label").textContent = job.label;
-    $("#range-price").textContent = money(job.low) + " – " + money(job.high);
+    $("#range-label").textContent = `${state.marks.filter((m)=>m.kind==="tree").length} tree(s) · ${state.marks.filter((m)=>m.kind==="stump").length} stump(s)`;
+    $("#range-price").textContent = `${money(totals.low)} – ${money(totals.high)}`;
+    const ul = $("#breakdown");
+    ul.innerHTML = "";
+    totals.lines.forEach((line) => {
+      const li = document.createElement("li");
+      li.textContent = `${line.label}: ${money(line.low)} – ${money(line.high)}`;
+      ul.appendChild(li);
+    });
     $("#thanks").hidden = false;
     const cont = $("#blake-continue");
-    if (cont) {
-      cont.href = blakeUrl("/");
-      cont.hidden = false;
-    }
+    cont.href = blakeUrl("/");
+    cont.hidden = false;
     status.textContent = "Estimate ready.";
     status.className = "form-status ok";
   });
@@ -268,6 +429,5 @@
     setTimeout(() => $("#address").focus(), 400);
   });
 
-  /* Expose for debugging / future variants */
-  window.__blakeDemo = { params, variant, blakeUrl, trackingQuery };
+  window.__blakeDemo = { params, variant, blakeUrl, state };
 })();

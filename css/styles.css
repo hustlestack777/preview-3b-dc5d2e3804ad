@@ -301,3 +301,99 @@ button, input { font: inherit; }
   color: var(--muted); font-size: .86rem; text-align: center;
 }
 .foot a { color: #cfe8d4; }
+
+/* Engine UI */
+.storm-banner {
+  margin: 0 0 1rem;
+  padding: .75rem .9rem;
+  border-radius: 12px;
+  background: #3a2210;
+  border: 1px solid #c97b3a;
+  color: #ffd7b0;
+  font-size: .88rem;
+}
+.sat-row {
+  display: grid;
+  gap: .75rem;
+  margin-bottom: .85rem;
+}
+@media (min-width: 720px) {
+  .sat-row { grid-template-columns: 1fr 1fr; align-items: stretch; }
+}
+.sat-shot {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  min-height: 180px;
+  background: #0a120c;
+}
+.sat-shot img { width: 100%; height: 180px; object-fit: cover; display: block; }
+.sat-cap {
+  position: absolute; left: .5rem; bottom: .5rem;
+  font-size: .72rem; font-weight: 700;
+  background: rgba(0,0,0,.55); padding: .25rem .45rem; border-radius: 8px;
+}
+.sat-note-box { color: var(--muted); font-size: .9rem; }
+.sat-note-box strong { color: var(--ink); }
+.map-tools { display: flex; flex-wrap: wrap; gap: .45rem; margin: .5rem 0 .55rem; }
+.tool {
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.05);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: .45rem .85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.tool.is-on { border-color: var(--green); background: rgba(63,191,106,.15); }
+.tool.ghost { opacity: .8; font-weight: 600; }
+.leaflet-map {
+  height: 280px;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  z-index: 1;
+}
+.hint { color: var(--muted); font-size: .82rem; margin: .45rem 0 .8rem; }
+.marks-list { display: grid; gap: .65rem; margin-bottom: .85rem; }
+.mark-card {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: .75rem;
+  background: rgba(0,0,0,.18);
+}
+.mark-card header {
+  display: flex; justify-content: space-between; gap: .5rem;
+  font-weight: 700; margin-bottom: .45rem;
+}
+.mark-card .row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .45rem;
+  margin-top: .35rem;
+}
+.mark-card label { font-size: .78rem; color: var(--muted); display: grid; gap: .2rem; }
+.mark-card select, .mark-card input[type="number"], .mark-card input[type="range"] {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: rgba(0,0,0,.25);
+  color: var(--ink);
+  padding: .35rem .45rem;
+}
+.mark-card .checks { display: flex; flex-wrap: wrap; gap: .55rem; margin-top: .45rem; font-size: .8rem; color: var(--muted); }
+.mark-card .mini { font-size: .8rem; color: #b6f0c8; margin-top: .35rem; }
+.mark-card button.x {
+  background: none; border: 0; color: var(--danger); cursor: pointer; font-weight: 700;
+}
+.totals {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: .75rem .9rem; border-radius: 12px;
+  background: rgba(63,191,106,.12); border: 1px solid rgba(63,191,106,.3);
+  margin-bottom: .85rem;
+}
+.addons { display: grid; gap: .4rem; margin-bottom: .85rem; }
+.breakdown { margin: .5rem 0 0; padding-left: 1.1rem; color: var(--muted); font-size: .86rem; }
+.ask-blake { color: #f0c27a; font-size: .8rem; }
+.list .off { opacity: .7; }

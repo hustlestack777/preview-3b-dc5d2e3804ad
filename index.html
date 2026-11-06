@@ -11,6 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
@@ -52,55 +53,62 @@
       <div class="wrap">
         <div class="quote-card" id="quote-card">
           <p class="addr-chip" id="addr-chip"></p>
+          <div id="storm-banner" class="storm-banner" hidden></div>
 
-          <!-- Step: job -->
-          <div class="q-panel is-on" data-q="job">
-            <h2>What do you need?</h2>
-            <div class="chips" id="job-chips"></div>
-            <label class="photo-label">Photos <span>(optional)</span>
-              <input type="file" id="photos" accept="image/*" multiple capture="environment" />
-            </label>
-            <div class="photo-prev" id="photo-prev"></div>
-            <button type="button" class="btn btn-block" id="btn-job">Continue</button>
+          <div class="sat-row">
+            <div class="sat-shot">
+              <img id="sat-img" alt="Satellite view of property" onerror="this.style.display='none'" />
+              <span class="sat-cap">Satellite (Esri World Imagery)</span>
+            </div>
+            <div class="sat-note-box">
+              <p><strong>Satellite technology</strong> sizes the job from above. Tap the map to mark each tree or stump. Final price is confirmed after an on-site assessment.</p>
+              <p class="muted" id="context-note"></p>
+            </div>
           </div>
 
-          <!-- Step: map + contact + range -->
-          <div class="q-panel" data-q="result">
-            <h2>Your property</h2>
-            <div class="map-box" id="map-box">
-              <div class="map-fallback" id="map-fallback">Looking up the property…</div>
-              <iframe id="map-frame" title="Property map" loading="lazy" referrerpolicy="no-referrer" hidden></iframe>
-            </div>
-            <p class="sat-note">Satellite technology helps us size the job. Final price is confirmed on-site.</p>
+          <div class="map-tools">
+            <button type="button" class="tool is-on" data-tool="tree">+ Tree</button>
+            <button type="button" class="tool" data-tool="stump">+ Stump</button>
+            <button type="button" class="tool ghost" id="btn-clear-marks">Clear marks</button>
+          </div>
+          <div id="leaflet-map" class="leaflet-map" role="application" aria-label="Tap to mark trees and stumps"></div>
+          <p class="hint">Tap the satellite map to drop a marker. Adjust size and options below.</p>
 
-            <div class="fields">
-              <label>Name
-                <input id="name" type="text" autocomplete="name" required />
-              </label>
-              <label>Mobile
-                <input id="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="(337) 555-0123" required />
-              </label>
-              <label class="check">
-                <input id="consent" type="checkbox" />
-                <span>I agree to be contacted about this estimate. Message/data rates may apply.</span>
-              </label>
-            </div>
-            <button type="button" class="btn btn-block" id="btn-range">Show my estimate</button>
-            <p class="form-status" id="result-status" role="status"></p>
+          <div id="marks-list" class="marks-list"></div>
+          <div class="totals" id="running-total" hidden>
+            <span>Running estimate</span>
+            <strong id="running-price">—</strong>
+          </div>
 
-            <div class="range" id="range" hidden>
-              <p class="range-label" id="range-label"></p>
-              <p class="range-price" id="range-price"></p>
-              <p class="range-note">Placeholder range for planning only — not a final quote. We’ll confirm after seeing the property.</p>
-              <p class="thanks" id="thanks" hidden>Thanks — demo lead saved. Nothing was texted or emailed to a customer.</p>
-              <a class="btn btn-block" id="blake-continue" data-blake-link data-blake-path="/" href="https://www.3bstreeremoval.com/" rel="noopener" target="_blank" hidden style="margin-top:0.85rem;text-align:center;text-decoration:none">Continue to 3 B&apos;s site</a>
-            </div>
+          <div class="addons">
+            <label class="check"><input type="checkbox" id="opt-emergency" /> Storm / emergency job</label>
+            <label class="check"><input type="checkbox" id="opt-haul-default" /> Default haul-off for new trees</label>
+          </div>
+
+          <div class="fields">
+            <label>Name<input id="name" type="text" autocomplete="name" required /></label>
+            <label>Mobile<input id="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="(337) 555-0123" required /></label>
+            <label class="check">
+              <input id="consent" type="checkbox" />
+              <span>I agree to be contacted about this estimate. Message/data rates may apply.</span>
+            </label>
+          </div>
+          <button type="button" class="btn btn-block" id="btn-range">Show my estimate</button>
+          <p class="form-status" id="result-status" role="status"></p>
+
+          <div class="range" id="range" hidden>
+            <p class="range-label" id="range-label"></p>
+            <div class="price" id="range-price"></div>
+            <ul class="breakdown" id="breakdown"></ul>
+            <p class="range-note">Placeholder range for planning only — not a final quote. Confirmed on-site after assessment.</p>
+            <p class="thanks" id="thanks" hidden>Thanks — demo lead saved. Nothing was texted or emailed to a customer.</p>
+            <a class="btn btn-block" id="blake-continue" data-blake-link data-blake-path="/" href="https://www.3bstreeremoval.com/" rel="noopener" target="_blank" hidden style="margin-top:0.85rem;text-align:center;text-decoration:none">Continue to 3 B&apos;s site</a>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- BELOW THE FOLD -->
+<!-- BELOW THE FOLD -->
     <section class="gallery" id="work">
       <div class="wrap">
         <h2>Recent work</h2>
@@ -119,19 +127,13 @@
       <div class="wrap info-grid">
         <div>
           <h2>Services</h2>
-          <ul class="list">
-            <li>Tree removal</li>
-            <li>Trimming &amp; pruning</li>
-            <li>Stump grinding</li>
-            <li>Storm / emergency</li>
-            <li>Cabling &amp; bracing</li>
-            <li>Planting &amp; transplanting</li>
-          </ul>
+          <ul class="list" id="services-list"></ul>
         </div>
         <div>
           <h2>Service area</h2>
           <p class="area">Pitkin · Leesville · DeRidder · Oakdale · Alexandria · Lake Charles region</p>
           <p class="muted">Family-owned. Licensed arborist. Central Louisiana.</p>
+          <p class="muted" style="margin-top:0.75rem">Storm desk uses free NOAA/NWS alerts. When storms hit, we flag yards for follow-up imagery.</p>
         </div>
       </div>
     </section>
@@ -152,7 +154,10 @@
     </div>
   </footer>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="js/config.js"></script>
+  <script src="js/pricing.js"></script>
+  <script src="js/engine.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
