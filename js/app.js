@@ -286,6 +286,22 @@
     });
     $("#running-total").hidden = false;
     $("#running-price").textContent = `${money(totals.low)} – ${money(totals.high)}`;
+    refreshBeforeAfter();
+  }
+
+  async function refreshBeforeAfter() {
+    const root = $("#before-after");
+    if (!root || state.lat == null || !state.marks.length) {
+      if (root) root.hidden = true;
+      return;
+    }
+    try {
+      const tile = Eng.esriExportUrl(state.lat, state.lon);
+      const pair = await BeforeAfter.buildPair({ tileUrl: tile, marks: state.marks });
+      BeforeAfter.mountSlider(root, pair.beforeUrl, pair.afterUrl);
+    } catch (_) {
+      root.hidden = true;
+    }
   }
 
   ["opt-emergency", "opt-haul-default"].forEach((id) => {
@@ -322,33 +338,65 @@
     });
   }
 
-  $("#addr-form").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const address = $("#address").value.trim();
+  /* Address autocomplete (PRD: Nominatim/Photon debounced; Enter selects, never navigates) */
+  let pendingGeo = null;
+  const ac = window.AddressAutocomplete.attach({
+    input: $("#address"),
+    form: $("#addr-form"),
+    listEl: $("#addr-suggestions"),
+    onStatus(msg, ok) {
+      const hint = $("#addr-hint");
+      if (!hint) return;
+      hint.textContent = msg;
+      hint.classList.toggle("is-ok", !!ok);
+    },
+    onSelect(s) {
+      pendingGeo = { lat: s.lat, lon: s.lon, displayName: s.label };
+      state.address = s.label;
+      state.lat = s.lat;
+      state.lon = s.lon;
+      state.displayName = s.label;
+      $("#addr-status").textContent = "";
+      $("#addr-status").className = "form-status";
+    }
+  });
+
+  async function startFromAddress() {
     const status = $("#addr-status");
-    if (address.length < 8) {
-      status.textContent = "Enter a full street address.";
+    const address = $("#address").value.trim();
+    if (address.length < 3) {
+      status.textContent = "Start typing your address and pick one from the list.";
       status.className = "form-status err";
       return;
     }
-    state.address = address;
+    $("#btn-start").disabled = true;
     status.textContent = "Looking up property…";
     status.className = "form-status";
-    $("#btn-start").disabled = true;
     try {
-      const geo = await Eng.geocode(address);
+      let geo = pendingGeo;
+      if (!geo || geo.displayName !== address) {
+        // If user edited after select, or typed full address and hit Get started
+        geo = await Eng.geocode(address);
+      }
+      state.address = address;
       state.lat = geo.lat;
       state.lon = geo.lon;
-      state.displayName = geo.displayName;
+      state.displayName = geo.displayName || address;
+      pendingGeo = geo;
       status.textContent = "Found — mark trees on the map below.";
       status.className = "form-status ok";
       await openQuote();
     } catch (_) {
-      status.textContent = "Could not find that address. Try a fuller street + city + ZIP.";
+      status.textContent = "Could not find that address. Pick a suggestion from the list.";
       status.className = "form-status err";
     } finally {
       $("#btn-start").disabled = false;
     }
+  }
+
+  $("#btn-start").addEventListener("click", (e) => {
+    e.preventDefault();
+    startFromAddress();
   });
 
   $("#btn-range").addEventListener("click", () => {
