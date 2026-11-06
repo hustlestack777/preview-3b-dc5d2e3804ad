@@ -1,5 +1,5 @@
 /* Free-imagery tree quote engine (client-side).
-   Sources: Nominatim/Photon geocode, Esri World Imagery tiles,
+   Sources: ArcGIS geocode (Photon/Nominatim fallback), satellite imagery tiles,
    Overpass (OSM buildings + power lines), api.weather.gov alerts,
    SPC storm reports. No paid Maps/Planet/Maxar keys. */
 (function (global) {
@@ -20,8 +20,30 @@
   async function geocode(address) {
     const tries = [
       async () => {
+        const params = new URLSearchParams({
+          f: "json",
+          singleLine: address,
+          maxLocations: "1",
+          outSR: "4326",
+          sourceCountry: "USA",
+          location: "-92.5,31.0"
+        });
         const res = await fetch(
-          "https://photon.komoot.io/api/?limit=1&q=" + encodeURIComponent(address)
+          "https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?" + params
+        );
+        if (!res.ok) throw new Error("esri");
+        const data = await res.json();
+        const c = data.candidates && data.candidates[0];
+        if (!c || !c.location) throw new Error("not found");
+        return {
+          lat: Number(c.location.y),
+          lon: Number(c.location.x),
+          displayName: c.address || address
+        };
+      },
+      async () => {
+        const res = await fetch(
+          "https://photon.komoot.io/api/?limit=1&lat=31&lon=-92.5&q=" + encodeURIComponent(address)
         );
         if (!res.ok) throw new Error("photon");
         const data = await res.json();
@@ -33,14 +55,14 @@
           lat: Number(lat),
           lon: Number(lon),
           displayName:
-            [p.name, p.street, p.housenumber, p.city || p.town || p.village, p.state, p.postcode]
+            [p.housenumber, p.street || p.name, p.city || p.town || p.village, p.state, p.postcode]
               .filter(Boolean)
               .join(", ") || address
         };
       },
       async () => {
         const res = await fetch(
-          "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" +
+          "https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=us&q=" +
             encodeURIComponent(address),
           { headers: { Accept: "application/json" } }
         );
@@ -74,10 +96,34 @@
     return { x, y, z };
   }
 
-  /** Preview thumbnail from Esri World Imagery XYZ tiles (free, no key). */
-  function esriExportUrl(lat, lon, size = 640, meters = 60) {
-    const { x, y, z } = latLonToTile(lat, lon, 18);
-    return `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`;
+  /** Centered satellite snapshot (free imagery, no key). spanM ~ yard width. */
+  function esriExportUrl(lat, lon, size = 800, meters = 160) {
+    const width = typeof size === "number" ? size : 800;
+    const height = Math.round(width * 0.65);
+    const spanM = meters || 160;
+    const dLat = spanM / 111320;
+    const dLon = spanM / (111320 * Math.cos((lat * Math.PI) / 180));
+    const bbox = [lon - dLon, lat - dLat, lon + dLon, lat + dLat].join(",");
+    return (
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?" +
+      new URLSearchParams({
+        bbox,
+        bboxSR: "4326",
+        imageSR: "3857",
+        size: width + "," + height,
+        format: "jpg",
+        f: "image"
+      })
+    );
+  }
+
+  function streetViewEmbedUrl(lat, lon) {
+    // Keyless street-level embed. cbp must be present or the embed renders empty.
+    return (
+      "https://www.google.com/maps?layer=c&cbll=" +
+      lat + "," + lon +
+      "&cbp=12,0,0,0,0&hl=en&output=svembed"
+    );
   }
 
   async function overpassContext(lat, lon, radiusM = 80) {
@@ -241,6 +287,7 @@ out center tags;`;
   global.TreeEngine = {
     geocode,
     esriExportUrl,
+    streetViewEmbedUrl,
     overpassContext,
     nearestM,
     estimateHeightFt,

@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-  <link rel="stylesheet" href="css/styles.css" />
+  <link rel="stylesheet" href="css/styles.css?v=20261106c" />
 </head>
 <body>
   <div class="demo-note">Demo — pricing is placeholder</div>
@@ -46,7 +46,7 @@
             </div>
             <ul class="addr-suggestions" id="addr-suggestions" role="listbox" hidden></ul>
           </div>
-          <p class="addr-hint" id="addr-hint">Serving Louisiana &amp; Texas — select from dropdown</p>
+          <p class="addr-hint" id="addr-hint">Serving Louisiana &amp; Texas — suggestions appear as you type</p>
           <p class="form-status" id="addr-status" role="status"></p>
           <p class="fine">Final price is confirmed after an on-site assessment.</p>
         <div class="trust-chips" aria-label="Trust">
@@ -62,59 +62,110 @@
     <section class="quote" id="quote" hidden>
       <div class="wrap">
         <div class="quote-card" id="quote-card">
+          <ol class="steps" aria-label="Estimate steps">
+            <li class="is-done" data-step-pill="1">Address</li>
+            <li class="is-on" data-step-pill="2">Property</li>
+            <li data-step-pill="3">Photos</li>
+            <li data-step-pill="4">Contact</li>
+          </ol>
           <p class="addr-chip" id="addr-chip"></p>
           <div id="storm-banner" class="storm-banner" hidden></div>
 
-          <div class="sat-row">
-            <div class="sat-shot">
-              <img id="sat-img" alt="Satellite view of property" onerror="this.style.display='none'" />
-              <span class="sat-cap">Satellite (Esri World Imagery)</span>
+          <div class="q-step is-on" data-step="2" id="step-property">
+            <h2 class="step-title">Your property</h2>
+            <p class="sat-lead"><strong>Satellite technology</strong> shows your yard from above, zoomed in close enough to see individual trees. Tap each tree or stump to mark it. Use street view to judge height from the road.</p>
+
+            <div class="property-views">
+              <div class="sat-panel">
+                <div class="view-head">
+                  <strong>Satellite view</strong>
+                  <span>Centered on your house — choose Tree or Stump, then tap it</span>
+                </div>
+                <div class="map-tools">
+                  <button type="button" class="tool is-on" data-tool="tree">+ Tree</button>
+                  <button type="button" class="tool" data-tool="stump">+ Stump</button>
+                  <button type="button" class="tool ghost" id="btn-clear-marks">Clear marks</button>
+                </div>
+                <div class="map-shell">
+                  <div id="leaflet-map" class="leaflet-map" role="application" aria-label="Tap to mark trees and stumps"></div>
+                  <div id="map-hint-overlay" class="map-hint-overlay">
+                    <span>Tap a tree to mark it</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="sv-panel">
+                <div class="view-head">
+                  <strong>Street view</strong>
+                  <span>Look around to judge tree height from the road</span>
+                </div>
+                <div class="sv-frame">
+                  <iframe id="sv-frame" title="Street view of the property" loading="eager" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
+                  <p id="sv-fallback" class="sv-fallback" hidden>No street-level photo at this pin. You can still mark trees on the satellite view and add a photo next.</p>
+                </div>
+              </div>
             </div>
-            <div class="sat-note-box">
-              <p><strong>Satellite technology</strong> sizes the job from above. Tap the map to mark each tree or stump. Final price is confirmed after an on-site assessment.</p>
-              <p class="muted" id="context-note"></p>
+
+            <p class="hint" id="map-hint">Tap the satellite view to drop a marker. Adjust size below if you want.</p>
+            <div id="marks-list" class="marks-list"></div>
+            <div class="totals" id="running-total" hidden>
+              <span id="marks-summary">No marks yet</span>
+              <strong id="running-price"></strong>
             </div>
+
+            <div id="before-after" class="before-after" hidden></div>
+
+            <div class="addons">
+              <label class="check"><input type="checkbox" id="opt-emergency" /> Storm / emergency job</label>
+              <label class="check"><input type="checkbox" id="opt-haul-default" /> Default haul-off for new trees</label>
+            </div>
+
+            <p class="form-status" id="property-status" role="status"></p>
+            <button type="button" class="btn btn-block" id="btn-to-photos">Continue to photos</button>
           </div>
 
-          <div id="before-after" class="before-after" hidden></div>
-
-          <div class="map-tools">
-            <button type="button" class="tool is-on" data-tool="tree">+ Tree</button>
-            <button type="button" class="tool" data-tool="stump">+ Stump</button>
-            <button type="button" class="tool ghost" id="btn-clear-marks">Clear marks</button>
-          </div>
-          <div id="leaflet-map" class="leaflet-map" role="application" aria-label="Tap to mark trees and stumps"></div>
-          <p class="hint">Tap the satellite map to drop a marker. Adjust size and options below.</p>
-
-          <div id="marks-list" class="marks-list"></div>
-          <div class="totals" id="running-total" hidden>
-            <span>Running estimate</span>
-            <strong id="running-price">—</strong>
-          </div>
-
-          <div class="addons">
-            <label class="check"><input type="checkbox" id="opt-emergency" /> Storm / emergency job</label>
-            <label class="check"><input type="checkbox" id="opt-haul-default" /> Default haul-off for new trees</label>
-          </div>
-
-          <div class="fields">
-            <label>Name<input id="name" type="text" autocomplete="name" required /></label>
-            <label>Mobile<input id="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="(337) 555-0123" required /></label>
-            <label class="check">
-              <input id="consent" type="checkbox" />
-              <span>I agree to be contacted about this estimate. Message/data rates may apply.</span>
+          <div class="q-step" data-step="3" id="step-photos" hidden>
+            <h2 class="step-title">Photos &amp; notes</h2>
+            <p class="sat-lead">A photo of the tree helps us judge height and condition. Optional, but useful.</p>
+            <label class="photo-label">Photos of the tree or yard
+              <span>Up to 6 photos, from your phone</span>
+              <input id="photos" type="file" accept="image/*" multiple />
             </label>
+            <div class="photo-prev" id="photo-prev"></div>
+            <label class="notes-label">Notes
+              <textarea id="notes" rows="4" placeholder="Which trees, access, gates, pets, anything we should know…"></textarea>
+            </label>
+            <div class="step-nav">
+              <button type="button" class="btn-ghost" id="btn-back-property">Back</button>
+              <button type="button" class="btn" id="btn-to-contact">Continue</button>
+            </div>
           </div>
-          <button type="button" class="btn btn-block" id="btn-range">Show my estimate</button>
-          <p class="form-status" id="result-status" role="status"></p>
 
-          <div class="range" id="range" hidden>
-            <p class="range-label" id="range-label"></p>
-            <div class="price" id="range-price"></div>
-            <ul class="breakdown" id="breakdown"></ul>
-            <p class="range-note">Placeholder range for planning only — not a final quote. Confirmed on-site after assessment.</p>
-            <p class="thanks" id="thanks" hidden>Thanks — demo lead saved. Nothing was texted or emailed to a customer.</p>
-            <a class="btn btn-block" id="blake-continue" data-blake-link data-blake-path="/" href="https://www.3bstreeremoval.com/" rel="noopener" target="_blank" hidden style="margin-top:0.85rem;text-align:center;text-decoration:none">Continue to 3 B&apos;s site</a>
+          <div class="q-step" data-step="4" id="step-contact" hidden>
+            <h2 class="step-title">Your contact info</h2>
+            <p class="sat-lead">We need this before we can show your estimate.</p>
+            <div class="fields">
+              <label>Name<input id="name" type="text" autocomplete="name" required /></label>
+              <label>Mobile<input id="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="(337) 555-0123" required /></label>
+              <label class="check">
+                <input id="consent" type="checkbox" />
+                <span>I agree to be contacted about this estimate. Message/data rates may apply.</span>
+              </label>
+            </div>
+            <div class="step-nav">
+              <button type="button" class="btn-ghost" id="btn-back-photos">Back</button>
+              <button type="button" class="btn" id="btn-range">Show my estimate</button>
+            </div>
+            <p class="form-status" id="result-status" role="status"></p>
+
+            <div class="range" id="range" hidden>
+              <p class="range-label" id="range-label"></p>
+              <div class="price" id="range-price"></div>
+              <ul class="breakdown" id="breakdown"></ul>
+              <p class="range-note">Placeholder range for planning only — not a final quote. Confirmed on-site after assessment.</p>
+              <p class="thanks" id="thanks" hidden>Thanks — demo lead saved. Nothing was texted or emailed to a customer.</p>
+              <a class="btn btn-block" id="blake-continue" data-blake-link data-blake-path="/" href="https://www.3bstreeremoval.com/" rel="noopener" target="_blank" hidden style="margin-top:0.85rem;text-align:center;text-decoration:none">Continue to 3 B&apos;s site</a>
+            </div>
           </div>
         </div>
       </div>
@@ -125,9 +176,9 @@
       <div class="wrap">
         <h2>How it works</h2>
         <div class="how-grid">
-          <div><span class="n">1</span><strong>Enter your address</strong><p>Pick your property from the suggestions.</p></div>
-          <div><span class="n">2</span><strong>Mark trees &amp; stumps</strong><p>Tap the satellite map. Adjust size and options.</p></div>
-          <div><span class="n">3</span><strong>Get a ballpark</strong><p>See a range, then Blake confirms on-site.</p></div>
+          <div><span class="n">1</span><strong>Enter your address</strong><p>Pick your property from the suggestions as you type.</p></div>
+          <div><span class="n">2</span><strong>See the property</strong><p>Satellite and street view, then tap each tree or stump.</p></div>
+          <div><span class="n">3</span><strong>Get a ballpark</strong><p>Add a photo if you have one. See a range after your contact info — Blake confirms on-site.</p></div>
         </div>
       </div>
     </section>
@@ -156,7 +207,7 @@
           <h2>Service area</h2>
           <p class="area">Pitkin · Leesville · DeRidder · Oakdale · Alexandria · Lake Charles region</p>
           <p class="muted">Family-owned. Licensed arborist. Central Louisiana.</p>
-          <p class="muted" style="margin-top:0.75rem">Storm desk uses free NOAA/NWS alerts. When storms hit, we flag yards for follow-up imagery.</p>
+          <p class="muted" style="margin-top:0.75rem">When storms hit the area, we flag yards that may need tree work.</p>
         </div>
       </div>
     </section>
@@ -178,11 +229,11 @@
   </footer>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="js/config.js"></script>
-  <script src="js/pricing.js"></script>
-  <script src="js/engine.js"></script>
-  <script src="js/autocomplete.js"></script>
-  <script src="js/beforeafter.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/config.js?v=20261106c"></script>
+  <script src="js/pricing.js?v=20261106c"></script>
+  <script src="js/engine.js?v=20261106c"></script>
+  <script src="js/autocomplete.js?v=20261106c"></script>
+  <script src="js/beforeafter.js?v=20261106c"></script>
+  <script src="js/app.js?v=20261106c"></script>
 </body>
 </html>

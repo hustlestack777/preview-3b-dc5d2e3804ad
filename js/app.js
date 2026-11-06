@@ -67,10 +67,34 @@
     tool: "tree",
     map: null,
     layerGroup: null,
-    storms: null
+    storms: null,
+    photos: [],
+    notes: "",
+    step: 1,
+    rangeShown: false
   };
 
   let markSeq = 0;
+
+  function goStep(step) {
+    state.step = step;
+    document.querySelectorAll(".q-step").forEach((el) => {
+      const n = Number(el.getAttribute("data-step"));
+      el.hidden = n !== step;
+      el.classList.toggle("is-on", n === step);
+    });
+    document.querySelectorAll("[data-step-pill]").forEach((p) => {
+      const n = Number(p.getAttribute("data-step-pill"));
+      p.classList.toggle("is-on", n === step);
+      p.classList.toggle("is-done", n < step);
+    });
+    if (step === 2 && state.map) {
+      setTimeout(() => state.map.invalidateSize(), 80);
+      setTimeout(() => state.map.invalidateSize(), 400);
+    }
+    const card = $("#quote-card");
+    if (card && step > 1) card.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   function setTool(tool) {
     state.tool = tool;
@@ -91,34 +115,57 @@
     const el = $("#leaflet-map");
     if (state.map) {
       state.map.setView([lat, lon], 19);
+      setTimeout(() => state.map.invalidateSize(), 150);
       return;
     }
-    state.map = L.map(el, { zoomControl: true, attributionControl: true }).setView([lat, lon], 19);
+    state.map = L.map(el, {
+      zoomControl: true,
+      attributionControl: true,
+      scrollWheelZoom: true
+    }).setView([lat, lon], 19);
+    if (state.map.attributionControl) {
+      state.map.attributionControl.setPrefix("");
+    }
     L.tileLayer(
       "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
       {
         maxZoom: 19,
-        attribution: "Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community"
+        maxNativeZoom: 19,
+        attribution: "Satellite imagery"
       }
     ).addTo(state.map);
     state.layerGroup = L.layerGroup().addTo(state.map);
     L.circleMarker([lat, lon], {
-      radius: 6,
+      radius: 7,
       color: "#fff",
       weight: 2,
       fillColor: "#3fbf6a",
       fillOpacity: 1
-    }).addTo(state.map).bindTooltip("Property pin", { permanent: false });
+    }).addTo(state.map).bindTooltip("Your house", { permanent: false });
 
     state.map.on("click", (e) => {
       addMark(e.latlng.lat, e.latlng.lng, state.tool);
     });
     setTimeout(() => state.map.invalidateSize(), 200);
+    setTimeout(() => state.map.invalidateSize(), 700);
+  }
+
+  function setStreetView(lat, lon) {
+    const frame = $("#sv-frame");
+    const fallback = $("#sv-fallback");
+    if (!frame) return;
+    frame.src = Eng.streetViewEmbedUrl(lat, lon);
+    fallback.hidden = true;
+    frame.hidden = false;
+    // If the embed stays blank, keep the iframe (it often still shows the nearest street photo)
+    // and offer a fallback note after a delay only if the iframe errors.
+    frame.onerror = () => {
+      fallback.hidden = false;
+    };
   }
 
   function addMark(lat, lon, kind) {
     markSeq += 1;
-    const origin = { lat: state.lat, lon: state.lon };
     const pt = { lat, lon };
     const distHouse = Eng.nearestM(pt, state.context.buildings);
     const distLines = Eng.nearestM(pt, state.context.power);
@@ -154,6 +201,8 @@
     }).addTo(state.layerGroup);
     marker.bindTooltip(kind === "tree" ? `Tree #${mark.id}` : `Stump #${mark.id}`);
     mark._leaflet = marker;
+    const overlay = $("#map-hint-overlay");
+    if (overlay) overlay.hidden = true;
     renderMarks();
   }
 
@@ -198,8 +247,10 @@
   function renderMarks() {
     const root = $("#marks-list");
     root.innerHTML = "";
+    const trees = state.marks.filter((m) => m.kind === "tree").length;
+    const stumps = state.marks.filter((m) => m.kind === "stump").length;
     if (!state.marks.length) {
-      root.innerHTML = `<p class="hint">No marks yet — tap the map to add a tree or stump.</p>`;
+      root.innerHTML = `<p class="hint">No marks yet — tap the satellite view to add a tree or stump.</p>`;
       $("#running-total").hidden = true;
       return;
     }
@@ -231,8 +282,7 @@
             <label><input type="checkbox" data-f="nearLines" data-id="${m.id}" ${m.nearLines?"checked":""}/> Near lines</label>
             <label><input type="checkbox" data-f="haulOff" data-id="${m.id}" ${m.haulOff?"checked":""}/> Haul-off</label>
             <label><input type="checkbox" data-f="grind" data-id="${m.id}" ${m.grind?"checked":""}/> Grind stump</label>
-          </div>
-          <div class="mini" data-price="${m.id}"></div>`;
+          </div>`;
       } else {
         card.innerHTML = `
           <header><span>Stump #${m.id}</span><button type="button" class="x" data-rm="${m.id}">Remove</button></header>
@@ -247,8 +297,7 @@
           <div class="checks">
             <label><input type="checkbox" data-f="haulMulch" data-id="${m.id}" ${m.haulMulch?"checked":""}/> Haul mulch</label>
             <label><input type="checkbox" data-f="nearLines" data-id="${m.id}" ${m.nearLines?"checked":""}/> Near lines</label>
-          </div>
-          <div class="mini" data-price="${m.id}"></div>`;
+          </div>`;
       }
       root.appendChild(card);
     });
@@ -274,18 +323,10 @@
       });
     });
 
-    const totals = computeTotals();
-    state.marks.forEach((m) => {
-      const el = root.querySelector(`[data-price="${m.id}"]`);
-      if (!el) return;
-      const p =
-        m.kind === "tree"
-          ? Eng.priceTree(m, pricing, { emergency: $("#opt-emergency").checked })
-          : Eng.priceStump(m, pricing);
-      el.textContent = `${money(p.low)} – ${money(p.high)} (placeholder)`;
-    });
     $("#running-total").hidden = false;
-    $("#running-price").textContent = `${money(totals.low)} – ${money(totals.high)}`;
+    $("#marks-summary").textContent =
+      `${trees} tree${trees === 1 ? "" : "s"} · ${stumps} stump${stumps === 1 ? "" : "s"} marked`;
+    $("#running-price").textContent = state.rangeShown ? "" : "Estimate after contact info";
     refreshBeforeAfter();
   }
 
@@ -296,7 +337,7 @@
       return;
     }
     try {
-      const tile = Eng.esriExportUrl(state.lat, state.lon);
+      const tile = Eng.esriExportUrl(state.lat, state.lon, 800, 160);
       const pair = await BeforeAfter.buildPair({ tileUrl: tile, marks: state.marks });
       BeforeAfter.mountSlider(root, pair.beforeUrl, pair.afterUrl);
     } catch (_) {
@@ -309,36 +350,59 @@
     if (el) el.addEventListener("change", () => renderMarks());
   });
 
+  const photosInput = $("#photos");
+  if (photosInput) {
+    photosInput.addEventListener("change", () => {
+      const files = Array.from(photosInput.files || []).slice(0, 6);
+      state.photos = files.map((f) => ({ name: f.name, size: f.size, type: f.type }));
+      const prev = $("#photo-prev");
+      prev.innerHTML = "";
+      files.forEach((file) => {
+        const img = document.createElement("img");
+        img.alt = file.name;
+        img.src = URL.createObjectURL(file);
+        prev.appendChild(img);
+      });
+    });
+  }
+
   async function openQuote() {
     $("#quote").hidden = false;
     $("#addr-chip").textContent = state.displayName || state.address;
-    $("#sat-img").src = Eng.esriExportUrl(state.lat, state.lon, 640, 70);
+    goStep(2);
     $("#quote").scrollIntoView({ behavior: "smooth", block: "start" });
 
     initMap(state.lat, state.lon);
+    setStreetView(state.lat, state.lon);
+    const overlay = $("#map-hint-overlay");
+    if (overlay && !state.marks.length) overlay.hidden = false;
 
-    $("#context-note").textContent = "Scanning nearby buildings & power lines (OpenStreetMap)…";
+    $("#context-note") && ($("#context-note").textContent = "");
+    const hint = $("#map-hint");
+    if (hint) hint.textContent = "Checking nearby buildings and power lines…";
     state.context = await Eng.overpassContext(state.lat, state.lon, 90);
     const b = state.context.buildings.length;
     const p = state.context.power.length;
-    $("#context-note").textContent = state.context.error
-      ? "Map context unavailable — mark trees manually. Distances can be edited."
-      : `Found ${b} building footprint(s) and ${p} power feature(s) nearby (OSM).`;
+    if (hint) {
+      hint.textContent = state.context.error
+        ? "Map context unavailable — mark trees by tapping the satellite view. Distances can be edited."
+        : `Found ${b} building${b === 1 ? "" : "s"} and ${p} power feature${p === 1 ? "" : "s"} nearby. Tap a tree that’s close to the house or lines so we can flag it.`;
+    }
 
     Eng.stormAlertsForPoint(state.lat, state.lon).then((storms) => {
       state.storms = storms;
       const banner = $("#storm-banner");
       if (storms.flag) {
         banner.hidden = false;
-        const events = storms.nws.map((n) => n.event).slice(0, 3).join(", ") || "Recent SPC storm reports nearby";
-        banner.innerHTML = `<strong>Storm desk:</strong> ${events}. Good window to quote tree work. <em>HD imagery pull queued for later.</em>`;
+        const events = storms.nws.map((n) => n.event).slice(0, 3).join(", ") || "Recent storm reports nearby";
+        banner.innerHTML = `<strong>Storm desk:</strong> ${events}. Good window to quote tree work.`;
       } else {
         banner.hidden = true;
       }
     });
   }
 
-  /* Address autocomplete (PRD: Nominatim/Photon debounced; Enter selects, never navigates) */
+  /* Address autocomplete — Enter selects, never navigates */
   let pendingGeo = null;
   const ac = window.AddressAutocomplete.attach({
     input: $("#address"),
@@ -358,6 +422,7 @@
       state.displayName = s.label;
       $("#addr-status").textContent = "";
       $("#addr-status").className = "form-status";
+      startFromAddress();
     }
   });
 
@@ -374,15 +439,29 @@
     status.className = "form-status";
     try {
       let geo = pendingGeo;
-      if (!geo || geo.displayName !== address) {
-        // If user edited after select, or typed full address and hit Get started
+      if (!geo || (geo.displayName !== address && geo.lat == null)) {
         geo = await Eng.geocode(address);
+      } else if (geo.displayName !== address || geo.lat == null || geo.lon == null) {
+        try {
+          geo = await Eng.geocode(address);
+        } catch (_) {
+          if (geo.lat == null) throw _;
+        }
       }
+      const moved = state.lat !== geo.lat || state.lon !== geo.lon;
       state.address = address;
       state.lat = geo.lat;
       state.lon = geo.lon;
       state.displayName = geo.displayName || address;
       pendingGeo = geo;
+      if (moved) {
+        state.marks = [];
+        markSeq = 0;
+        if (state.layerGroup) state.layerGroup.clearLayers();
+        state.rangeShown = false;
+        const rng = document.getElementById("range");
+        if (rng) rng.hidden = true;
+      }
       status.textContent = "Found — mark trees on the map below.";
       status.className = "form-status ok";
       await openQuote();
@@ -398,6 +477,23 @@
     e.preventDefault();
     startFromAddress();
   });
+
+  $("#btn-to-photos").addEventListener("click", () => {
+    const status = $("#property-status");
+    if (!state.marks.length) {
+      status.textContent = "Tap the satellite view to mark at least one tree or stump.";
+      status.className = "form-status err";
+      return;
+    }
+    status.textContent = "";
+    goStep(3);
+  });
+  $("#btn-back-property").addEventListener("click", () => goStep(2));
+  $("#btn-to-contact").addEventListener("click", () => {
+    state.notes = ($("#notes") && $("#notes").value.trim()) || "";
+    goStep(4);
+  });
+  $("#btn-back-photos").addEventListener("click", () => goStep(3));
 
   $("#btn-range").addEventListener("click", () => {
     const status = $("#result-status");
@@ -424,6 +520,7 @@
       return;
     }
 
+    state.notes = ($("#notes") && $("#notes").value.trim()) || "";
     const totals = computeTotals();
     const payload = {
       business: "3 B's Tree Removal",
@@ -435,6 +532,9 @@
       lat: state.lat,
       lon: state.lon,
       marks: state.marks.map(({ _leaflet, ...rest }) => rest),
+      notes: state.notes,
+      photoCount: state.photos.length,
+      photoNames: state.photos.map((p) => p.name),
       rangeLow: totals.low,
       rangeHigh: totals.high,
       breakdown: totals.lines,
@@ -442,8 +542,8 @@
       source: params.src,
       variant: params.v,
       utm: params.utm,
-      imagery: "esri_world_imagery",
-      context: "osm_overpass",
+      imagery: "satellite",
+      context: "nearby-buildings-power",
       blakeContinueUrl: blakeUrl("/"),
       createdAt: new Date().toISOString()
     };
@@ -454,6 +554,7 @@
       localStorage.setItem(key, JSON.stringify(prev.slice(-50)));
     } catch (_) {}
 
+    state.rangeShown = true;
     $("#range").hidden = false;
     $("#range-label").textContent = `${state.marks.filter((m)=>m.kind==="tree").length} tree(s) · ${state.marks.filter((m)=>m.kind==="stump").length} stump(s)`;
     $("#range-price").textContent = `${money(totals.low)} – ${money(totals.high)}`;
@@ -470,6 +571,7 @@
     cont.hidden = false;
     status.textContent = "Estimate ready.";
     status.className = "form-status ok";
+    $("#range").scrollIntoView({ behavior: "smooth", block: "nearest" });
   });
 
   $("#btn-jump").addEventListener("click", () => {
