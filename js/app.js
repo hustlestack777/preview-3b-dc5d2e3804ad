@@ -7,6 +7,62 @@
     stumpOnly: { label: "Stump grinding", hint: "Per stump", low: 150, high: 450 }
   };
 
+  const defaults = window.SITE_DEFAULTS || {};
+  const variants = window.SITE_VARIANTS || {};
+
+  function readParams() {
+    const q = new URLSearchParams(location.search);
+    const utm = {};
+    q.forEach((val, key) => {
+      if (/^utm_/i.test(key)) utm[key.toLowerCase()] = val;
+    });
+    const src = (q.get("src") || defaults.source || "lrl").toLowerCase();
+    let v = (q.get("v") || defaults.variant || "a").toLowerCase();
+    if (!variants[v]) v = defaults.variant || "a";
+    return { src, v, utm, raw: q };
+  }
+
+  const params = readParams();
+  const variant = variants[params.v] || variants.a || {
+    id: params.v,
+    headline: "Get a tree-work estimate.",
+    subline: "Enter your property address to get started.",
+    cta: "Get started",
+    heroImage: "img/hero.jpg"
+  };
+
+  function trackingQuery(extra) {
+    const out = new URLSearchParams();
+    out.set("src", params.src);
+    out.set("v", params.v);
+    Object.entries(params.utm).forEach(([k, val]) => out.set(k, val));
+    if (extra) Object.entries(extra).forEach(([k, val]) => { if (val != null && val !== "") out.set(k, String(val)); });
+    return out.toString();
+  }
+
+  function blakeUrl(path) {
+    const base = defaults.blakeSite || "https://www.3bstreeremoval.com/";
+    const u = new URL(path || "", base);
+    const t = new URLSearchParams(trackingQuery());
+    t.forEach((val, key) => u.searchParams.set(key, val));
+    return u.toString();
+  }
+
+  /* Apply variant to hero */
+  const h1 = document.querySelector(".hero h1");
+  const sub = document.querySelector(".hero .sub");
+  const cta = document.querySelector("#btn-start");
+  const heroImg = document.querySelector(".hero-bg");
+  if (h1 && variant.headline) h1.textContent = variant.headline;
+  if (sub && variant.subline) sub.textContent = variant.subline;
+  if (cta && variant.cta) cta.textContent = variant.cta;
+  if (heroImg && variant.heroImage) heroImg.src = variant.heroImage;
+
+  /* Tag outbound Blake links */
+  document.querySelectorAll("[data-blake-link]").forEach((a) => {
+    a.href = blakeUrl(a.getAttribute("data-blake-path") || "/");
+  });
+
   const state = {
     address: "",
     lat: null,
@@ -169,7 +225,7 @@
     const job = JOBS[state.job];
     const payload = {
       business: "3 B's Tree Removal",
-      to: "shaun.brasher@gmail.com",
+      to: defaults.leadEmailTo || "shaun.brasher@gmail.com",
       name: state.name,
       phone: state.phone,
       address: state.address,
@@ -180,7 +236,11 @@
       photos: state.photos,
       rangeLow: job.low,
       rangeHigh: job.high,
-      source: "blake-demo-v2",
+      source: params.src,
+      variant: params.v,
+      utm: params.utm,
+      pageUrl: location.href,
+      blakeContinueUrl: blakeUrl("/"),
       createdAt: new Date().toISOString()
     };
     try {
@@ -194,6 +254,11 @@
     $("#range-label").textContent = job.label;
     $("#range-price").textContent = money(job.low) + " – " + money(job.high);
     $("#thanks").hidden = false;
+    const cont = $("#blake-continue");
+    if (cont) {
+      cont.href = blakeUrl("/");
+      cont.hidden = false;
+    }
     status.textContent = "Estimate ready.";
     status.className = "form-status ok";
   });
@@ -202,4 +267,7 @@
     window.scrollTo({ top: 0, behavior: "smooth" });
     setTimeout(() => $("#address").focus(), 400);
   });
+
+  /* Expose for debugging / future variants */
+  window.__blakeDemo = { params, variant, blakeUrl, trackingQuery };
 })();
