@@ -2,309 +2,155 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>3 B's Tree Removal | Instant Tree Quote Demo</title>
-  <meta name="description" content="Licensed arborist serving Pitkin, Leesville, DeRidder, Oakdale and Alexandria. Instant ballpark quote from your address, tree photos and a short description." />
-  <meta name="theme-color" content="#0f1a12" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>3 B's Tree Removal | Get a tree-work estimate</title>
+  <meta name="description" content="Enter your address for a ballpark tree-work estimate. Licensed arborist serving Pitkin, Leesville, DeRidder, Oakdale & Alexandria." />
   <meta name="robots" content="noindex,nofollow" />
+  <meta name="theme-color" content="#0c140e" />
+  <link rel="preload" as="image" href="img/hero.jpg" fetchpriority="high" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-  <div class="preview-banner">Demo — pricing is placeholder · not Blake’s live site · noindex</div>
+  <div class="demo-note">Demo — pricing is placeholder</div>
 
-  <header class="site-header">
-    <div class="wrap nav">
-      <a class="brand" href="#top">
-        <div class="brand-mark" aria-hidden="true">3B</div>
-        <div class="brand-text">
-          <strong data-brand-short>3 B's Tree Removal</strong>
-          <span>Pitkin, Louisiana · licensed arborist</span>
-        </div>
-      </a>
-      <nav class="nav-links" aria-label="Primary">
-        <a href="#services">Services</a>
-        <a href="#how">How it works</a>
-        <a href="#area">Service area</a>
-        <a href="#quote">Instant quote</a>
-      </nav>
-      <a class="nav-phone" data-phone-tel data-phone-display href="tel:+13373784046">(337) 378-4046</a>
-      <a class="btn btn-sm nav-cta" href="#quote">Get a ballpark</a>
-      <button class="menu-toggle" type="button" aria-label="Open menu" aria-expanded="false" data-menu-toggle>
-        <span></span>
-      </button>
-    </div>
-    <nav class="mobile-nav" data-mobile-nav aria-label="Mobile">
-      <a href="#services">Services</a>
-      <a href="#how">How it works</a>
-      <a href="#area">Service area</a>
-      <a href="#quote">Instant quote</a>
-      <a data-phone-tel href="tel:+13373784046">Call <span data-phone-display>(337) 378-4046</span></a>
-    </nav>
+  <header class="topbar">
+    <a class="brand" href="#top">
+      <span class="mark">3B</span>
+      <span class="brand-name">3 B's Tree Removal</span>
+    </a>
+    <a class="call" href="tel:+13373784046">(337) 378-4046</a>
   </header>
 
   <main id="top">
-    <section>
-      <div class="wrap hero">
-        <div class="hero-copy">
-          <div class="eyebrow">Photo + address → ballpark quote</div>
-          <h1>See your trees.<br />Get a range.<br />Talk to a real crew.</h1>
-          <p class="lead">
-            Drop your address, snap a couple photos, and tell us what’s going on.
-            We’ll pull satellite and street views of the property, size the job into a bucket,
-            and show a low–high range — then a licensed arborist follows up with an exact quote.
-          </p>
-          <div class="hero-cta">
-            <a class="btn" href="#quote">Start instant quote</a>
-            <a class="btn btn-ghost" href="#how">See how it works</a>
+    <!-- FULL-BLEED HERO -->
+    <section class="hero" aria-label="Get a tree-work estimate">
+      <img class="hero-bg" src="img/hero.jpg" alt="" width="1376" height="768" fetchpriority="high" />
+      <div class="hero-shade" aria-hidden="true"></div>
+      <div class="hero-inner">
+        <p class="eyebrow">Pitkin, LA · licensed arborist</p>
+        <h1>Get a tree-work estimate.</h1>
+        <p class="sub">Enter your property address to get started.</p>
+
+        <form class="addr-form" id="addr-form" autocomplete="on">
+          <label class="sr" for="address">Property address</label>
+          <div class="addr-row">
+            <input id="address" name="address" type="text" inputmode="text" autocomplete="street-address"
+              placeholder="Street, city, state, ZIP" required minlength="8" />
+            <button type="submit" class="btn" id="btn-start">Get started</button>
           </div>
-          <div class="trust-row">
-            <span><b>Family-owned</b> Pitkin, LA</span>
-            <span><b>Licensed arborist</b></span>
-            <span><b>Arborist · removal · trim · stump · storm</b></span>
-          </div>
-        </div>
-        <div class="hero-media" aria-hidden="true">
-          <div class="tree-art">
-            <div class="hero-caption">
-              <strong>Demo visual</strong>
-              Real job photos swap in when Blake supplies them.
-            </div>
-          </div>
-        </div>
+          <p class="form-status" id="addr-status" role="status"></p>
+          <p class="fine">Final price is confirmed after an on-site assessment.</p>
+        </form>
       </div>
     </section>
 
-    <section class="alt" id="services">
+    <!-- QUOTE FLOW (revealed after address) -->
+    <section class="quote" id="quote" hidden>
       <div class="wrap">
-        <div class="section-head">
-          <div class="eyebrow">What we handle</div>
-          <h2>Tree work done right the first time</h2>
-          <p>From a single leaner in the yard to storm cleanup and stump grinding — sized honestly before anyone rolls a truck.</p>
-        </div>
-        <div class="cards cols-3">
-          <article class="card featured">
-            <span class="card-tag">Core</span>
-            <h3>Tree removal</h3>
-            <p>Residential removals, near-structure work, and multi-tree jobs with cleanup options.</p>
-          </article>
-          <article class="card">
-            <span class="card-tag">Core</span>
-            <h3>Trimming &amp; pruning</h3>
-            <p>Canopy reduction, deadwood, clearance from roofs and lines — sized from your photos.</p>
-          </article>
-          <article class="card featured">
-            <span class="card-tag">Arborist</span>
-            <h3>Licensed arborist care</h3>
-            <p>Risk assessments, cabling &amp; bracing, health evaluations, and planting/transplanting — not just cut-and-haul.</p>
-          </article>
-          <article class="card">
-            <span class="card-tag">Add-on</span>
-            <h3>Stump grinding</h3>
-            <p>Grind after removal or alone. Add it in the quote tool so the range includes it.</p>
-          </article>
-          <article class="card">
-            <span class="card-tag">Urgent</span>
-            <h3>Storm / emergency</h3>
-            <p>Downed or leaning trees, driveway blocked, roof risk — flag it in the form.</p>
-          </article>
-          <article class="card">
-            <span class="card-tag">Extra</span>
-            <h3>Land clearing</h3>
-            <p>Site prep and brush when it rides with a tree job.</p>
-          </article>
-          <article class="card">
-            <span class="card-tag">Side</span>
-            <h3>Firewood</h3>
-            <p>Seasoned wood available through the firewood.delivery partnership in Blake’s zones.</p>
-          </article>
-        </div>
-      </div>
-    </section>
+        <div class="quote-card" id="quote-card">
+          <p class="addr-chip" id="addr-chip"></p>
 
-    <section id="how">
-      <div class="wrap">
-        <div class="section-head">
-          <div class="eyebrow">Instant quote</div>
-          <h2>Address + photos beat a blank “call for price”</h2>
-          <p>Most tree companies make you wait for a free estimate visit before you see a number. This tool gives a ballpark range up front so you know if you’re in the right neighborhood — then Blake confirms on-site.</p>
-        </div>
-        <div class="cards cols-3">
-          <article class="card">
-            <span class="card-tag">1</span>
-            <h3>Address &amp; maps</h3>
-            <p>We look up the property and show satellite (aerial) plus Street View so the crew sees access, power lines, and canopy.</p>
-          </article>
-          <article class="card">
-            <span class="card-tag">2</span>
-            <h3>Photos + description</h3>
-            <p>You upload tree shots and a short note (leaning, near house, storm damage, stump only, etc.).</p>
-          </article>
-          <article class="card">
-            <span class="card-tag">3</span>
-            <h3>Size bucket → range</h3>
-            <p>We estimate a size bucket and return a low–high range from a pricing table Blake will confirm. Contact + consent required before the range shows.</p>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="alt" id="area">
-      <div class="wrap">
-        <div class="section-head">
-          <div class="eyebrow">Service area</div>
-          <h2 data-area-label>Pitkin · Leesville · DeRidder · Oakdale · Alexandria region</h2>
-          <p data-area-note>Zones confirmed with Blake before public launch. Farther by special request.</p>
-        </div>
-        <div class="area-list" data-towns></div>
-      </div>
-    </section>
-
-    <section id="quote">
-      <div class="wrap">
-        <div class="section-head">
-          <div class="eyebrow">Try it</div>
-          <h2>Instant tree quote</h2>
-          <p>Demo only. Ranges are placeholders. No guarantee of final price. Lead email goes to Shaun until Blake’s intake is wired.</p>
-        </div>
-
-        <div class="quote-shell" id="quote-tool">
-          <div class="q-steps" aria-label="Quote steps">
-            <div class="q-step is-active" data-step-pill="1">1 · Job</div>
-            <div class="q-step" data-step-pill="2">2 · Address &amp; maps</div>
-            <div class="q-step" data-step-pill="3">3 · Photos</div>
-            <div class="q-step" data-step-pill="4">4 · Contact &amp; range</div>
+          <!-- Step: job -->
+          <div class="q-panel is-on" data-q="job">
+            <h2>What do you need?</h2>
+            <div class="chips" id="job-chips"></div>
+            <label class="photo-label">Photos <span>(optional)</span>
+              <input type="file" id="photos" accept="image/*" multiple capture="environment" />
+            </label>
+            <div class="photo-prev" id="photo-prev"></div>
+            <button type="button" class="btn btn-block" id="btn-job">Continue</button>
           </div>
 
-          <!-- STEP 1 -->
-          <div class="panel is-active" data-panel="1">
-            <div class="field">
-              <label>What do you need?</label>
-              <div class="chip-grid" data-job-chips></div>
+          <!-- Step: map + contact + range -->
+          <div class="q-panel" data-q="result">
+            <h2>Your property</h2>
+            <div class="map-box" id="map-box">
+              <div class="map-fallback" id="map-fallback">Looking up the property…</div>
+              <iframe id="map-frame" title="Property map" loading="lazy" referrerpolicy="no-referrer" hidden></iframe>
             </div>
-            <div class="field">
-              <label for="job-desc">Short description <span class="hint">What’s going on with the tree(s)? Near a house or power lines? Storm damage?</span></label>
-              <textarea id="job-desc" maxlength="800" placeholder="Example: Big oak leaning toward the garage after the storm. About 50–60 ft. Want removal + stump grind."></textarea>
-            </div>
-            <div class="field">
-              <label>Add-ons (optional)</label>
-              <div class="addon-list" data-addons></div>
-            </div>
-            <div class="q-actions">
-              <button type="button" class="btn" data-next="2">Continue</button>
-            </div>
-            <p class="form-status" data-form-status></p>
-          </div>
+            <p class="sat-note">Satellite technology helps us size the job. Final price is confirmed on-site.</p>
 
-          <!-- STEP 2 -->
-          <div class="panel" data-panel="2">
-            <div class="field">
-              <label for="job-address">Property address <span class="hint">Street, city, state, ZIP</span></label>
-              <input id="job-address" type="text" autocomplete="street-address" placeholder="123 Main St, Alexandria, LA 71301" />
-            </div>
-            <div class="q-actions">
-              <button type="button" class="btn btn-ghost" data-prev="1">Back</button>
-              <button type="button" class="btn" data-lookup>Look up maps</button>
-            </div>
-            <div class="maps-grid" data-maps hidden>
-              <div class="map-card" data-sat-card>
-                <span class="map-label">Satellite</span>
-                <div class="map-fallback" data-sat-fallback>
-                  <div><strong>Satellite preview</strong><span data-sat-msg>Enter an address to load aerial view.</span></div>
-                </div>
-                <img data-sat-img alt="Satellite view of property" hidden />
-              </div>
-              <div class="map-card" data-sv-card>
-                <span class="map-label">Street View</span>
-                <div class="map-fallback" data-sv-fallback>
-                  <div><strong>Street View preview</strong><span data-sv-msg>Shows the curb view when available.</span></div>
-                </div>
-                <img data-sv-img alt="Street View of property" hidden />
-              </div>
-            </div>
-            <p class="form-status" data-form-status></p>
-            <div class="q-actions" data-maps-continue hidden>
-              <button type="button" class="btn" data-next="3">Looks right — continue</button>
-            </div>
-          </div>
-
-          <!-- STEP 3 -->
-          <div class="panel" data-panel="3">
-            <div class="field">
-              <label>Tree photo(s) <span class="hint">Optional for this demo · 1–6 photos help size the job (whole tree + base + nearby house/lines).</span></label>
-              <label class="upload-zone" for="quote-photos">
-                <strong>Tap to upload or take photos</strong>
-                <span class="hint">JPG, PNG, HEIC · stays on this device until you submit</span>
-                <input id="quote-photos" type="file" accept="image/*" multiple capture="environment" />
+            <div class="fields">
+              <label>Name
+                <input id="name" type="text" autocomplete="name" required />
               </label>
-              <div class="upload-preview" data-upload-preview></div>
-            </div>
-            <div class="q-actions">
-              <button type="button" class="btn btn-ghost" data-prev="2">Back</button>
-              <button type="button" class="btn btn-ghost" data-skip-photos data-next="4">Skip photos (demo)</button>
-              <button type="button" class="btn" data-next="4">Continue</button>
-            </div>
-            <p class="form-status" data-form-status></p>
-          </div>
-
-          <!-- STEP 4 -->
-          <div class="panel" data-panel="4">
-            <div class="field">
-              <label for="lead-name">Your name</label>
-              <input id="lead-name" type="text" autocomplete="name" required />
-            </div>
-            <div class="field">
-              <label for="lead-phone">Mobile phone</label>
-              <input id="lead-phone" type="tel" autocomplete="tel" inputmode="tel" required placeholder="(337) 555-0123" />
-            </div>
-            <div class="field">
-              <label for="lead-email">Email (optional)</label>
-              <input id="lead-email" type="email" autocomplete="email" />
-            </div>
-            <div class="check-row">
-              <input id="tcpa" type="checkbox" />
-              <label for="tcpa">
-                I agree to be contacted by phone, text, or email about this tree quote request.
-                Message/data rates may apply. Consent is not a condition of purchase. I can opt out anytime.
+              <label>Mobile
+                <input id="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="(337) 555-0123" required />
+              </label>
+              <label class="check">
+                <input id="consent" type="checkbox" />
+                <span>I agree to be contacted about this estimate. Message/data rates may apply.</span>
               </label>
             </div>
-            <div class="q-actions">
-              <button type="button" class="btn btn-ghost" data-prev="3">Back</button>
-              <button type="button" class="btn" data-submit>Show my ballpark range</button>
+            <button type="button" class="btn btn-block" id="btn-range">Show my estimate</button>
+            <p class="form-status" id="result-status" role="status"></p>
+
+            <div class="range" id="range" hidden>
+              <p class="range-label" id="range-label"></p>
+              <p class="range-price" id="range-price"></p>
+              <p class="range-note">Placeholder range for planning only — not a final quote. We’ll confirm after seeing the property.</p>
+              <p class="thanks" id="thanks" hidden>Thanks — demo lead saved. Nothing was texted or emailed to a customer.</p>
             </div>
-            <div class="range-card" data-range-card hidden>
-              <div class="label">Estimated range · <span data-range-label></span></div>
-              <div class="price" data-range-price></div>
-              <div class="note" data-range-note>
-                Placeholder range for planning only — not a final quote and not a guarantee.
-                A licensed arborist confirms on-site after reviewing your photos and the property.
-              </div>
-              <p class="note" data-thanks hidden style="margin-top:0.75rem">Thanks — we saved this demo lead locally. Nothing was texted or emailed to a customer.</p>
-              <p class="note" style="margin-top:0.5rem"><a data-mailto-lead href="#" hidden>Optional: open an email draft to Shaun with these details</a></p>
-            </div>
-            <p class="form-status" data-form-status></p>
-            <p class="disclaimer">
-              Pricing table is a demo placeholder pending Blake’s confirmation.
-              Final price depends on access, hazards, disposal, permits, and site conditions.
-            </p>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- BELOW THE FOLD -->
+    <section class="gallery" id="work">
+      <div class="wrap">
+        <h2>Recent work</h2>
+        <div class="grid">
+          <img src="img/g1.jpg" alt="Climber removing a tall tree" width="1000" height="1333" loading="lazy" />
+          <img src="img/g2.jpg" alt="Bucket truck tree removal" width="1000" height="1333" loading="lazy" />
+          <img src="img/g3.jpg" alt="Crew with oak logs" width="1200" height="900" loading="lazy" />
+          <img src="img/g4.jpg" alt="Stump and saw work" width="1000" height="1333" loading="lazy" />
+          <img src="img/g5.jpg" alt="Before and after tree work" width="1200" height="600" loading="lazy" />
+          <img src="img/g6.jpg" alt="3 B's crew on the job" width="1200" height="896" loading="lazy" />
+        </div>
+      </div>
+    </section>
+
+    <section class="info">
+      <div class="wrap info-grid">
+        <div>
+          <h2>Services</h2>
+          <ul class="list">
+            <li>Tree removal</li>
+            <li>Trimming &amp; pruning</li>
+            <li>Stump grinding</li>
+            <li>Storm / emergency</li>
+            <li>Cabling &amp; bracing</li>
+            <li>Planting &amp; transplanting</li>
+          </ul>
+        </div>
+        <div>
+          <h2>Service area</h2>
+          <p class="area">Pitkin · Leesville · DeRidder · Oakdale · Alexandria · Lake Charles region</p>
+          <p class="muted">Family-owned. Licensed arborist. Central Louisiana.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta">
+      <div class="wrap cta-inner">
+        <h2>Ready to talk?</h2>
+        <a class="btn btn-lg" href="tel:+13373784046">Call (337) 378-4046</a>
+        <button type="button" class="linkish" id="btn-jump">Or get an estimate online</button>
       </div>
     </section>
   </main>
 
-  <footer class="footer">
+  <footer class="foot">
     <div class="wrap">
-      <strong data-brand>3 B's Tree Removal</strong> · Pitkin, Louisiana<br />
-      Demo conversion layer for Shaun — leave <a href="https://3bstreeremoval.com" rel="noopener" target="_blank">3bstreeremoval.com</a> up until ready.<br />
-      Customer line on demo: <span data-phone-display>(337) 378-4046</span> · AI disclosure: this demo was built by an AI assistant for Shaun.
+      <strong>3 B's Tree Removal</strong> · Pitkin, Louisiana<br />
+      Demo preview — not the live site · <a href="https://3bstreeremoval.com" rel="noopener" target="_blank">3bstreeremoval.com</a>
     </div>
   </footer>
 
-  <script src="js/config.js"></script>
-  <script src="js/main.js"></script>
-  <script src="js/quote.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>
