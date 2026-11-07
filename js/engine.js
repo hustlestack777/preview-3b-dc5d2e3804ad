@@ -854,7 +854,10 @@ out center tags;`;
   }
 
   async function fetchOsmTrees(lat, lon, radiusM = 70) {
-    const q = `[out:json][timeout:15];node["natural"="tree"](around:${radiusM},${lat},${lon});out;`;
+    const q = `[out:json][timeout:15];(
+      node["natural"="tree"](around:${radiusM},${lat},${lon});
+      node["natural"="tree_stump"](around:${radiusM},${lat},${lon});
+    );out;`;
     try {
       const res = await fetch("https://overpass-api.de/api/interpreter", {
         method: "POST",
@@ -865,7 +868,16 @@ out center tags;`;
       const data = await res.json();
       return (data.elements || [])
         .filter((el) => el.lat != null)
-        .map((el) => ({ lat: el.lat, lon: el.lon, canopyFt: 22, kind: "tree", source: "osm" }));
+        .map((el) => {
+          const stump = el.tags && el.tags.natural === "tree_stump";
+          return {
+            lat: el.lat,
+            lon: el.lon,
+            canopyFt: stump ? 0 : 22,
+            kind: stump ? "stump" : "tree",
+            source: "osm"
+          };
+        });
     } catch (_) {
       return [];
     }
