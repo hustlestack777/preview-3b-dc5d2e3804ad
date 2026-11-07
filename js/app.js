@@ -69,6 +69,7 @@
     imageOverlay: null,
     storms: null,
     photos: [],
+    media: [],
     notes: "",
     step: 1,
     rangeShown: false,
@@ -166,7 +167,7 @@
   function initMap(lat, lon) {
     const el = $("#leaflet-map");
     if (state.map) {
-      state.map.setView([lat, lon], 19);
+      state.map.setView([lat, lon], 20);
       setTimeout(() => state.map.invalidateSize(), 150);
       return;
     }
@@ -174,16 +175,16 @@
       zoomControl: true,
       attributionControl: true,
       scrollWheelZoom: true
-    }).setView([lat, lon], 19);
+    }).setView([lat, lon], 20);
     if (state.map.attributionControl) state.map.attributionControl.setPrefix("");
-    // Native z19 only — z20 public tiles are tiny placeholders and look worse.
-    // detectRetina would request z20, so it stays off. Sharpness comes from the
-    // high-res snapshot overlaid on the lot.
+    // Google satellite tiles go to z21 and stay sharp when the map is fitted
+    // tightly to the lot (same source GetMowed uses via Static Maps).
     L.tileLayer(
-      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      "https://mt{s}.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}",
       {
-        maxZoom: 19,
-        maxNativeZoom: 19,
+        maxZoom: 21,
+        maxNativeZoom: 21,
+        subdomains: ["0", "1", "2", "3"],
         detectRetina: false,
         attribution: "Satellite imagery"
       }
@@ -227,100 +228,75 @@
     }).addTo(state.layerGroup).bindTooltip("Your house", { permanent: false });
   }
 
+  function showScanner(on) {
+    const el = $("#scan-overlay");
+    if (!el) return;
+    el.hidden = !on;
+  }
+
   async function paintProperty(lat, lon) {
     initMap(lat, lon);
     clearPropertyLayers();
 
     const caption = $("#parcel-caption");
     const hint = $("#map-hint");
-    if (hint) hint.textContent = "Finding your property line…";
+    showScanner(true);
+    if (caption) caption.textContent = "Outlining your property…";
+    if (hint) hint.textContent = "Outlining your property…";
 
+    const started = Date.now();
     let parcel = null;
     try {
       parcel = await Eng.fetchParcel(lat, lon, state.displayName || state.address);
     } catch (_) {}
     state.parcel = parcel;
+    const linger = Math.max(0, 1200 - (Date.now() - started));
+    if (linger) await new Promise((resolve) => setTimeout(resolve, linger));
 
-    const core = parcel ? parcel.bounds : Eng.boundsFromPoint(lat, lon, 40);
-    const bounds = Eng.expandToMinSize(Eng.padBounds(core, 0.25), 58);
+    const detectCore = parcel ? parcel.bounds : Eng.boundsFromPoint(lat, lon, 40);
+    const detectBounds = Eng.padBounds(detectCore, 0.08);
 
-    const overlayUrl = Eng.esriBBoxExportUrl(bounds);
-    state.imageOverlay = L.imageOverlay(
-      overlayUrl,
-      [
-        [bounds.south, bounds.west],
-        [bounds.north, bounds.east]
-      ],
-      { opacity: 1, interactive: false, className: "sat-sharp", pane: "overlayPane" }
-    ).addTo(state.map);
-    state.imageOverlay.on("error", () => {
-      if (state.imageOverlay) {
-        try { state.map.removeLayer(state.imageOverlay); } catch (_) {}
-        state.imageOverlay = null;
-      }
-    });
-
-    if (parcel && parcel.ring) {
-      const latlngs = Eng.ringToLatLngs(parcel.ring);
-      state.parcelLayer = L.polygon(latlngs, {
-        color: "#ff8a2b",
-        weight: 3,
-        fillColor: "#ff8a2b",
-        fillOpacity: 0.08,
+    if (parcel && (parcel.feature || parcel.ring)) {
+      const geo = parcel.feature || {
+        type: "Feature",
+        properties: {},
+        geometry: { type: "Polygon", coordinates: [parcel.ring] }
+      };
+      state.parcelLayer = L.geoJSON(geo, {
+        style: {
+          color: "#ff8a2b",
+          weight: 3,
+          fillColor: "#ff8a2b",
+          fillOpacity: 0.1,
+          className: "parcel-draw"
+        },
         interactive: false
       }).addTo(state.map);
-      if (caption) caption.textContent = "Property line from parish records";
-    } else {
-      const bldg = (state.context.buildings || [])[0];
-      if (bldg) {
-        L.circleMarker([bldg.lat, bldg.lon], {
-          radius: 14,
-          color: "#ff8a2b",
-          weight: 2,
-          fillOpacity: 0.05,
-          interactive: false,
-          pane: "trees"
-        }).addTo(state.layerGroup);
+      if (caption) caption.textContent = parcel.label || "Property line from parish records";
+      try {
+        state.map.fitBounds(state.parcelLayer.getBounds(), { padding: [26, 26], maxZoom: 21 });
+      } catch (_) {
+        state.map.setView([lat, lon], 20);
       }
-      const approx = L.rectangle(
-        [
-          [core.south, core.west],
-          [core.north, core.east]
-        ],
-        {
-          color: "#ff8a2b",
-          weight: 2,
-          dashArray: "6 5",
-          fillColor: "#ff8a2b",
-          fillOpacity: 0.05,
-          interactive: false
-        }
-      ).addTo(state.map);
-      state.parcelLayer = approx;
-      if (caption) caption.textContent = "Approximate lot — exact property line not available here";
+    } else {
+      if (caption) caption.textContent = "Exact property line not in parish records here";
+      state.map.setView([lat, lon], 20);
     }
-    state.map.fitBounds(
-      [
-        [bounds.south, bounds.west],
-        [bounds.north, bounds.east]
-      ],
-      { padding: [18, 18], maxZoom: 19 }
-    );
+    showScanner(false);
 
     housePin(lat, lon);
 
     if (hint) hint.textContent = "Looking for trees on the lot…";
     let detected = [];
     try {
-      detected = await Eng.detectTreesFromExport(overlayUrl, bounds);
+      const overlayUrl = Eng.esriBBoxExportUrl(detectBounds);
+      detected = await Eng.detectTreesFromExport(overlayUrl, detectBounds);
     } catch (err) {
       console.warn("detectTrees", err);
       detected = [];
     }
-    if (parcel && parcel.ring) {
-      detected = detected.filter((t) =>
-        Eng.pointInRing(t.lon, t.lat, parcel.ring) || Eng.haversineM(t, { lat, lon }) < 28
-      );
+    if (parcel && (parcel.ring || (parcel.rings && parcel.rings.length))) {
+      detected = detected.filter((t) => Eng.pointInParcel(t.lon, t.lat, parcel, 4));
     }
 
     detected.forEach((t) => {
@@ -335,14 +311,15 @@
     if (hint) {
       const n = detected.length;
       hint.textContent = n
-        ? `We spotted ${n} possible tree${n === 1 ? "" : "s"}. Tap the ones you want quoted — or add a tree / stump yourself.`
-        : "We couldn’t automatically spot trees here. Tap Add a tree, then tap each one on the map.";
+        ? `We spotted ${n} possible tree${n === 1 ? "" : "s"}. Tap to select or unselect — or skip and describe the work below.`
+        : "We couldn’t automatically spot trees here. Tap Add a tree, or skip and describe the work below.";
     }
     updateOverlayHint();
-    // OSM tree nodes, if any, without blocking the map.
     Eng.fetchOsmTrees(lat, lon, 70).then((osm) => {
       (osm || []).forEach((t) => {
-        const inside = !parcel || !parcel.ring || Eng.pointInRing(t.lon, t.lat, parcel.ring) || Eng.haversineM(t, { lat, lon }) < 28;
+        const inside = !parcel || !(parcel.ring || (parcel.rings && parcel.rings.length))
+          ? true
+          : Eng.pointInParcel(t.lon, t.lat, parcel, 4);
         if (!inside) return;
         if (state.marks.some((m) => Eng.haversineM(m, t) < 6)) return;
         addMark(t.lat, t.lon, "tree", {
@@ -354,7 +331,7 @@
       });
       if (hint && state.marks.some((m) => m.source === "detected")) {
         const n = state.marks.filter((m) => m.kind === "tree").length;
-        hint.textContent = `We spotted ${n} possible tree${n === 1 ? "" : "s"}. Tap the ones you want quoted — or add a tree / stump yourself.`;
+        hint.textContent = `We spotted ${n} possible tree${n === 1 ? "" : "s"}. Tap to select or unselect — or skip and describe the work below.`;
       }
       updateOverlayHint();
     }).catch(() => {});
@@ -515,21 +492,66 @@
     $("#running-price").textContent = state.rangeShown ? "" : "Estimate after contact info";
   }
 
-  const photosInput = $("#photos");
-  if (photosInput) {
-    photosInput.addEventListener("change", () => {
-      const files = Array.from(photosInput.files || []).slice(0, 6);
-      state.photos = files.map((f) => ({ name: f.name, size: f.size, type: f.type }));
-      const prev = $("#photo-prev");
-      prev.innerHTML = "";
-      files.forEach((file) => {
-        const img = document.createElement("img");
-        img.alt = file.name;
-        img.src = URL.createObjectURL(file);
-        prev.appendChild(img);
+  function renderMedia() {
+    const roots = [$("#photo-prev"), $("#photo-prev-extra")].filter(Boolean);
+    roots.forEach((root) => {
+      root.innerHTML = "";
+      state.media.forEach((item) => {
+        const wrap = document.createElement("div");
+        wrap.className = "media-thumb";
+        if (item.kind === "video") {
+          const vid = document.createElement("video");
+          vid.src = item.url;
+          vid.muted = true;
+          vid.playsInline = true;
+          wrap.appendChild(vid);
+        } else {
+          const img = document.createElement("img");
+          img.src = item.url;
+          img.alt = item.name || "Photo";
+          wrap.appendChild(img);
+        }
+        const rm = document.createElement("button");
+        rm.type = "button";
+        rm.className = "media-x";
+        rm.setAttribute("aria-label", "Remove");
+        rm.textContent = "×";
+        rm.addEventListener("click", () => {
+          URL.revokeObjectURL(item.url);
+          state.media = state.media.filter((m) => m.id !== item.id);
+          renderMedia();
+        });
+        wrap.appendChild(rm);
+        root.appendChild(wrap);
       });
     });
+    state.photos = state.media.map((m) => ({ name: m.name, size: m.size, type: m.type, kind: m.kind }));
   }
+
+  function addMediaFiles(fileList) {
+    Array.from(fileList || []).forEach((file) => {
+      if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) return;
+      if (state.media.length >= 8) return;
+      state.media.push({
+        id: Date.now() + Math.random(),
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        kind: file.type.startsWith("video/") ? "video" : "image",
+        url: URL.createObjectURL(file)
+      });
+    });
+    renderMedia();
+  }
+
+  ["#photos", "#photos-extra"].forEach((sel) => {
+    const input = $(sel);
+    if (!input) return;
+    input.addEventListener("change", () => {
+      addMediaFiles(input.files);
+      input.value = "";
+    });
+  });
 
   async function openQuote() {
     $("#quote").hidden = false;
@@ -549,7 +571,7 @@
     } catch (err) {
       console.warn("paintProperty failed", err);
       const caption = document.getElementById("parcel-caption");
-      if (caption) caption.textContent = "Approximate lot — exact property line not available here";
+      if (caption) caption.textContent = "Exact property line not in parish records here";
     }
 
     Eng.stormAlertsForPoint(state.lat, state.lon).then((storms) => {
@@ -652,12 +674,16 @@
 
   $("#btn-to-photos").addEventListener("click", () => {
     const status = $("#property-status");
-    if (!selectedMarks().length) {
-      status.textContent = "Tap at least one circled tree (or add a tree / stump) to continue.";
-      status.className = "form-status err";
-      return;
+    const describe = ($("#work-describe") && $("#work-describe").value.trim()) || "";
+    if (describe) {
+      state.notes = describe;
+      const notesEl = $("#notes");
+      if (notesEl && !notesEl.value.trim()) notesEl.value = describe;
     }
-    status.textContent = "";
+    if (status) {
+      status.textContent = "";
+      status.className = "form-status";
+    }
     goStep(3);
   });
   $("#btn-back-property").addEventListener("click", () => goStep(2));
@@ -686,13 +712,7 @@
       status.className = "form-status err";
       return;
     }
-    if (!selectedMarks().length) {
-      status.textContent = "Select at least one tree or stump.";
-      status.className = "form-status err";
-      return;
-    }
-
-    state.notes = ($("#notes") && $("#notes").value.trim()) || "";
+    state.notes = ($("#notes") && $("#notes").value.trim()) || ($("#work-describe") && $("#work-describe").value.trim()) || "";
     const totals = computeTotals();
     const payload = {
       business: "3 B's Tree Removal",
@@ -716,7 +736,15 @@
       variant: params.v,
       utm: params.utm,
       imagery: "satellite",
-      parcel: state.parcel ? { source: state.parcel.source, exact: true } : { exact: false },
+      parcel: state.parcel
+        ? {
+            source: state.parcel.source,
+            exact: true,
+            areaSqFt: state.parcel.areaSqFt,
+            widthFt: state.parcel.widthFt,
+            depthFt: state.parcel.depthFt
+          }
+        : { exact: false },
       blakeContinueUrl: blakeUrl("/"),
       createdAt: new Date().toISOString()
     };
@@ -729,15 +757,25 @@
 
     state.rangeShown = true;
     $("#range").hidden = false;
-    $("#range-label").textContent = `${selectedMarks().filter((m)=>m.kind==="tree").length} tree(s) · ${selectedMarks().filter((m)=>m.kind==="stump").length} stump(s)`;
-    $("#range-price").textContent = `${money(totals.low)} – ${money(totals.high)}`;
     const ul = $("#breakdown");
     ul.innerHTML = "";
-    totals.lines.forEach((line) => {
-      const li = document.createElement("li");
-      li.textContent = `${line.label}: ${money(line.low)} – ${money(line.high)}`;
-      ul.appendChild(li);
-    });
+    if (!selectedMarks().length) {
+      $("#range-label").textContent = "We'll review what you sent";
+      $("#range-price").textContent = "Blake will follow up with a ballpark";
+      if (state.notes) {
+        const li = document.createElement("li");
+        li.textContent = "You wrote: " + state.notes;
+        ul.appendChild(li);
+      }
+    } else {
+      $("#range-label").textContent = `${selectedMarks().filter((m)=>m.kind==="tree").length} tree(s) · ${selectedMarks().filter((m)=>m.kind==="stump").length} stump(s)`;
+      $("#range-price").textContent = `${money(totals.low)} – ${money(totals.high)}`;
+      totals.lines.forEach((line) => {
+        const li = document.createElement("li");
+        li.textContent = `${line.label}: ${money(line.low)} – ${money(line.high)}`;
+        ul.appendChild(li);
+      });
+    }
     $("#thanks").hidden = false;
     const cont = $("#blake-continue");
     cont.href = blakeUrl("/");

@@ -291,18 +291,24 @@ out center tags;`;
   const PARCEL_LAYERS = [
     {
       id: "calcasieu",
+      label: "Calcasieu Parish GIS",
       url: "https://lak-dc-arcgis2.cppj.net/arcgis/rest/services/HubLayers/Parcels/FeatureServer/0/query",
+      addressField: "PHYSICALAD",
       contains(lat, lon) {
         return lon <= -92.85 && lon >= -93.95 && lat >= 29.95 && lat <= 30.55;
       }
     },
     {
       id: "lafayette",
+      label: "Lafayette Parish GIS",
       url: "https://maps.lafayettela.gov/arcgis/rest/services/MGO/MGOParcelsService/FeatureServer/0/query",
+      addressField: "PROPERTY_LOCATION",
       contains(lat, lon) {
         return lon <= -91.85 && lon >= -92.25 && lat >= 30.05 && lat <= 30.38;
       }
     }
+    // Rapides Parish does not publish a public parcel FeatureServer.
+    // When no layer hits, we draw no outline (never a fake box).
   ];
 
   function outerRing(geom) {
@@ -310,6 +316,15 @@ out center tags;`;
     if (geom.type === "Polygon") return geom.coordinates[0];
     if (geom.type === "MultiPolygon") return geom.coordinates[0][0];
     return null;
+  }
+
+  function geometryOuterRings(geom) {
+    if (!geom) return [];
+    if (geom.type === "Polygon") return geom.coordinates[0] ? [geom.coordinates[0]] : [];
+    if (geom.type === "MultiPolygon") {
+      return (geom.coordinates || []).map((poly) => poly && poly[0]).filter((r) => r && r.length);
+    }
+    return [];
   }
 
   function ringCentroid(ring) {
@@ -323,6 +338,7 @@ out center tags;`;
   }
 
   function pointInRing(lon, lat, ring) {
+    if (!ring || ring.length < 4) return false;
     let inside = false;
     for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
       const xi = ring[i][0], yi = ring[i][1];
@@ -335,7 +351,7 @@ out center tags;`;
 
   function ringBounds(ring) {
     let west = Infinity, south = Infinity, east = -Infinity, north = -Infinity;
-    ring.forEach((pt) => {
+    (ring || []).forEach((pt) => {
       west = Math.min(west, pt[0]);
       east = Math.max(east, pt[0]);
       south = Math.min(south, pt[1]);
@@ -379,6 +395,32 @@ out center tags;`;
     return m ? m[1] : "";
   }
 
+  function streetTokens(s) {
+    const stop = {
+      N: 1, S: 1, E: 1, W: 1, NE: 1, NW: 1, SE: 1, SW: 1,
+      NORTH: 1, SOUTH: 1, EAST: 1, WEST: 1,
+      ST: 1, STREET: 1, AVE: 1, AVENUE: 1, BLVD: 1, BOULEVARD: 1,
+      DR: 1, DRIVE: 1, RD: 1, ROAD: 1, LN: 1, LANE: 1, CT: 1, COURT: 1,
+      CIR: 1, CIRCLE: 1, HWY: 1, HIGHWAY: 1, PKWY: 1, PARKWAY: 1,
+      PL: 1, PLACE: 1, WAY: 1, TR: 1, TRAIL: 1, LA: 1, LOUISIANA: 1
+    };
+    return String(s || "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9 ]/g, " ")
+      .split(/\s+/)
+      .filter((t) => t && !stop[t] && !/^\d+$/.test(t));
+  }
+
+  function addressesMatch(search, site) {
+    const hn = houseNum(search);
+    const shn = houseNum(site);
+    if (!hn || !shn || hn !== shn) return false;
+    const a = streetTokens(search);
+    const b = new Set(streetTokens(site));
+    if (!a.length || !b.size) return false;
+    return a.some((t) => b.has(t));
+  }
+
   function featureKey(f) {
     const p = (f && f.properties) || {};
     return p.OBJECTID || p.OBJECTID_1 || p.ASMNTNUM || f.id || JSON.stringify(outerRing(f.geometry)).slice(0, 48);
@@ -398,58 +440,90 @@ out center tags;`;
     return out;
   }
 
-  async function queryParcelLayer(url, lat, lon) {
-    const tries = [
-      { geometry: lon + "," + lat, geometryType: "esriGeometryPoint" },
-      (() => {
-        const b = boundsFromPoint(lat, lon, 40);
-        return {
-          geometry: [b.west, b.south, b.east, b.north].join(","),
-          geometryType: "esriGeometryEnvelope"
-        };
-      })()
-    ];
-    const collected = [];
-    for (let i = 0; i < tries.length; i++) {
-      const extra = tries[i];
-      const params = new URLSearchParams({
-        geometry: extra.geometry,
-        geometryType: extra.geometryType,
-        inSR: "4326",
-        spatialRel: "esriSpatialRelIntersects",
-        outFields: "*",
-        returnGeometry: "true",
-        outSR: "4326",
-        f: "geojson"
-      });
-      const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 8000);
-      try {
-        const res = await fetch(url + "?" + params, { signal: ctrl.signal });
-        if (!res.ok) continue;
-        const data = await res.json();
-        if (data.features && data.features.length) collected.push(data.features);
-      } catch (_) {
-      } finally {
-        clearTimeout(timer);
-      }
+  async function queryOnce(url, extra) {
+    const params = new URLSearchParams({
+      geometry: extra.geometry,
+      geometryType: extra.geometryType,
+      inSR: "4326",
+      spatialRel: "esriSpatialRelIntersects",
+      outFields: "*",
+      returnGeometry: "true",
+      outSR: "4326",
+      f: "geojson"
+    });
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    try {
+      const res = await fetch(url + "?" + params, { signal: ctrl.signal });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return data.features && data.features.length ? data.features : [];
+    } catch (_) {
+      return [];
+    } finally {
+      clearTimeout(timer);
     }
-    return mergeUniqueFeatures(collected);
+  }
+
+  async function queryParcelByAddress(layer, address) {
+    const hn = houseNum(address);
+    const tokens = streetTokens(address);
+    if (!layer.addressField || !hn || !tokens.length) return [];
+    const street = tokens[0].replace(/'/g, "''");
+    const where = "UPPER(" + layer.addressField + ") LIKE '%" + hn + "%" + street + "%'";
+    const params = new URLSearchParams({
+      where,
+      outFields: "*",
+      returnGeometry: "true",
+      outSR: "4326",
+      resultRecordCount: "12",
+      f: "geojson"
+    });
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    try {
+      const res = await fetch(layer.url + "?" + params, { signal: ctrl.signal });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return data.features && data.features.length ? data.features : [];
+    } catch (_) {
+      return [];
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  // Point-in-polygon first. A small envelope and an address query only gather
+  // candidates (geocode pins often sit in the street). We still pick and draw
+  // exactly one real parcel polygon — never a box, never merged lots.
+  async function queryParcelLayer(layer, lat, lon, address) {
+    const near = boundsFromPoint(lat, lon, 22);
+    const [pointHits, nearHits, addrHits] = await Promise.all([
+      queryOnce(layer.url, { geometry: lon + "," + lat, geometryType: "esriGeometryPoint" }),
+      queryOnce(layer.url, {
+        geometry: [near.west, near.south, near.east, near.north].join(","),
+        geometryType: "esriGeometryEnvelope"
+      }),
+      queryParcelByAddress(layer, address)
+    ]);
+    return mergeUniqueFeatures([pointHits, nearHits, addrHits]);
   }
 
   function siteAddress(props) {
-    return String((props || {}).PHYSICALAD || (props || {}).PROPERTY_LOCATION || (props || {}).SITEADRESS || "")
+    const p = props || {};
+    return String(
+      p.PHYSICALAD ||
+      p.PROPERTY_LOCATION ||
+      p.SITEADRESS ||
+      p.SITEADDRESS ||
+      p.SITUS ||
+      p.PROP_ADDR ||
+      p.ADDRESS ||
+      ""
+    )
       .replace(/\s+/g, " ")
       .trim()
       .toUpperCase();
-  }
-
-  function pinStem(props) {
-    const pin = String((props || {}).PIN || (props || {}).ASMNTNUM || (props || {}).ASSMT_NUM || "")
-      .replace(/\s+/g, " ")
-      .trim();
-    if (!pin) return "";
-    return pin.replace(/\s*-\s*\d{1,4}(\s*-\s*\d{1,2})?$/, "").trim();
   }
 
   function ringSpan(ring) {
@@ -460,97 +534,169 @@ out center tags;`;
     return { w, h, aspect: Math.max(w, h) / Math.min(w, h) };
   }
 
-  function convexHull(points) {
-    const pts = points
-      .filter((p) => p && isFinite(p[0]) && isFinite(p[1]))
-      .slice()
-      .sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-    if (pts.length <= 2) return pts;
-    const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
-    const lower = [];
-    pts.forEach((p) => {
-      while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
-      lower.push(p);
-    });
-    const upper = [];
-    pts.slice().reverse().forEach((p) => {
-      while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop();
-      upper.push(p);
-    });
-    const hull = lower.slice(0, -1).concat(upper.slice(0, -1));
-    if (hull.length && (hull[0][0] !== hull[hull.length - 1][0] || hull[0][1] !== hull[hull.length - 1][1])) {
-      hull.push(hull[0]);
+  function ringAreaSqFt(ring) {
+    if (!ring || ring.length < 4) return 0;
+    const lat0 = ring[0][1];
+    const mLat = 111320;
+    const mLon = 111320 * Math.cos((lat0 * Math.PI) / 180);
+    let acc = 0;
+    for (let i = 0; i < ring.length - 1; i++) {
+      const x1 = ring[i][0] * mLon;
+      const y1 = ring[i][1] * mLat;
+      const x2 = ring[i + 1][0] * mLon;
+      const y2 = ring[i + 1][1] * mLat;
+      acc += x1 * y2 - x2 * y1;
     }
-    return hull;
+    return Math.abs(acc) / 2 * 10.76391041671;
   }
 
-  function siblingFeatures(picked, features) {
-    const props = picked.f.properties || {};
-    const addr = siteAddress(props);
-    const stem = pinStem(props);
-    return (features || []).filter((f) => {
-      const p = f.properties || {};
-      return (addr && siteAddress(p) === addr) || (stem && pinStem(p) === stem);
-    });
+  function distanceToRingM(lon, lat, ring) {
+    if (!ring || ring.length < 2) return Infinity;
+    if (pointInRing(lon, lat, ring)) return 0;
+    const mLat = 111320;
+    const mLon = 111320 * Math.cos((lat * Math.PI) / 180);
+    const toXY = (pt) => [(pt[0] - lon) * mLon, (pt[1] - lat) * mLat];
+    let min = Infinity;
+    for (let i = 0; i < ring.length - 1; i++) {
+      const a = toXY(ring[i]);
+      const b = toXY(ring[i + 1]);
+      const dx = b[0] - a[0];
+      const dy = b[1] - a[1];
+      const len2 = dx * dx + dy * dy || 1;
+      const t = Math.max(0, Math.min(1, (-a[0] * dx - a[1] * dy) / len2));
+      min = Math.min(min, Math.hypot(a[0] + t * dx, a[1] + t * dy));
+    }
+    return min;
+  }
+
+  function lotDimensions(ring) {
+    const areaSqFt = Math.round(ringAreaSqFt(ring));
+    const acres = areaSqFt / 43560;
+    if (!ring || ring.length < 4) {
+      return { areaSqFt, acres, widthFt: 0, depthFt: 0 };
+    }
+    const lat0 = ring[0][1];
+    const mLat = 111320;
+    const mLon = 111320 * Math.cos((lat0 * Math.PI) / 180);
+    const pts = ring.map((pt) => [pt[0] * mLon, pt[1] * mLat]);
+    let best = { area: Infinity, w: 0, h: 0 };
+    for (let i = 0; i < pts.length - 1; i++) {
+      const dx = pts[i + 1][0] - pts[i][0];
+      const dy = pts[i + 1][1] - pts[i][1];
+      const len = Math.hypot(dx, dy) || 1;
+      const ux = dx / len;
+      const uy = dy / len;
+      const vx = -uy;
+      const vy = ux;
+      let minU = Infinity, maxU = -Infinity, minV = Infinity, maxV = -Infinity;
+      pts.forEach((p) => {
+        const u = p[0] * ux + p[1] * uy;
+        const v = p[0] * vx + p[1] * vy;
+        if (u < minU) minU = u;
+        if (u > maxU) maxU = u;
+        if (v < minV) minV = v;
+        if (v > maxV) maxV = v;
+      });
+      const w = maxU - minU;
+      const h = maxV - minV;
+      if (w > 0 && h > 0 && w * h < best.area) best = { area: w * h, w, h };
+    }
+    const ftW = best.w * 3.28084;
+    const ftH = best.h * 3.28084;
+    return {
+      areaSqFt,
+      acres,
+      widthFt: Math.round(Math.min(ftW, ftH)),
+      depthFt: Math.round(Math.max(ftW, ftH))
+    };
+  }
+
+  function formatLotLabel(dims, sourceLabel) {
+    const parts = [];
+    if (dims.widthFt > 0 && dims.depthFt > 0) {
+      parts.push("About " + dims.widthFt + " × " + dims.depthFt + " ft");
+    }
+    if (dims.areaSqFt > 0) {
+      const acres =
+        dims.acres >= 10 ? dims.acres.toFixed(1) : dims.acres >= 0.1 ? dims.acres.toFixed(2) : dims.acres.toFixed(3);
+      parts.push(dims.areaSqFt.toLocaleString("en-US") + " sq ft · " + acres + " acre");
+    }
+    const size = parts.join(" · ");
+    return size ? size + " · " + sourceLabel : "Property line from " + sourceLabel;
   }
 
   function pickParcelFeature(features, lat, lon, address) {
     const hn = houseNum(address);
+    if (!features || !features.length) return null;
     const scored = features.map((f) => {
       const ring = outerRing(f.geometry) || [];
       const contains = ring.length ? pointInRing(lon, lat, ring) : false;
-      const c = ringCentroid(ring);
-      const dist = haversineM({ lat, lon }, { lat: c.lat, lon: c.lon });
+      const dist = ring.length ? distanceToRingM(lon, lat, ring) : Infinity;
       const props = f.properties || {};
       const site = siteAddress(props);
-      const addrMatch = !!(hn && site.includes(hn));
+      const siteHn = houseNum(site);
+      const addrMatch = addressesMatch(address, site);
+      const addrConflict = !!(hn && siteHn && !addrMatch);
       const span = ring.length ? ringSpan(ring) : { w: 0, h: 0, aspect: 99 };
       const sliver = span.aspect > 5 && Math.min(span.w, span.h) < 22;
-      return { f, contains, dist, addrMatch, ring, sliver, span };
+      const area = ring.length ? ringAreaSqFt(ring) : 0;
+      return { f, contains, dist, addrMatch, addrConflict, ring, sliver, span, area };
     });
     scored.sort((a, b) => {
-      if (a.contains !== b.contains) return a.contains ? -1 : 1;
       if (a.addrMatch !== b.addrMatch) return a.addrMatch ? -1 : 1;
+      if (a.contains !== b.contains) return a.contains ? -1 : 1;
       if (a.sliver !== b.sliver) return a.sliver ? 1 : -1;
+      if (a.contains && b.contains && a.area && b.area && a.area !== b.area) return a.area - b.area;
       return a.dist - b.dist;
     });
-    return scored[0] || null;
+    const best = scored[0];
+    if (!best || !best.ring.length) return null;
+    // Only draw a lot we can stand behind: the searched address, or the
+    // polygon that actually contains the pin. Never the nearest neighbor.
+    if (best.addrMatch || best.contains) return best;
+    return null;
+  }
+
+  function pointInParcel(lon, lat, parcel, slopM) {
+    if (!parcel) return false;
+    const rings = parcel.rings && parcel.rings.length ? parcel.rings : parcel.ring ? [parcel.ring] : [];
+    if (rings.some((r) => pointInRing(lon, lat, r))) return true;
+    if (slopM > 0 && rings.some((r) => distanceToRingM(lon, lat, r) <= slopM)) return true;
+    return false;
   }
 
   async function fetchParcel(lat, lon, address) {
-    const ordered = PARCEL_LAYERS.slice().sort((a, b) => {
-      const ao = a.contains(lat, lon) ? 0 : 1;
-      const bo = b.contains(lat, lon) ? 0 : 1;
-      return ao - bo;
-    });
+    const ordered = PARCEL_LAYERS.filter((layer) => layer.contains(lat, lon));
     for (let i = 0; i < ordered.length; i++) {
       const layer = ordered[i];
-      if (!layer.contains(lat, lon) && i > 0) continue;
       try {
-        const feats = await queryParcelLayer(layer.url, lat, lon);
+        const feats = await queryParcelLayer(layer, lat, lon, address);
         const picked = pickParcelFeature(feats, lat, lon, address);
         if (!picked || !picked.ring.length) continue;
-        const kin = siblingFeatures(picked, feats);
-        const pts = [];
-        (kin.length ? kin : [picked.f]).forEach((f) => {
-          const ring = outerRing(f.geometry) || [];
-          ring.forEach((pt) => pts.push(pt));
-        });
-        const ring = (kin.length > 1 ? convexHull(pts) : picked.ring) || picked.ring;
-        if (!ring.length) continue;
+        const rings = geometryOuterRings(picked.f.geometry);
+        const ring = picked.ring;
+        const dims = lotDimensions(ring);
         const bounds = ringBounds(ring);
         return {
           source: layer.id,
+          sourceLabel: layer.label,
           exact: true,
           ring,
+          rings: rings.length ? rings : [ring],
+          feature: picked.f,
           bounds,
-          merged: kin.length > 1,
-          properties: picked.f.properties || {}
+          properties: picked.f.properties || {},
+          areaSqFt: dims.areaSqFt,
+          acres: dims.acres,
+          widthFt: dims.widthFt,
+          depthFt: dims.depthFt,
+          label: formatLotLabel(dims, layer.label)
         };
       } catch (_) {}
     }
     return null;
   }
+
 
   function ringToLatLngs(ring) {
     return (ring || []).map((pt) => [pt[1], pt[0]]);
@@ -743,6 +889,7 @@ out center tags;`;
     boundsFromPoint,
     ringToLatLngs,
     pointInRing,
+    pointInParcel,
     detectTreesFromExport,
     fetchOsmTrees
   };

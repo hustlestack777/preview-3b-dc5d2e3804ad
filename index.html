@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-  <link rel="stylesheet" href="css/styles.css?v=20261106d" />
+  <link rel="stylesheet" href="css/styles.css?v=20261107a" />
 </head>
 <body>
   <div class="demo-note">Demo — pricing is placeholder</div>
@@ -73,13 +73,13 @@
 
           <div class="q-step is-on" data-step="2" id="step-property">
             <h2 class="step-title">Your property</h2>
-            <p class="sat-lead"><strong>Satellite technology</strong> shows your yard from above, with the property line squared off when parish records have it. Green circles are trees we spotted — tap the ones you want quoted. Use street view to judge height from the road.</p>
+            <p class="sat-lead"><strong>Satellite technology</strong> shows your yard from above and outlines the exact property line from parish records when we have it. Green circles are trees we spotted — tap to select or unselect. Yellow marks a stump. Street view helps judge height from the road.</p>
 
             <div class="property-views">
               <div class="sat-panel">
                 <div class="view-head">
                   <strong>Satellite view</strong>
-                  <span id="parcel-caption">Your lot, squared off</span>
+                  <span id="parcel-caption">Finding your lot…</span>
                 </div>
                 <div class="map-tools">
                   <button type="button" class="tool is-on" data-tool="select">Select trees</button>
@@ -94,6 +94,10 @@
                 </ul>
                 <div class="map-shell">
                   <div id="leaflet-map" class="leaflet-map" role="application" aria-label="Tap to mark trees and stumps"></div>
+                  <div id="scan-overlay" class="scan-overlay" hidden>
+                    <div class="scan-beam" aria-hidden="true"></div>
+                    <p class="scan-label">Outlining your property…</p>
+                  </div>
                   <div id="map-hint-overlay" class="map-hint-overlay">
                     <span>Tap a circled tree to select it</span>
                   </div>
@@ -114,6 +118,15 @@
 
             <p class="hint" id="map-hint">Tap the green circles you want quoted. Selected trees get a card below so you can add type, height, and notes.</p>
             <div id="marks-list" class="marks-list"></div>
+            <label class="notes-label skip-describe" for="work-describe">Skip — just describe it
+              <span>Don’t want to tap trees? Tell us what you need and continue. Selecting is never required.</span>
+              <textarea id="work-describe" rows="3" placeholder="e.g. Two oaks in the backyard and a stump by the driveway"></textarea>
+            </label>
+            <label class="photo-label">Photos or a short video
+              <span>Optional — snap or attach from your phone. You can remove any one. Never required.</span>
+              <input id="photos-extra" type="file" accept="image/*,video/*" multiple />
+            </label>
+            <div class="photo-prev" id="photo-prev-extra"></div>
             <div class="totals" id="running-total" hidden>
               <span id="marks-summary">No marks yet</span>
               <strong id="running-price"></strong>
@@ -122,15 +135,15 @@
             <label class="storm-toggle"><input type="checkbox" id="opt-storm" /> Storm damage / urgent?</label>
 
             <p class="form-status" id="property-status" role="status"></p>
-            <button type="button" class="btn btn-block" id="btn-to-photos">Continue to photos</button>
+            <button type="button" class="btn btn-block" id="btn-to-photos">Continue</button>
           </div>
 
           <div class="q-step" data-step="3" id="step-photos" hidden>
             <h2 class="step-title">Photos &amp; notes</h2>
-            <p class="sat-lead">A photo of the tree helps us judge height and condition. Optional, but useful.</p>
-            <label class="photo-label">Photos of the tree or yard
-              <span>Up to 6 photos, from your phone</span>
-              <input id="photos" type="file" accept="image/*" multiple />
+            <p class="sat-lead">A photo or short video of the tree helps us judge height and condition. Optional — skip anytime.</p>
+            <label class="photo-label">Photos or a short video of the trees or stumps
+              <span>Optional — snap or attach from your phone. Tap the × to remove one.</span>
+              <input id="photos" type="file" accept="image/*,video/*" multiple />
             </label>
             <div class="photo-prev" id="photo-prev"></div>
             <label class="notes-label">Notes
@@ -178,7 +191,7 @@
         <h2>How it works</h2>
         <div class="how-grid">
           <div><span class="n">1</span><strong>Enter your address</strong><p>Pick it from the list, then tap Get started.</p></div>
-          <div><span class="n">2</span><strong>Pick your trees</strong><p>See the lot outline, then tap the circled trees you want quoted.</p></div>
+          <div><span class="n">2</span><strong>Pick your trees</strong><p>See the lot outline, then tap the circled trees you want quoted — or skip and just describe the work.</p></div>
           <div><span class="n">3</span><strong>Get a ballpark</strong><p>Add a photo if you have one. See a range after your contact info — Blake confirms on-site.</p></div>
         </div>
       </div>
@@ -230,10 +243,10 @@
   </footer>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="js/config.js?v=20261106d"></script>
-  <script src="js/pricing.js?v=20261106d"></script>
-  <script src="js/engine.js?v=20261106d"></script>
-  <script src="js/autocomplete.js?v=20261106d"></script>
-  <script src="js/app.js?v=20261106d"></script>
+  <script src="js/config.js?v=20261107a"></script>
+  <script src="js/pricing.js?v=20261107a"></script>
+  <script src="js/engine.js?v=20261107a"></script>
+  <script src="js/autocomplete.js?v=20261107a"></script>
+  <script src="js/app.js?v=20261107a"></script>
 </body>
 </html>
