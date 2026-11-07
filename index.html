@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-  <link rel="stylesheet" href="css/styles.css?v=20261107a" />
+  <link rel="stylesheet" href="css/styles.css?v=20261107b" />
 </head>
 <body>
   <div class="demo-note">Demo — pricing is placeholder</div>
@@ -73,19 +73,13 @@
 
           <div class="q-step is-on" data-step="2" id="step-property">
             <h2 class="step-title">Your property</h2>
-            <p class="sat-lead"><strong>Satellite technology</strong> shows your yard from above and outlines the exact property line from parish records when we have it. Green circles are trees we spotted — tap to select or unselect. Yellow marks a stump. Street view helps judge height from the road.</p>
+            <p class="sat-lead"><strong>Satellite technology</strong> shows your yard from above and outlines the exact property line from parish records when we have it. Green circles are trees we spotted. Yellow marks a stump. Street view helps judge height from the road.</p>
 
-            <div class="property-views">
+            <div class="property-layout">
               <div class="sat-panel">
                 <div class="view-head">
                   <strong>Satellite view</strong>
                   <span id="parcel-caption">Finding your lot…</span>
-                </div>
-                <div class="map-tools">
-                  <button type="button" class="tool is-on" data-tool="select">Select trees</button>
-                  <button type="button" class="tool" data-tool="tree">Add a tree</button>
-                  <button type="button" class="tool" data-tool="stump">Add a stump</button>
-                  <button type="button" class="tool ghost" id="btn-clear-marks">Clear picks</button>
                 </div>
                 <ul class="map-legend" aria-label="Map key">
                   <li><span class="lg lg-tree"></span> Tree</li>
@@ -93,15 +87,39 @@
                   <li><span class="lg lg-lot"></span> Property line</li>
                 </ul>
                 <div class="map-shell">
-                  <div id="leaflet-map" class="leaflet-map" role="application" aria-label="Tap to mark trees and stumps"></div>
+                  <div id="leaflet-map" class="leaflet-map" role="application" aria-label="Satellite view of your property"></div>
                   <div id="scan-overlay" class="scan-overlay" hidden>
                     <div class="scan-beam" aria-hidden="true"></div>
                     <p class="scan-label">Outlining your property…</p>
                   </div>
-                  <div id="map-hint-overlay" class="map-hint-overlay">
-                    <span>Tap a circled tree to select it</span>
+                </div>
+              </div>
+
+              <div class="count-block" id="count-block">
+                <p class="spotted" id="spotted-estimate" role="status">Looking for trees on the lot…</p>
+                <p class="spotted-note" id="spotted-note" hidden>Change the counts if we missed one. Or skip the numbers and just describe the work.</p>
+                <div class="count-steppers">
+                  <div class="stepper">
+                    <span class="stepper-label" id="trees-step-label">Trees</span>
+                    <div class="stepper-ctrl" role="group" aria-labelledby="trees-step-label">
+                      <button type="button" class="step-btn" id="trees-minus" aria-label="Fewer trees">−</button>
+                      <output id="trees-count" for="trees-minus trees-plus" aria-live="polite">2</output>
+                      <button type="button" class="step-btn" id="trees-plus" aria-label="More trees">+</button>
+                    </div>
+                  </div>
+                  <div class="stepper">
+                    <span class="stepper-label" id="stumps-step-label">Stumps</span>
+                    <div class="stepper-ctrl" role="group" aria-labelledby="stumps-step-label">
+                      <button type="button" class="step-btn" id="stumps-minus" aria-label="Fewer stumps">−</button>
+                      <output id="stumps-count" for="stumps-minus stumps-plus" aria-live="polite">0</output>
+                      <button type="button" class="step-btn" id="stumps-plus" aria-label="More stumps">+</button>
+                    </div>
                   </div>
                 </div>
+                <label class="notes-label comments-label" for="work-comments">Anything we should know?
+                  <span>Optional — gates, pets, access, which trees. Never required.</span>
+                  <textarea id="work-comments" rows="3" placeholder="e.g. Gate code, dogs in the yard, the oak by the driveway"></textarea>
+                </label>
               </div>
 
               <div class="sv-panel">
@@ -111,15 +129,13 @@
                 </div>
                 <div class="sv-frame">
                   <iframe id="sv-frame" title="Street view of the property" loading="eager" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
-                  <p id="sv-fallback" class="sv-fallback" hidden>No street-level photo at this pin. You can still mark trees on the satellite view and add a photo next.</p>
+                  <p id="sv-fallback" class="sv-fallback" hidden>No street-level photo at this pin. You can still set the tree and stump counts and add a photo next.</p>
                 </div>
               </div>
             </div>
 
-            <p class="hint" id="map-hint">Tap the green circles you want quoted. Selected trees get a card below so you can add type, height, and notes.</p>
-            <div id="marks-list" class="marks-list"></div>
             <label class="notes-label skip-describe" for="work-describe">Skip — just describe it
-              <span>Don’t want to tap trees? Tell us what you need and continue. Selecting is never required.</span>
+              <span>Prefer words to numbers? Tell us what you need and continue. This is never required.</span>
               <textarea id="work-describe" rows="3" placeholder="e.g. Two oaks in the backyard and a stump by the driveway"></textarea>
             </label>
             <label class="photo-label">Photos or a short video
@@ -191,7 +207,7 @@
         <h2>How it works</h2>
         <div class="how-grid">
           <div><span class="n">1</span><strong>Enter your address</strong><p>Pick it from the list, then tap Get started.</p></div>
-          <div><span class="n">2</span><strong>Pick your trees</strong><p>See the lot outline, then tap the circled trees you want quoted — or skip and just describe the work.</p></div>
+          <div><span class="n">2</span><strong>Confirm the count</strong><p>We estimate trees and stumps from the lot photo. Use + and − to adjust, or skip and just describe the work.</p></div>
           <div><span class="n">3</span><strong>Get a ballpark</strong><p>Add a photo if you have one. See a range after your contact info — Blake confirms on-site.</p></div>
         </div>
       </div>
@@ -243,10 +259,10 @@
   </footer>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="js/config.js?v=20261107a"></script>
-  <script src="js/pricing.js?v=20261107a"></script>
-  <script src="js/engine.js?v=20261107a"></script>
-  <script src="js/autocomplete.js?v=20261107a"></script>
-  <script src="js/app.js?v=20261107a"></script>
+  <script src="js/config.js?v=20261107b"></script>
+  <script src="js/pricing.js?v=20261107b"></script>
+  <script src="js/engine.js?v=20261107c"></script>
+  <script src="js/autocomplete.js?v=20261107b"></script>
+  <script src="js/app.js?v=20261107b"></script>
 </body>
 </html>

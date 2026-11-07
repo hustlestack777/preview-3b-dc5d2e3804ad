@@ -625,10 +625,83 @@ out center tags;`;
     return size ? size + " · " + sourceLabel : "Property line from " + sourceLabel;
   }
 
-  function pickParcelFeature(features, lat, lon, address) {
+  /**
+   * Calcasieu parcels are stored as NAD83 / UTM zone 15N (EPSG:26915).
+   * The query asks for outSR=4326, and ArcGIS returns GeoJSON in
+   * longitude, latitude order. That is the same WGS84 geographic CRS
+   * Leaflet projects onto the Google Web Mercator tiles. A local
+   * NAD83→WGS84 shift is under a meter here — do not swap axes or
+   * treat the coordinates as state-plane feet.
+   *
+   * Some situs addresses are split into two (or more) parcels that only
+   * touch. Drawing just the piece that contains the geocode pin cuts
+   * through the house and drops the driveway. Those pieces are merged
+   * into one outer ring below.
+   */
+  function coordKey(p) {
+    return (Math.round(p[0] * 1e7) / 1e7) + "," + (Math.round(p[1] * 1e7) / 1e7);
+  }
+
+  function bboxGapM(ringA, ringB) {
+    const a = ringBounds(ringA);
+    const b = ringBounds(ringB);
+    const lat = ((a.north + a.south) / 2) * Math.PI / 180;
+    const dx = Math.max(0, Math.max(b.west - a.east, a.west - b.east));
+    const dy = Math.max(0, Math.max(b.south - a.north, a.south - b.north));
+    const mx = dx * 111320 * Math.cos(lat);
+    const my = dy * 111320;
+    return Math.hypot(mx, my);
+  }
+
+  /** Outer ring of polygons that share edges. Shared edges cancel. */
+  function unionOuterRing(rings) {
+    const adj = {};
+    const seen = {};
+    function addSeg(a, b) {
+      const ka = coordKey(a);
+      const kb = coordKey(b);
+      const undirected = ka < kb ? ka + "|" + kb : kb + "|" + ka;
+      if (seen[undirected]) {
+        // Second time this edge appears: it is shared, drop both sides.
+        delete seen[undirected];
+        adj[ka] = (adj[ka] || []).filter((k) => k !== kb);
+        adj[kb] = (adj[kb] || []).filter((k) => k !== ka);
+        return;
+      }
+      seen[undirected] = true;
+      (adj[ka] = adj[ka] || []).push(kb);
+      (adj[kb] = adj[kb] || []).push(ka);
+    }
+    (rings || []).forEach((ring) => {
+      for (let i = 0; i < ring.length - 1; i++) addSeg(ring[i], ring[i + 1]);
+    });
+    const used = {};
+    const out = [];
+    Object.keys(adj).forEach((start) => {
+      if (used[start] || !(adj[start] || []).length) return;
+      const ring = [];
+      let cur = start;
+      let guard = 0;
+      while (cur && !used[cur] && guard++ < 8000) {
+        used[cur] = true;
+        const xy = cur.split(",").map(Number);
+        ring.push(xy);
+        const next = (adj[cur] || []).filter((k) => !used[k]);
+        cur = next.length ? next[0] : null;
+      }
+      if (ring.length >= 4) {
+        ring.push(ring[0].slice());
+        out.push(ring);
+      }
+    });
+    if (!out.length) return null;
+    out.sort((a, b) => Math.abs(ringAreaSqFt(b)) - Math.abs(ringAreaSqFt(a)));
+    return out[0];
+  }
+
+  function scoreParcelFeatures(features, lat, lon, address) {
     const hn = houseNum(address);
-    if (!features || !features.length) return null;
-    const scored = features.map((f) => {
+    return (features || []).map((f) => {
       const ring = outerRing(f.geometry) || [];
       const contains = ring.length ? pointInRing(lon, lat, ring) : false;
       const dist = ring.length ? distanceToRingM(lon, lat, ring) : Infinity;
@@ -640,8 +713,13 @@ out center tags;`;
       const span = ring.length ? ringSpan(ring) : { w: 0, h: 0, aspect: 99 };
       const sliver = span.aspect > 5 && Math.min(span.w, span.h) < 22;
       const area = ring.length ? ringAreaSqFt(ring) : 0;
-      return { f, contains, dist, addrMatch, addrConflict, ring, sliver, span, area };
+      return { f, contains, dist, addrMatch, addrConflict, ring, sliver, span, area, site };
     });
+  }
+
+  function pickParcelFeature(features, lat, lon, address) {
+    if (!features || !features.length) return null;
+    const scored = scoreParcelFeatures(features, lat, lon, address);
     scored.sort((a, b) => {
       if (a.addrMatch !== b.addrMatch) return a.addrMatch ? -1 : 1;
       if (a.contains !== b.contains) return a.contains ? -1 : 1;
@@ -655,6 +733,32 @@ out center tags;`;
     // polygon that actually contains the pin. Never the nearest neighbor.
     if (best.addrMatch || best.contains) return best;
     return null;
+  }
+
+  /**
+   * Anchor parcel plus any other piece of the same situs that touches it.
+   * Keeps a neighbor with a different address out, even if it is adjacent.
+   */
+  function propertyPieces(features, anchor, lat, lon, address) {
+    const scored = scoreParcelFeatures(features, lat, lon, address);
+    const pieces = [anchor];
+    const anchorSite = anchor.site || siteAddress((anchor.f && anchor.f.properties) || {});
+    let added = true;
+    while (added) {
+      added = false;
+      scored.forEach((cand) => {
+        if (!cand.ring.length || pieces.some((p) => p.f === cand.f)) return;
+        if (cand.area < 400) return;
+        if (cand.addrConflict && !cand.addrMatch) return;
+        const sameSite = cand.addrMatch && (anchor.addrMatch || addressesMatch(anchorSite, cand.site));
+        if (!sameSite) return;
+        const close = pieces.some((p) => bboxGapM(p.ring, cand.ring) < 12);
+        if (!close) return;
+        pieces.push(cand);
+        added = true;
+      });
+    }
+    return pieces;
   }
 
   function pointInParcel(lon, lat, parcel, slopM) {
@@ -673,23 +777,30 @@ out center tags;`;
         const feats = await queryParcelLayer(layer, lat, lon, address);
         const picked = pickParcelFeature(feats, lat, lon, address);
         if (!picked || !picked.ring.length) continue;
-        const rings = geometryOuterRings(picked.f.geometry);
-        const ring = picked.ring;
+        const pieces = propertyPieces(feats, picked, lat, lon, address);
+        const merged = pieces.length > 1 ? unionOuterRing(pieces.map((p) => p.ring)) : null;
+        const ring = merged && merged.length >= 4 ? merged : picked.ring;
         const dims = lotDimensions(ring);
         const bounds = ringBounds(ring);
+        const feature = {
+          type: "Feature",
+          properties: picked.f.properties || {},
+          geometry: { type: "Polygon", coordinates: [ring] }
+        };
         return {
           source: layer.id,
           sourceLabel: layer.label,
           exact: true,
           ring,
-          rings: rings.length ? rings : [ring],
-          feature: picked.f,
+          rings: [ring],
+          feature,
           bounds,
           properties: picked.f.properties || {},
           areaSqFt: dims.areaSqFt,
           acres: dims.acres,
           widthFt: dims.widthFt,
           depthFt: dims.depthFt,
+          parts: pieces.length,
           label: formatLotLabel(dims, layer.label)
         };
       } catch (_) {}
@@ -854,7 +965,10 @@ out center tags;`;
   }
 
   async function fetchOsmTrees(lat, lon, radiusM = 70) {
-    const q = `[out:json][timeout:15];node["natural"="tree"](around:${radiusM},${lat},${lon});out;`;
+    const q = `[out:json][timeout:15];(
+      node["natural"="tree"](around:${radiusM},${lat},${lon});
+      node["natural"="tree_stump"](around:${radiusM},${lat},${lon});
+    );out;`;
     try {
       const res = await fetch("https://overpass-api.de/api/interpreter", {
         method: "POST",
@@ -865,7 +979,16 @@ out center tags;`;
       const data = await res.json();
       return (data.elements || [])
         .filter((el) => el.lat != null)
-        .map((el) => ({ lat: el.lat, lon: el.lon, canopyFt: 22, kind: "tree", source: "osm" }));
+        .map((el) => {
+          const stump = el.tags && el.tags.natural === "tree_stump";
+          return {
+            lat: el.lat,
+            lon: el.lon,
+            canopyFt: stump ? 0 : 22,
+            kind: stump ? "stump" : "tree",
+            source: "osm"
+          };
+        });
     } catch (_) {
       return [];
     }

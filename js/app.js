@@ -62,7 +62,13 @@
     displayName: "",
     context: { buildings: [], power: [] },
     marks: [],
-    tool: "select",
+    treeCount: 2,
+    stumpCount: 0,
+    countsTouched: false,
+    spottedTrees: null,
+    spottedStumps: null,
+    statusLine: "Looking for trees on the lot…",
+    comments: "",
     map: null,
     layerGroup: null,
     parcelLayer: null,
@@ -77,9 +83,22 @@
   };
 
   let markSeq = 0;
+  let lastNotePrefill = "";
+  const DEFAULT_TREES = 2;
+  const DEFAULT_STUMPS = 0;
+  const MAX_TREES = 40;
+  const MAX_STUMPS = 20;
 
-  function selectedMarks() {
-    return state.marks.filter((m) => m.selected);
+  function plural(n, one, many) {
+    return n === 1 ? `1 ${one}` : `${n} ${many}`;
+  }
+
+  function spottedSentence(n, m) {
+    return `We spotted about ${plural(n, "tree", "trees")} and ${plural(m, "stump", "stumps")}.`;
+  }
+
+  function countKind(kind) {
+    return state.marks.filter((m) => m.kind === kind).length;
   }
 
   function goStep(step) {
@@ -102,67 +121,95 @@
     if (card && step > 1) card.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  function setTool(tool) {
-    state.tool = tool;
-    document.querySelectorAll(".tool[data-tool]").forEach((b) => {
-      b.classList.toggle("is-on", b.getAttribute("data-tool") === tool);
-    });
-  }
-  document.querySelectorAll(".tool[data-tool]").forEach((b) => {
-    b.addEventListener("click", () => setTool(b.getAttribute("data-tool")));
-  });
-  $("#btn-clear-marks").addEventListener("click", () => {
-    state.marks = state.marks.filter((m) => m.source === "detected");
-    state.marks.forEach((m) => {
-      m.selected = false;
-      styleMarker(m);
-    });
-    // remove manual leaflet markers already filtered out
-    if (state.layerGroup) {
-      state.layerGroup.clearLayers();
-      if (state.lat != null) housePin(state.lat, state.lon);
-      state.marks.forEach((m) => {
-        if (m._leaflet) m._leaflet.addTo(state.layerGroup);
-      });
-    }
-    renderMarks();
-    updateOverlayHint();
-  });
-
   function markerStyle(mark) {
     const tree = mark.kind === "tree";
-    if (mark.selected) {
-      return {
-        radius: tree ? 11 : 9,
-        color: "#fff",
-        weight: 3,
-        fillColor: tree ? "#3fbf6a" : "#e8c15a",
-        fillOpacity: 0.92
-      };
-    }
     return {
-      radius: tree ? 9 : 8,
-      color: tree ? "#3fbf6a" : "#e8c15a",
-      weight: 3,
+      radius: tree ? 10 : 8,
+      color: "#fff",
+      weight: 2,
       fillColor: tree ? "#3fbf6a" : "#e8c15a",
-      fillOpacity: 0.18
+      fillOpacity: 0.78
     };
   }
 
-  function styleMarker(mark) {
-    if (mark._leaflet) mark._leaflet.setStyle(markerStyle(mark));
+  function syncCountOutputs() {
+    const treesOut = $("#trees-count");
+    const stumpsOut = $("#stumps-count");
+    if (treesOut) {
+      treesOut.textContent = String(state.treeCount);
+      treesOut.setAttribute("aria-label", plural(state.treeCount, "tree", "trees"));
+    }
+    if (stumpsOut) {
+      stumpsOut.textContent = String(state.stumpCount);
+      stumpsOut.setAttribute("aria-label", plural(state.stumpCount, "stump", "stumps"));
+    }
+    const treesMinus = $("#trees-minus");
+    const treesPlus = $("#trees-plus");
+    const stumpsMinus = $("#stumps-minus");
+    const stumpsPlus = $("#stumps-plus");
+    if (treesMinus) treesMinus.disabled = state.treeCount <= 0;
+    if (treesPlus) treesPlus.disabled = state.treeCount >= MAX_TREES;
+    if (stumpsMinus) stumpsMinus.disabled = state.stumpCount <= 0;
+    if (stumpsPlus) stumpsPlus.disabled = state.stumpCount >= MAX_STUMPS;
+    const summary = $("#marks-summary");
+    if (summary) {
+      summary.textContent = `${plural(state.treeCount, "tree", "trees")} · ${plural(state.stumpCount, "stump", "stumps")}`;
+    }
+    const total = $("#running-total");
+    if (total) total.hidden = false;
+    const price = $("#running-price");
+    if (price && !state.rangeShown) price.textContent = "Estimate after contact info";
   }
 
-  function updateOverlayHint() {
-    const overlay = $("#map-hint-overlay");
-    const found = state.marks.filter((m) => m.kind === "tree").length;
-    const picked = selectedMarks().length;
-    if (overlay) overlay.hidden = picked > 0 || found === 0;
-    if (overlay && !overlay.hidden) {
-      overlay.querySelector("span").textContent =
-        found ? `Tap a circled tree to select it` : "Tap Add a tree, then tap it on the map";
+  function renderEstimate() {
+    syncCountOutputs();
+    const el = $("#spotted-estimate");
+    const note = $("#spotted-note");
+    if (!el) return;
+    if (state.spottedTrees == null) {
+      el.textContent = state.statusLine || "Looking for trees on the lot…";
+      if (note) note.hidden = true;
+      return;
+    }
+    const fallback = state.spottedTrees === 0 && state.spottedStumps === 0;
+    const n = fallback ? DEFAULT_TREES : state.spottedTrees;
+    const m = fallback ? DEFAULT_STUMPS : state.spottedStumps;
+    el.textContent = spottedSentence(n, m);
+    if (note) {
+      note.hidden = false;
+      note.textContent = fallback
+        ? "Couldn’t read the canopy clearly, so this is a typical starting count. Change it anytime — or just describe the work."
+        : "Change the counts if we missed one. Or skip the numbers and just describe the work.";
     }
   }
+
+  function applyDetectedCounts() {
+    state.spottedTrees = countKind("tree");
+    state.spottedStumps = countKind("stump");
+    if (!state.countsTouched) {
+      const fallback = state.spottedTrees === 0 && state.spottedStumps === 0;
+      state.treeCount = fallback ? DEFAULT_TREES : state.spottedTrees;
+      state.stumpCount = fallback ? DEFAULT_STUMPS : state.spottedStumps;
+    }
+    renderEstimate();
+  }
+
+  function bumpCount(field, delta, max) {
+    state.countsTouched = true;
+    const next = Math.min(max, Math.max(0, state[field] + delta));
+    state[field] = next;
+    renderEstimate();
+  }
+
+  function bindStepper(minusId, plusId, field, max) {
+    const minus = $(minusId);
+    const plus = $(plusId);
+    if (minus) minus.addEventListener("click", () => bumpCount(field, -1, max));
+    if (plus) plus.addEventListener("click", () => bumpCount(field, 1, max));
+  }
+  bindStepper("#trees-minus", "#trees-plus", "treeCount", MAX_TREES);
+  bindStepper("#stumps-minus", "#stumps-plus", "stumpCount", MAX_STUMPS);
+  renderEstimate();
 
   function initMap(lat, lon) {
     const el = $("#leaflet-map");
@@ -194,12 +241,6 @@
       state.map.getPane("trees").style.zIndex = 650;
     }
     state.layerGroup = L.layerGroup().addTo(state.map);
-    state.map.on("click", (e) => {
-      if (state.tool === "tree" || state.tool === "stump") {
-        addMark(e.latlng.lat, e.latlng.lng, state.tool, { selected: true, source: "manual" });
-        setTool("select");
-      }
-    });
     setTimeout(() => state.map.invalidateSize(), 200);
     setTimeout(() => state.map.invalidateSize(), 700);
   }
@@ -237,12 +278,20 @@
   async function paintProperty(lat, lon) {
     initMap(lat, lon);
     clearPropertyLayers();
+    state.marks = [];
+    markSeq = 0;
+    state.spottedTrees = null;
+    state.spottedStumps = null;
+    state.statusLine = "Outlining your property…";
+    if (!state.countsTouched) {
+      state.treeCount = DEFAULT_TREES;
+      state.stumpCount = DEFAULT_STUMPS;
+    }
+    renderEstimate();
 
     const caption = $("#parcel-caption");
-    const hint = $("#map-hint");
     showScanner(true);
     if (caption) caption.textContent = "Outlining your property…";
-    if (hint) hint.textContent = "Outlining your property…";
 
     const started = Date.now();
     let parcel = null;
@@ -286,7 +335,8 @@
 
     housePin(lat, lon);
 
-    if (hint) hint.textContent = "Looking for trees on the lot…";
+    state.statusLine = "Looking for trees on the lot…";
+    renderEstimate();
     let detected = [];
     try {
       const overlayUrl = Eng.esriBBoxExportUrl(detectBounds);
@@ -301,39 +351,36 @@
 
     detected.forEach((t) => {
       addMark(t.lat, t.lon, "tree", {
-        selected: false,
         source: "detected",
         canopyFt: t.canopyFt,
         heightFt: Eng.estimateHeightFt(t.canopyFt || 24, "unknown")
       });
     });
+    applyDetectedCounts();
 
-    if (hint) {
-      const n = detected.length;
-      hint.textContent = n
-        ? `We spotted ${n} possible tree${n === 1 ? "" : "s"}. Tap to select or unselect — or skip and describe the work below.`
-        : "We couldn’t automatically spot trees here. Tap Add a tree, or skip and describe the work below.";
-    }
-    updateOverlayHint();
+    const parcelAtScan = parcel;
     Eng.fetchOsmTrees(lat, lon, 70).then((osm) => {
+      if (state.lat !== lat || state.lon !== lon) return;
+      let treesAdded = countKind("tree");
+      let stumpsAdded = countKind("stump");
       (osm || []).forEach((t) => {
-        const inside = !parcel || !(parcel.ring || (parcel.rings && parcel.rings.length))
+        const kind = t.kind === "stump" ? "stump" : "tree";
+        const inside = !parcelAtScan || !(parcelAtScan.ring || (parcelAtScan.rings && parcelAtScan.rings.length))
           ? true
-          : Eng.pointInParcel(t.lon, t.lat, parcel, 4);
+          : Eng.pointInParcel(t.lon, t.lat, parcelAtScan, 4);
         if (!inside) return;
-        if (state.marks.some((m) => Eng.haversineM(m, t) < 6)) return;
-        addMark(t.lat, t.lon, "tree", {
-          selected: false,
+        if (state.marks.some((m) => m.kind === kind && Eng.haversineM(m, t) < 6)) return;
+        if (kind === "tree" && treesAdded >= 16) return;
+        if (kind === "stump" && stumpsAdded >= 8) return;
+        addMark(t.lat, t.lon, kind, {
           source: "detected",
           canopyFt: t.canopyFt,
-          heightFt: Eng.estimateHeightFt(t.canopyFt || 24, "unknown")
+          heightFt: kind === "tree" ? Eng.estimateHeightFt(t.canopyFt || 24, "unknown") : 0
         });
+        if (kind === "tree") treesAdded += 1;
+        else stumpsAdded += 1;
       });
-      if (hint && state.marks.some((m) => m.source === "detected")) {
-        const n = state.marks.filter((m) => m.kind === "tree").length;
-        hint.textContent = `We spotted ${n} possible tree${n === 1 ? "" : "s"}. Tap to select or unselect — or skip and describe the work below.`;
-      }
-      updateOverlayHint();
+      applyDetectedCounts();
     }).catch(() => {});
     setTimeout(() => state.map.invalidateSize(), 200);
   }
@@ -364,36 +411,72 @@
       heightFt: kind === "tree" ? opts.heightFt || Eng.estimateHeightFt(canopyFt, "unknown") : 0,
       diameterIn: kind === "stump" ? 18 : 0,
       notes: "",
-      selected: opts.selected !== false && opts.source === "manual" ? true : !!opts.selected,
-      source: opts.source || "manual"
+      source: opts.source || "detected"
     };
-    if (opts.selected === false) mark.selected = false;
-    if (opts.source === "manual") mark.selected = true;
     state.marks.push(mark);
-
-    const marker = L.circleMarker([lat, lon], Object.assign({ pane: "trees" }, markerStyle(mark))).addTo(state.layerGroup);
-    marker.bindTooltip(kind === "tree" ? `Tree #${mark.id}` : `Stump #${mark.id}`);
-    marker.on("click", (e) => {
-      if (e.originalEvent) L.DomEvent.stopPropagation(e);
-      mark.selected = !mark.selected;
-      styleMarker(mark);
-      renderMarks();
-      updateOverlayHint();
-    });
-    mark._leaflet = marker;
-    renderMarks();
-    updateOverlayHint();
+    if (state.layerGroup) {
+      const marker = L.circleMarker([lat, lon], Object.assign(
+        { pane: "trees", interactive: false },
+        markerStyle(mark)
+      )).addTo(state.layerGroup);
+      mark._leaflet = marker;
+    }
     return mark;
   }
 
-  function removeMark(id) {
-    const idx = state.marks.findIndex((m) => m.id === id);
-    if (idx < 0) return;
-    const m = state.marks[idx];
-    if (m._leaflet) state.layerGroup.removeLayer(m._leaflet);
-    state.marks.splice(idx, 1);
-    renderMarks();
-    updateOverlayHint();
+  function meanHeight(trees) {
+    if (!trees.length) return 40;
+    const sum = trees.reduce((s, t) => s + (Number(t.heightFt) || 40), 0);
+    return Math.round(sum / trees.length);
+  }
+
+  function quoteItems() {
+    const trees = state.marks
+      .filter((m) => m.kind === "tree")
+      .slice()
+      .sort((a, b) => (b.canopyFt || 0) - (a.canopyFt || 0));
+    const stumps = state.marks.filter((m) => m.kind === "stump");
+    const avgH = meanHeight(trees);
+    const items = [];
+    for (let i = 0; i < state.treeCount; i++) {
+      const src = trees[i];
+      if (src) {
+        items.push({
+          id: src.id,
+          kind: "tree",
+          lat: src.lat,
+          lon: src.lon,
+          species: src.species || "unknown",
+          canopyFt: src.canopyFt,
+          heightFt: src.heightFt || avgH,
+          notes: "",
+          source: src.source || "detected"
+        });
+      } else {
+        items.push({
+          id: "tree-" + (i + 1),
+          kind: "tree",
+          species: "unknown",
+          canopyFt: 24,
+          heightFt: avgH,
+          notes: "",
+          source: "count"
+        });
+      }
+    }
+    for (let i = 0; i < state.stumpCount; i++) {
+      const src = stumps[i];
+      items.push({
+        id: src ? src.id : "stump-" + (i + 1),
+        kind: "stump",
+        lat: src ? src.lat : undefined,
+        lon: src ? src.lon : undefined,
+        diameterIn: (src && src.diameterIn) || 18,
+        notes: "",
+        source: src ? src.source || "detected" : "count"
+      });
+    }
+    return items;
   }
 
   function computeTotals() {
@@ -401,13 +484,13 @@
     let low = 0;
     let high = 0;
     const lines = [];
-    selectedMarks().forEach((m) => {
+    quoteItems().forEach((m, index) => {
       if (m.kind === "tree") {
         const p = Eng.priceTree(m, pricing, { emergency });
         low += p.low;
         high += p.high;
         lines.push({
-          label: `Tree #${m.id} · ${m.species} · ~${m.heightFt} ft · ${p.band}`,
+          label: `Tree ${index + 1} · ~${m.heightFt} ft · ${p.band}`,
           low: p.low,
           high: p.high
         });
@@ -416,80 +499,13 @@
         low += p.low;
         high += p.high;
         lines.push({
-          label: `Stump #${m.id} · ${m.diameterIn}" `,
+          label: `Stump · ${m.diameterIn}"`,
           low: p.low,
           high: p.high
         });
       }
     });
     return { low, high, lines };
-  }
-
-  function renderMarks() {
-    const root = $("#marks-list");
-    root.innerHTML = "";
-    const picked = selectedMarks();
-    const trees = picked.filter((m) => m.kind === "tree").length;
-    const stumps = picked.filter((m) => m.kind === "stump").length;
-    if (!picked.length) {
-      root.innerHTML = `<p class="hint">No trees selected yet — tap a green circle, or add one yourself.</p>`;
-      $("#running-total").hidden = true;
-      return;
-    }
-    picked.forEach((m) => {
-      const card = document.createElement("div");
-      card.className = "mark-card";
-      if (m.kind === "tree") {
-        card.innerHTML = `
-          <header><span>Tree #${m.id}</span><button type="button" class="x" data-rm="${m.id}">Remove</button></header>
-          <div class="row">
-            <label>Type
-              <select data-f="species" data-id="${m.id}">
-                ${["unknown","oak","pine","cypress","pecan","sweetgum"].map((s) =>
-                  `<option value="${s}" ${m.species===s?"selected":""}>${s}</option>`).join("")}
-              </select>
-            </label>
-            <label>Rough height (ft)
-              <input type="number" min="8" max="140" data-f="heightFt" data-id="${m.id}" value="${m.heightFt}" />
-            </label>
-          </div>
-          <label class="notes-mini">Notes
-            <input type="text" data-f="notes" data-id="${m.id}" value="${(m.notes || "").replace(/"/g, "&quot;")}" placeholder="Anything about this tree" />
-          </label>`;
-      } else {
-        card.innerHTML = `
-          <header><span>Stump #${m.id}</span><button type="button" class="x" data-rm="${m.id}">Remove</button></header>
-          <div class="row">
-            <label>Diameter (in)
-              <input type="number" min="4" max="72" data-f="diameterIn" data-id="${m.id}" value="${m.diameterIn}" />
-            </label>
-          </div>
-          <label class="notes-mini">Notes
-            <input type="text" data-f="notes" data-id="${m.id}" value="${(m.notes || "").replace(/"/g, "&quot;")}" placeholder="Anything about this stump" />
-          </label>`;
-      }
-      root.appendChild(card);
-    });
-
-    root.querySelectorAll("[data-rm]").forEach((b) =>
-      b.addEventListener("click", () => removeMark(Number(b.getAttribute("data-rm"))))
-    );
-    root.querySelectorAll("[data-f]").forEach((el) => {
-      el.addEventListener("change", () => {
-        const id = Number(el.getAttribute("data-id"));
-        const f = el.getAttribute("data-f");
-        const m = state.marks.find((x) => x.id === id);
-        if (!m) return;
-        if (f === "notes" || f === "species") m[f] = el.value;
-        else m[f] = Number(el.value);
-        if (f === "species") m.heightFt = Eng.estimateHeightFt(m.canopyFt || 24, m.species);
-      });
-    });
-
-    $("#running-total").hidden = false;
-    $("#marks-summary").textContent =
-      `${trees} tree${trees === 1 ? "" : "s"} · ${stumps} stump${stumps === 1 ? "" : "s"} selected`;
-    $("#running-price").textContent = state.rangeShown ? "" : "Estimate after contact info";
   }
 
   function renderMedia() {
@@ -572,6 +588,7 @@
       console.warn("paintProperty failed", err);
       const caption = document.getElementById("parcel-caption");
       if (caption) caption.textContent = "Exact property line not in parish records here";
+      if (state.spottedTrees == null) applyDetectedCounts();
     }
 
     Eng.stormAlertsForPoint(state.lat, state.lon).then((storms) => {
@@ -650,10 +667,25 @@
       if (moved || !state.marks.length) {
         state.marks = [];
         markSeq = 0;
+        state.countsTouched = false;
+        state.treeCount = DEFAULT_TREES;
+        state.stumpCount = DEFAULT_STUMPS;
+        state.spottedTrees = null;
+        state.spottedStumps = null;
+        state.comments = "";
+        state.notes = "";
+        lastNotePrefill = "";
+        const describeEl = $("#work-describe");
+        const commentsEl = $("#work-comments");
+        const notesEl = $("#notes");
+        if (describeEl) describeEl.value = "";
+        if (commentsEl) commentsEl.value = "";
+        if (notesEl) notesEl.value = "";
         if (state.layerGroup) state.layerGroup.clearLayers();
         state.rangeShown = false;
         const rng = document.getElementById("range");
         if (rng) rng.hidden = true;
+        renderEstimate();
       }
       status.textContent = "Opening your property…";
       status.className = "form-status ok";
@@ -672,14 +704,26 @@
     startFromAddress();
   });
 
+  function readComments() {
+    return ($("#work-comments") && $("#work-comments").value.trim()) || "";
+  }
+  function readDescribe() {
+    return ($("#work-describe") && $("#work-describe").value.trim()) || "";
+  }
+  function combinedPropertyNotes() {
+    return [readComments(), readDescribe()].filter(Boolean).join("\n\n");
+  }
+
   $("#btn-to-photos").addEventListener("click", () => {
     const status = $("#property-status");
-    const describe = ($("#work-describe") && $("#work-describe").value.trim()) || "";
-    if (describe) {
-      state.notes = describe;
-      const notesEl = $("#notes");
-      if (notesEl && !notesEl.value.trim()) notesEl.value = describe;
+    state.comments = readComments();
+    const combined = combinedPropertyNotes();
+    const notesEl = $("#notes");
+    if (notesEl && (!notesEl.value.trim() || notesEl.value.trim() === lastNotePrefill)) {
+      notesEl.value = combined;
     }
+    lastNotePrefill = combined;
+    state.notes = (notesEl && notesEl.value.trim()) || combined;
     if (status) {
       status.textContent = "";
       status.className = "form-status";
@@ -688,7 +732,9 @@
   });
   $("#btn-back-property").addEventListener("click", () => goStep(2));
   $("#btn-to-contact").addEventListener("click", () => {
-    state.notes = ($("#notes") && $("#notes").value.trim()) || "";
+    const notesEl = $("#notes");
+    state.comments = readComments();
+    state.notes = (notesEl && notesEl.value.trim()) || combinedPropertyNotes();
     goStep(4);
   });
   $("#btn-back-photos").addEventListener("click", () => goStep(3));
@@ -712,8 +758,10 @@
       status.className = "form-status err";
       return;
     }
-    state.notes = ($("#notes") && $("#notes").value.trim()) || ($("#work-describe") && $("#work-describe").value.trim()) || "";
+    state.comments = readComments();
+    state.notes = ($("#notes") && $("#notes").value.trim()) || combinedPropertyNotes();
     const totals = computeTotals();
+    const quoted = quoteItems();
     const payload = {
       business: "3 B's Tree Removal",
       to: defaults.leadEmailTo || "shaun.brasher@gmail.com",
@@ -723,7 +771,12 @@
       geocode: state.displayName,
       lat: state.lat,
       lon: state.lon,
-      marks: selectedMarks().map(({ _leaflet, ...rest }) => rest),
+      treeCount: state.treeCount,
+      stumpCount: state.stumpCount,
+      spottedTrees: state.spottedTrees,
+      spottedStumps: state.spottedStumps,
+      comments: state.comments,
+      marks: quoted,
       notes: state.notes,
       photoCount: state.photos.length,
       photoNames: state.photos.map((p) => p.name),
@@ -759,22 +812,24 @@
     $("#range").hidden = false;
     const ul = $("#breakdown");
     ul.innerHTML = "";
-    if (!selectedMarks().length) {
+    const treeN = quoted.filter((m) => m.kind === "tree").length;
+    const stumpN = quoted.filter((m) => m.kind === "stump").length;
+    if (!quoted.length) {
       $("#range-label").textContent = "We'll review what you sent";
       $("#range-price").textContent = "Blake will follow up with a ballpark";
-      if (state.notes) {
-        const li = document.createElement("li");
-        li.textContent = "You wrote: " + state.notes;
-        ul.appendChild(li);
-      }
     } else {
-      $("#range-label").textContent = `${selectedMarks().filter((m)=>m.kind==="tree").length} tree(s) · ${selectedMarks().filter((m)=>m.kind==="stump").length} stump(s)`;
+      $("#range-label").textContent = `${plural(treeN, "tree", "trees")} · ${plural(stumpN, "stump", "stumps")}`;
       $("#range-price").textContent = `${money(totals.low)} – ${money(totals.high)}`;
       totals.lines.forEach((line) => {
         const li = document.createElement("li");
         li.textContent = `${line.label}: ${money(line.low)} – ${money(line.high)}`;
         ul.appendChild(li);
       });
+    }
+    if (state.notes) {
+      const li = document.createElement("li");
+      li.textContent = "You wrote: " + state.notes;
+      ul.appendChild(li);
     }
     $("#thanks").hidden = false;
     const cont = $("#blake-continue");
