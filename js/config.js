@@ -15,6 +15,8 @@ window.SITE_DEFAULTS = {
   variant: "a",
   blakeSite: "https://www.3bstreeremoval.com/",
   leadEmailTo: "shaun.brasher@gmail.com",
+  // Shared lead intake (Render). FormSubmit above stays as the fallback.
+  leadApi: "https://tree-leads-3b-4omg.onrender.com",
   phoneDisplay: "337-378-4046",
   phoneTel: "+13373784046"
 };

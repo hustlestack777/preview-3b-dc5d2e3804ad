@@ -1427,3 +1427,4 @@ html.lb-open { overflow: hidden; }
     linear-gradient(180deg, rgba(8,14,10,.62) 0%, rgba(8,14,10,.32) 32%, rgba(8,14,10,.5) 58%, rgba(8,14,10,.92) 100%),
     radial-gradient(ellipse at center, rgba(8,14,10,.35) 0%, rgba(8,14,10,.15) 70%);
 }
+.fields .opt{font-weight:400;color:#6b6b6b;font-size:.9em}

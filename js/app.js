@@ -107,6 +107,7 @@
     fd.append("_captcha", "false");
     fd.append("name", payload.name);
     fd.append("phone", payload.phone);
+    if (payload.email) fd.append("email", payload.email);
     fd.append("address", payload.address || "");
     fd.append("geocode", payload.geocode || "");
     fd.append("map", payload.lat && payload.lon ? "https://maps.google.com/?q=" + payload.lat + "," + payload.lon : "");
@@ -155,6 +156,55 @@
     const json = await res.json().catch(() => ({}));
     if (json.success === "false" || json.success === false) throw new Error(json.message || "lead post failed");
     return true;
+  }
+
+  // Wake the free lead server while the customer fills in the form.
+  if (defaults.leadApi) {
+    fetch(defaults.leadApi.replace(/\/$/, "") + "/health", { mode: "cors" }).catch(() => {});
+  }
+
+  function blobToDataUrl(blob) {
+    return new Promise((resolve) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result);
+      r.onerror = () => resolve(null);
+      r.readAsDataURL(blob);
+    });
+  }
+
+  // Shared lead intake: saves the lead, emails the team, and emails the customer their copy.
+  async function postLead(payload) {
+    if (!defaults.leadApi) throw new Error("no lead api");
+    const images = (state.media || []).filter((m) => m && m.kind === "image" && m.file).slice(0, 6);
+    const photos = [];
+    for (const m of images) {
+      const blob = await compressImage(m.file);
+      if (!blob) continue;
+      const dataUrl = await blobToDataUrl(blob);
+      if (dataUrl) photos.push({ name: m.name || "photo-" + (photos.length + 1) + ".jpg", dataUrl });
+    }
+    const body = Object.assign({}, payload, { photos, page: location.pathname + location.search });
+    delete body.to;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 75000);
+    try {
+      const res = await fetch(defaults.leadApi.replace(/\/$/, "") + "/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: ctrl.signal
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.ok || !json.emailed) throw new Error(json.error || "lead api failed");
+      return true;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  // New path first; the old FormSubmit email is the fallback until the new path is proven.
+  function submitLead(payload) {
+    return postLead(payload).catch(() => emailLead(payload));
   }
 
   function mailtoFallback(payload) {
@@ -978,6 +1028,8 @@
       to: defaults.leadEmailTo || "shaun.brasher@gmail.com",
       name,
       phone,
+      email: ($("#email") && $("#email").value.trim()) || "",
+      website: ($("#website") && $("#website").value) || "",
       town: ($("#town") && $("#town").value.trim()) || "",
       bestDay: radioVal("best-day"),
       bestTime: radioVal("best-time"),
@@ -1064,7 +1116,7 @@
     if (btn) btn.disabled = true;
     status.textContent = "Sending your info…";
     status.className = "form-status";
-    emailLead(payload)
+    submitLead(payload)
       .then(() => {
         showRange();
         status.textContent = "Your ballpark range is ready.";
