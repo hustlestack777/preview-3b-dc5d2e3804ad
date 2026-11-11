@@ -4,7 +4,7 @@ window.SITE_VARIANTS = {
     id: "a",
     label: "Hero estimate (default)",
     headline: "Call for an estimate.",
-    subline: "Big trees, trees over the house, storm damage: we handle the tough jobs. Enter your address and add photos to see a ballpark price range. Blake confirms the real price when we call you back.",
+    subline: "Big trees, trees over the house, storm damage: we handle the tough jobs. Enter your address and add photos to see a ballpark price range. We’ll confirm your real price when we call you back.",
     cta: "Get started",
     heroImage: "img/hero-poster.jpg"
   }

@@ -1387,6 +1387,16 @@ html.lb-open { overflow: hidden; }
 .ballpark-list li span { min-width: 0; }
 .ballpark-list li b { white-space: nowrap; color: #2f6b3f; font-weight: 700; }
 .ballpark-fine { margin: .7rem 0 0; color: #4d5a4c; font-size: .82rem; }
+
+.ballpark-disclaimer { margin: .7rem 0 0; color: #1a241c; font-size: .92rem; line-height: 1.45; }
+.range-disclaimer, .photo-limit {
+  margin: .45rem 0 0;
+  color: var(--muted);
+  font-size: .82rem;
+  line-height: 1.4;
+}
+.photo-limit { color: #4d5a4c; }
+
 @media (min-width: 720px) {
   .ballpark { padding: 1.25rem 1.4rem 1.1rem; }
 }

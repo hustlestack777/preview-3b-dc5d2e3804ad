@@ -92,12 +92,13 @@
       "Notes: " + (payload.notes || "(none)"),
       "Photo count: " + (payload.photoCount || 0),
       "Photo names: " + ((payload.photoNames || []).join(", ") || "(none)"),
+      "Photos attached: as many as fit under FormSubmit 10 MB limit (images are shrunk first).",
       "Marks: " + JSON.stringify(payload.marks || [], null, 2),
       "Parcel: " + JSON.stringify(payload.parcel || {}, null, 2),
       "Source: " + payload.source + " / variant " + payload.variant,
       "Created: " + payload.createdAt,
       "",
-      "Review the photos and the satellite view, then call the customer back at their best time. Blake confirms the real price on the call."
+      "Review the photos and the satellite view, then call the customer back at their best time and confirm the real price."
     ].filter((line, i, arr) => line !== "" || (arr[i - 1] !== ""));
     const bodyText = lines.join("\n");
     const fd = new FormData();
@@ -126,10 +127,26 @@
     fd.append("createdAt", payload.createdAt || "");
     fd.append("message", bodyText);
 
-    const files = (state.photos || []).filter((f) => f && f.type && f.type.startsWith("image/")).slice(0, 10);
-    for (let i = 0; i < files.length; i++) {
-      const blob = await compressImage(files[i]);
-      if (blob) fd.append("photo" + (i + 1), blob, "photo-" + (i + 1) + ".jpg");
+    // FormSubmit hard limit is 10 MB total per submission. Stay under it after compression.
+    const MAX_ATTACH_BYTES = 9 * 1024 * 1024;
+    const images = (state.media || []).filter((m) => m && m.kind === "image" && m.file);
+    let usedBytes = 0;
+    let attached = 0;
+    const skippedNames = [];
+    for (let i = 0; i < images.length; i++) {
+      const blob = await compressImage(images[i].file);
+      if (!blob) continue;
+      if (usedBytes + blob.size > MAX_ATTACH_BYTES) {
+        skippedNames.push(images[i].name);
+        continue;
+      }
+      usedBytes += blob.size;
+      attached += 1;
+      fd.append("photo" + attached, blob, "photo-" + attached + ".jpg");
+    }
+    fd.append("photosAttached", String(attached));
+    if (skippedNames.length) {
+      fd.append("photosOmitted", skippedNames.length + " photo(s) omitted (10 MB email limit): " + skippedNames.join(", "));
     }
 
     const endpoint = "https://formsubmit.co/ajax/" + encodeURIComponent(to);
@@ -698,23 +715,53 @@
         root.appendChild(wrap);
       });
     });
-    state.photos = state.media.map((m) => ({ name: m.name, size: m.size, type: m.type, kind: m.kind }));
+    state.photos = state.media.map((m) => ({ name: m.name, size: m.size, type: m.type, kind: m.kind, file: m.file }));
+    updatePhotoLimitNote();
+  }
+
+  const MAX_MEDIA_ITEMS = 40; // preview cap; FormSubmit still caps the email at 10 MB total
+
+  function photoLimitEls() {
+    return [$("#photo-limit"), $("#photo-limit-extra")].filter(Boolean);
+  }
+
+  function updatePhotoLimitNote() {
+    const images = state.media.filter((m) => m.kind === "image");
+    const videos = state.media.filter((m) => m.kind === "video");
+    const parts = [];
+    if (state.media.length >= MAX_MEDIA_ITEMS) {
+      parts.push("You can add up to " + MAX_MEDIA_ITEMS + " files in this form.");
+    }
+    if (images.length) {
+      parts.push(images.length === 1 ? "1 photo ready." : images.length + " photos ready.");
+      parts.push("We'll shrink them and attach as many as the 10 MB email limit allows.");
+    }
+    if (videos.length) {
+      parts.push("Short videos can be selected here, but this form can't email them yet.");
+    }
+    const text = parts.join(" ");
+    photoLimitEls().forEach((el) => {
+      el.hidden = !text;
+      el.textContent = text;
+    });
   }
 
   function addMediaFiles(fileList) {
     Array.from(fileList || []).forEach((file) => {
       if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) return;
-      if (state.media.length >= 10) return;
+      if (state.media.length >= MAX_MEDIA_ITEMS) return;
       state.media.push({
         id: Date.now() + Math.random(),
         name: file.name,
         size: file.size,
         type: file.type,
         kind: file.type.startsWith("video/") ? "video" : "image",
-        url: URL.createObjectURL(file)
+        url: URL.createObjectURL(file),
+        file
       });
     });
     renderMedia();
+    updatePhotoLimitNote();
   }
 
   ["#photos", "#photos-extra"].forEach((sel) => {
@@ -1009,7 +1056,7 @@
       }
       const thanks = $("#thanks");
       thanks.hidden = false;
-      thanks.textContent = "Thanks, we got your info. We’ll review your photos and the satellite view and call you back. Blake confirms the real price on that call.";
+      thanks.textContent = "Thanks, we got your info. We’ll review your photos and the satellite view, and we’ll confirm your real price when we call you back.";
       $("#range").scrollIntoView({ behavior: "smooth", block: "nearest" });
     };
 
@@ -1027,7 +1074,7 @@
         mailtoFallback(payload);
         showRange();
         const thanks = $("#thanks");
-        thanks.textContent = "If your email app opened, please hit send so we get your info. Then we’ll call you back, and Blake confirms the real price on that call.";
+        thanks.textContent = "If your email app opened, please hit send so we get your info. Then we’ll confirm your real price when we call you back.";
         status.textContent = "Your ballpark range is ready. Please send the email if it appeared.";
         status.className = "form-status ok";
       })
