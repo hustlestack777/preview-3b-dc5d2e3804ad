@@ -83,7 +83,12 @@
       payload.lat && payload.lon ? "Map: https://maps.google.com/?q=" + payload.lat + "," + payload.lon : "",
       "Storm / urgent: " + (payload.stormUrgent ? "yes" : "no"),
       "Job types: " + ((payload.jobTypeLabels || []).join(", ") || "(none)"),
-      "Range: " + (payload.rangeLow != null ? "$" + payload.rangeLow + " – $" + payload.rangeHigh : "follow up"),
+      "Ballpark shown: " + (payload.rangeLow ? "$" + payload.rangeLow + " – $" + payload.rangeHigh : "none (follow up)"),
+      "Town / address given: " + (payload.town || "(none)"),
+      "Best day to call: " + (payload.bestDay || "(any)"),
+      "Best time to call: " + (payload.bestTime || "(any)"),
+      "How soon: " + (payload.howSoon || "(not given)"),
+      "Trees or limbs: " + (payload.treeCount != null ? payload.treeCount : "?") + " · Stumps: " + (payload.stumpCount != null ? payload.stumpCount : "?"),
       "Notes: " + (payload.notes || "(none)"),
       "Photo count: " + (payload.photoCount || 0),
       "Photo names: " + ((payload.photoNames || []).join(", ") || "(none)"),
@@ -92,7 +97,7 @@
       "Source: " + payload.source + " / variant " + payload.variant,
       "Created: " + payload.createdAt,
       "",
-      "Blake should review the info and the satellite view, then call the customer back."
+      "Review the photos and the satellite view, then call the customer back at their best time. Blake confirms the real price on the call."
     ].filter((line, i, arr) => line !== "" || (arr[i - 1] !== ""));
     const bodyText = lines.join("\n");
     const fd = new FormData();
@@ -106,7 +111,13 @@
     fd.append("map", payload.lat && payload.lon ? "https://maps.google.com/?q=" + payload.lat + "," + payload.lon : "");
     fd.append("stormUrgent", payload.stormUrgent ? "yes" : "no");
     fd.append("jobTypes", (payload.jobTypeLabels || []).join(", ") || "(none)");
-    fd.append("range", payload.rangeLow != null ? "$" + payload.rangeLow + " – $" + payload.rangeHigh : "follow up");
+    fd.append("ballparkShown", payload.rangeLow ? "$" + payload.rangeLow + " – $" + payload.rangeHigh : "none (follow up)");
+    fd.append("town", payload.town || "");
+    fd.append("bestDay", payload.bestDay || "");
+    fd.append("bestTime", payload.bestTime || "");
+    fd.append("howSoon", payload.howSoon || "");
+    fd.append("treesOrLimbs", String(payload.treeCount != null ? payload.treeCount : ""));
+    fd.append("stumps", String(payload.stumpCount != null ? payload.stumpCount : ""));
     fd.append("notes", payload.notes || "(none)");
     fd.append("breakdown", (payload.breakdown || []).map((l) => l.label + ": $" + l.low + "–$" + l.high).join("; ") || "(none)");
     fd.append("marks", JSON.stringify(payload.marks || [], null, 2));
@@ -115,7 +126,7 @@
     fd.append("createdAt", payload.createdAt || "");
     fd.append("message", bodyText);
 
-    const files = (state.photos || []).filter((f) => f && f.type && f.type.startsWith("image/")).slice(0, 4);
+    const files = (state.photos || []).filter((f) => f && f.type && f.type.startsWith("image/")).slice(0, 10);
     for (let i = 0; i < files.length; i++) {
       const blob = await compressImage(files[i]);
       if (blob) fd.append("photo" + (i + 1), blob, "photo-" + (i + 1) + ".jpg");
@@ -155,7 +166,7 @@
       li.className = s.live ? "" : "off";
       li.innerHTML = s.live
         ? s.label
-        : `${s.label} <span class="ask-blake">(${s.note || "ask Blake"})</span>`;
+        : `${s.label} <span class="ask-blake">(${s.note || "ask us"})</span>`;
       svcList.appendChild(li);
     });
   }
@@ -616,41 +627,42 @@
 
   function computeTotals() {
     const emergency = $("#opt-storm") && $("#opt-storm").checked;
+    const types = state.jobTypes || selectedJobTypes();
+    const has = (t) => types.includes(t);
+    const trimOnly = has("trim") && !has("removal");
     let low = 0;
     let high = 0;
     const lines = [];
+    const add = (label, r) => {
+      low += r.low;
+      high += r.high;
+      lines.push({ label, low: Math.round(r.low), high: Math.round(r.high) });
+    };
+    let stumpIdx = 0;
     quoteItems().forEach((m, index) => {
       if (m.kind === "tree") {
-        const p = Eng.priceTree(m, pricing, { emergency });
-        low += p.low;
-        high += p.high;
-        lines.push({
-          label: `Tree ${index + 1} · ~${m.heightFt} ft · ${p.band}`,
-          low: p.low,
-          high: p.high
-        });
+        if (trimOnly) {
+          add(`Trim tree ${index + 1}`, pricing.trim);
+        } else {
+          const p = Eng.priceTree(m, pricing, { emergency });
+          add(`Remove tree ${index + 1} · ~${m.heightFt} ft · ${p.band}`, p);
+        }
       } else {
         const p = Eng.priceStump(m, pricing);
-        low += p.low;
-        high += p.high;
-        lines.push({
-          label: `Stump · ${m.diameterIn}"`,
-          low: p.low,
-          high: p.high
-        });
+        const extra = pricing.stumps.extraStump;
+        const r = stumpIdx > 0 && extra && m.diameterIn <= 24 ? extra : p;
+        stumpIdx += 1;
+        add(`Grind stump · ${m.diameterIn}"`, r);
       }
     });
-    if ((state.jobTypes || []).includes("dirt")) {
-      const dirt = (pricing && (pricing.dirtWork || pricing.landClearing)) || { low: 400, high: 2000 };
-      low += dirt.low;
-      high += dirt.high;
-      lines.push({
-        label: "Skid steer dirt work and lot clearing",
-        low: dirt.low,
-        high: dirt.high
-      });
+    if (has("emergency") && !lines.length && pricing.stormCleanup) {
+      add("Storm cleanup (downed limbs)", pricing.stormCleanup);
     }
-    return { low, high, lines };
+    if (has("dirt")) {
+      const dirt = (pricing && (pricing.dirtWork || pricing.landClearing)) || { low: 500, high: 2400 };
+      add("Skid steer dirt work (half day to a full day)", dirt);
+    }
+    return { low: Math.round(low), high: Math.round(high), lines };
   }
 
   function renderMedia() {
@@ -692,7 +704,7 @@
   function addMediaFiles(fileList) {
     Array.from(fileList || []).forEach((file) => {
       if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) return;
-      if (state.media.length >= 8) return;
+      if (state.media.length >= 10) return;
       state.media.push({
         id: Date.now() + Math.random(),
         name: file.name,
@@ -886,6 +898,11 @@
   });
   $("#btn-back-photos").addEventListener("click", () => goStep(3));
 
+  function radioVal(name) {
+    const el = document.querySelector('input[name="' + name + '"]:checked');
+    return el ? el.value : "";
+  }
+
   $("#btn-range").addEventListener("click", () => {
     const status = $("#result-status");
     const name = $("#name").value.trim();
@@ -901,7 +918,7 @@
       return;
     }
     if (!$("#consent").checked) {
-      status.textContent = "Check the consent box to see your estimate.";
+      status.textContent = "Check the consent box so we can call you.";
       status.className = "form-status err";
       return;
     }
@@ -914,6 +931,10 @@
       to: defaults.leadEmailTo || "shaun.brasher@gmail.com",
       name,
       phone,
+      town: ($("#town") && $("#town").value.trim()) || "",
+      bestDay: radioVal("best-day"),
+      bestTime: radioVal("best-time"),
+      howSoon: radioVal("how-soon"),
       address: state.address,
       geocode: state.displayName,
       lat: state.lat,
@@ -971,7 +992,7 @@
       const rangeLead = typeBits.length ? typeBits.join(" · ") : (countBits.join(" · ") || "We'll review what you sent");
       if (!totals.lines.length) {
         $("#range-label").textContent = rangeLead;
-        $("#range-price").textContent = "Planning range after Blake reviews";
+        $("#range-price").textContent = "We’ll give you a ballpark on the callback";
       } else {
         $("#range-label").textContent = countBits.length ? rangeLead + " · " + countBits.join(" · ") : rangeLead;
         $("#range-price").textContent = `${money(totals.low)} – ${money(totals.high)}`;
@@ -988,12 +1009,7 @@
       }
       const thanks = $("#thanks");
       thanks.hidden = false;
-      thanks.textContent = "Thanks — we received your info. Blake will review your info and the satellite view and call you back.";
-      const cont = $("#blake-continue");
-      if (cont) {
-        cont.href = "tel:" + (defaults.phoneTel || "+13373784046");
-        cont.hidden = false;
-      }
+      thanks.textContent = "Thanks, we got your info. We’ll review your photos and the satellite view and call you back. Blake confirms the real price on that call.";
       $("#range").scrollIntoView({ behavior: "smooth", block: "nearest" });
     };
 
@@ -1004,15 +1020,15 @@
     emailLead(payload)
       .then(() => {
         showRange();
-        status.textContent = "Estimate range ready.";
+        status.textContent = "Your ballpark range is ready.";
         status.className = "form-status ok";
       })
       .catch(() => {
         mailtoFallback(payload);
         showRange();
         const thanks = $("#thanks");
-        thanks.textContent = "If your email app opened, please hit send so we get your info. Blake will review your info and the satellite view and call you back.";
-        status.textContent = "Estimate range ready. Please send the email if it appeared.";
+        thanks.textContent = "If your email app opened, please hit send so we get your info. Then we’ll call you back, and Blake confirms the real price on that call.";
+        status.textContent = "Your ballpark range is ready. Please send the email if it appeared.";
         status.className = "form-status ok";
       })
       .finally(() => {

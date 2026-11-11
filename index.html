@@ -15,16 +15,18 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
   <link rel="icon" href="img/logo/favicon.ico" sizes="any" />
   <link rel="icon" type="image/png" sizes="32x32" href="img/logo/favicon-32.png" />
-  <link rel="icon" type="image/png" sizes="48x48" href="img/logo/favicon-48.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="img/logo/favicon-16.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="img/logo/icon-192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="img/logo/icon-512.png" />
   <link rel="apple-touch-icon" href="img/logo/apple-touch-icon.png" />
-  <link rel="stylesheet" href="css/styles.css?v=20261111k" />
+  <link rel="stylesheet" href="css/styles.css?v=20261111m" />
 </head>
 <body>
   <div class="demo-note">Private preview — not public yet</div>
 
   <header class="topbar">
     <a class="brand" href="#top">
-      <img class="brand-logo" src="img/logo/logo_d_wordmark.png" width="1178" height="679" alt="3 B's Tree Removal" />
+      <img class="brand-logo" src="img/logo/logo_D_on_dark.svg" width="1906" height="1190" alt="3 B's Tree Removal" />
     </a>
     <a class="call" href="tel:+13373784046">337-378-4046</a>
   </header>
@@ -64,7 +66,7 @@
       <div class="hero-inner">
         <p class="eyebrow">Pitkin, LA · LDAF licensed arborist</p>
         <h1>Call for an estimate.</h1>
-        <p class="sub">Enter your address. We’ll show a satellite view of your lot and a planning range for tree work or skid steer dirt work. Blake will call you back.</p>
+        <p class="sub">Big trees, trees over the house, storm damage: we handle the tough jobs. Enter your address and add photos to see a ballpark price range. Blake confirms the real price when we call you back.</p>
 
         <form class="addr-form" id="addr-form" autocomplete="off" action="javascript:void(0)" onsubmit="return false;">
           <label class="sr" for="address">Property address</label>
@@ -79,9 +81,9 @@
           </div>
           <p class="addr-hint" id="addr-hint">Pick your address from the list, then tap Get started</p>
           <p class="form-status" id="addr-status" role="status"></p>
-          <p class="fine">Planning range only. Blake confirms the work after reviewing your lot.</p>
+          <p class="fine">Ballpark range only, never a firm price. Blake confirms the real price on the callback.</p>
         <div class="trust-chips" aria-label="Trust">
-          <span>Call for an estimate</span>
+          <span>Big, tough jobs</span>
           <span>LDAF licensed arborist</span>
           <span>Serving Central &amp; Southwest Louisiana</span>
         </div>
@@ -130,11 +132,11 @@
                 <p class="spotted-note" id="spotted-note" hidden>Change the counts if we missed one. Or skip the numbers and just describe the work.</p>
                 <div class="count-steppers">
                   <div class="stepper">
-                    <span class="stepper-label" id="trees-step-label">Trees</span>
+                    <span class="stepper-label" id="trees-step-label">Trees or limbs</span>
                     <div class="stepper-ctrl" role="group" aria-labelledby="trees-step-label">
-                      <button type="button" class="step-btn" id="trees-minus" aria-label="Fewer trees">−</button>
+                      <button type="button" class="step-btn" id="trees-minus" aria-label="Fewer trees or limbs">−</button>
                       <output id="trees-count" for="trees-minus trees-plus" aria-live="polite">2</output>
-                      <button type="button" class="step-btn" id="trees-plus" aria-label="More trees">+</button>
+                      <button type="button" class="step-btn" id="trees-plus" aria-label="More trees or limbs">+</button>
                     </div>
                   </div>
                   <div class="stepper">
@@ -179,7 +181,7 @@
               <textarea id="work-describe" rows="3" placeholder="e.g. Two oaks in the backyard and a stump by the driveway"></textarea>
             </label>
             <label class="photo-label">Photos or a short video
-              <span>Optional — snap or attach from your phone. You can remove any one. Never required.</span>
+              <span>Add up to 10 from your phone. You can remove any one. Never required.</span>
               <input id="photos-extra" type="file" accept="image/*,video/*" multiple />
             </label>
             <div class="photo-prev" id="photo-prev-extra"></div>
@@ -196,13 +198,13 @@
 
           <div class="q-step" data-step="3" id="step-photos" hidden>
             <h2 class="step-title">Photos &amp; notes</h2>
-            <p class="sat-lead">A photo or short video of the tree helps Blake judge height and condition. Optional — skip anytime.</p>
+            <p class="sat-lead">Photos help us judge height, condition and access. Add as many as you can (up to 10). You’ll see a ballpark range, and Blake confirms the real price when we call you back.</p>
             <label class="photo-label">Photos or a short video of the trees or stumps
-              <span>Optional — snap or attach from your phone. Tap the × to remove one.</span>
+              <span>Add up to 10 photos or short videos from your phone. Tap the × to remove one.</span>
               <input id="photos" type="file" accept="image/*,video/*" multiple />
             </label>
             <div class="photo-prev" id="photo-prev"></div>
-            <label class="notes-label">Job details
+            <label class="notes-label">Notes <span>Optional</span>
               <textarea id="notes" rows="4" placeholder="Which trees, access, gates, pets, anything we should know…"></textarea>
             </label>
             <div class="step-nav">
@@ -212,11 +214,37 @@
           </div>
 
           <div class="q-step" data-step="4" id="step-contact" hidden>
-            <h2 class="step-title">Your contact info</h2>
-            <p class="sat-lead">We need this before we can show your estimate range.</p>
+            <h2 class="step-title">When should we call you?</h2>
+            <p class="sat-lead">Tell us when to call, and we’ll show your ballpark price range.</p>
             <div class="fields">
               <label>Name<input id="name" type="text" autocomplete="name" required /></label>
               <label>Mobile<input id="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="(337) 555-0123" required /></label>
+              <label>Town or job address<input id="town" type="text" autocomplete="address-level2" placeholder="e.g. Leesville or 412 Magnolia Ln" /></label>
+              <fieldset class="choice-group" id="best-day">
+                <legend>Best day to call</legend>
+                <div class="choice-row">
+                  <label class="choice"><input type="radio" name="best-day" value="Weekday" /> Weekday</label>
+                  <label class="choice"><input type="radio" name="best-day" value="Weekend" /> Weekend</label>
+                  <label class="choice"><input type="radio" name="best-day" value="Any day" checked /> Any day</label>
+                </div>
+              </fieldset>
+              <fieldset class="choice-group" id="best-time">
+                <legend>Best time to call</legend>
+                <div class="choice-row">
+                  <label class="choice"><input type="radio" name="best-time" value="Morning" /> Morning</label>
+                  <label class="choice"><input type="radio" name="best-time" value="Afternoon" /> Afternoon</label>
+                  <label class="choice"><input type="radio" name="best-time" value="Evening" /> Evening</label>
+                </div>
+              </fieldset>
+              <fieldset class="choice-group" id="how-soon">
+                <legend>How soon do you need it done?</legend>
+                <div class="choice-row">
+                  <label class="choice"><input type="radio" name="how-soon" value="ASAP" /> ASAP</label>
+                  <label class="choice"><input type="radio" name="how-soon" value="This week" /> This week</label>
+                  <label class="choice"><input type="radio" name="how-soon" value="This month" /> This month</label>
+                  <label class="choice"><input type="radio" name="how-soon" value="Just planning" /> Just planning</label>
+                </div>
+              </fieldset>
               <label class="check">
                 <input id="consent" type="checkbox" />
                 <span>I agree to receive a call from 3 B’s Tree Removal about this estimate.</span>
@@ -224,7 +252,7 @@
             </div>
             <div class="step-nav">
               <button type="button" class="btn-ghost" id="btn-back-photos">Back</button>
-              <button type="button" class="btn" id="btn-range">See my estimate range</button>
+              <button type="button" class="btn" id="btn-range">See my ballpark range</button>
             </div>
             <p class="form-status" id="result-status" role="status"></p>
 
@@ -232,9 +260,8 @@
               <p class="range-label" id="range-label"></p>
               <div class="price" id="range-price"></div>
               <ul class="breakdown" id="breakdown"></ul>
-              <p class="range-note">This is a planning range, not a final quote. Blake will review your info and the satellite view and call you back.</p>
-              <p class="thanks" id="thanks" hidden>Thanks — we received your info. Blake will review your info and the satellite view and call you back.</p>
-              <a class="btn btn-block" id="blake-continue" href="tel:+13373784046" style="margin-top:0.85rem;text-align:center;text-decoration:none" hidden>Call 337-378-4046</a>
+              <p class="range-note">This is a ballpark, not a firm price. We’ll review your photos and a satellite view of your lot, and Blake confirms the real price when we call you back.</p>
+              <p class="thanks" id="thanks" hidden>Thanks, we got your info. We’ll call you back, and Blake confirms the real price on that call.</p>
             </div>
           </div>
         </div>
@@ -244,11 +271,30 @@
     <section class="how light-band" id="how">
       <div class="wrap">
         <p class="section-kicker">How it works</p>
-        <h2>A clear look at your lot, then a planning range.</h2>
+        <h2>A ballpark price up front, then a callback.</h2>
         <div class="how-grid">
           <div><span class="n">1</span><strong>Enter your address</strong><p>Pick it from the list, then tap Get started.</p></div>
-          <div><span class="n">2</span><strong>Confirm the count</strong><p>Tell us the kind of work, then confirm trees and stumps from the lot photo. Use + and − to adjust, or skip and just describe it.</p></div>
-          <div><span class="n">3</span><strong>See a planning range</strong><p>Add a photo if you have one. After your contact info, you’ll see a range. Blake confirms it when he calls you back.</p></div>
+          <div><span class="n">2</span><strong>Tell us about the job</strong><p>Pick the kind of work, how many trees or limbs, and add as many photos as you can. Or skip the numbers and just describe it.</p></div>
+          <div><span class="n">3</span><strong>See a ballpark, then get a call</strong><p>Tell us the best time to call and you’ll see a ballpark range right away. We review your photos and a satellite view of your lot, and Blake confirms the real price when we call you back.</p></div>
+        </div>
+        <div class="ballpark" aria-labelledby="ballpark-h">
+          <h3 id="ballpark-h">Ballpark prices</h3>
+          <p class="ballpark-lead">Typical Louisiana ranges so you know what to expect. Every job is different: size, lean, and how close it is to the house or lines all move the price. Blake confirms the real price on the callback.</p>
+          <ul class="ballpark-list">
+            <li><span>Tree removal, small (under 30&nbsp;ft)</span><b>$300 – $700</b></li>
+            <li><span>Tree removal, medium (30–60&nbsp;ft)</span><b>$700 – $1,500</b></li>
+            <li><span>Tree removal, large (60–80&nbsp;ft)</span><b>$1,500 – $3,000</b></li>
+            <li><span>Very large (80+&nbsp;ft) or crane work</span><b>$3,000 and up</b></li>
+            <li><span>Over the house, near lines, tight access</span><b>add about 25–50%</b></li>
+            <li><span>Trimming, per tree</span><b>$250 – $900</b></li>
+            <li><span>Stump grinding, first stump</span><b>$125 – $400</b></li>
+            <li><span>Storm cleanup, downed limbs</span><b>$300 – $1,500</b></li>
+            <li><span>Tree on a house or structure</span><b>$1,500 – $5,000+</b></li>
+            <li><span>Debris haul-off, per load</span><b>$100 – $300</b></li>
+            <li><span>Skid steer dirt work, per hour</span><b>$100 – $300</b></li>
+            <li><span>Lot clearing, per acre</span><b>$1,500 – $4,000</b></li>
+          </ul>
+          <p class="ballpark-fine">Ballparks only, never a firm price. We don’t book jobs on this page.</p>
         </div>
       </div>
     </section>
@@ -257,7 +303,7 @@
       <div class="wrap">
         <p class="section-kicker">Services</p>
         <h2>Tree work and skid steer dirt work.</h2>
-        <p class="band-lead">Call for an estimate. Serving homeowners across Central &amp; Southwest Louisiana.</p>
+        <p class="band-lead">Big trees, tough spots and storm damage are what we do. Serving homeowners across Central &amp; Southwest Louisiana.</p>
         <!--
           SHAUN TO CONFIRM — do not show the list below on the page until you approve it.
           Public wording stays generic: "skid steer dirt work and lot clearing."
@@ -415,11 +461,11 @@
           <h2>Service area</h2>
           <p class="area-line">Serving Central &amp; Southwest Louisiana</p>
           <p class="area">Vernon · Beauregard · Rapides · Allen · Sabine · Calcasieu</p>
-          <p class="muted">Parish list is a starting coverage area and will be confirmed with Blake.</p>
+          <p class="muted">Parish list is a starting coverage area. Not sure we cover you? Send your info and we’ll let you know on the callback.</p>
         </div>
         <div>
           <h2>About the work</h2>
-          <p class="muted">Blake Berry is an LDAF licensed arborist based in Pitkin, Louisiana. He also does skid steer dirt work and lot clearing. You’ll see a planning range on this page. He reviews your information and the satellite view, then calls you back — this page never books the job for you.</p>
+          <p class="muted">We take on the big, tough jobs. Our owner, Blake Berry, is an LDAF licensed arborist for tree work, based in Pitkin, Louisiana. We also do skid steer dirt work and lot clearing. You’ll see a ballpark price range here. We review your photos and a satellite view of your lot, and Blake confirms the real price when we call you back. This page never books the job for you.</p>
         </div>
       </div>
     </section>
@@ -444,11 +490,11 @@
   </footer>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="js/config.js?v=20261111d"></script>
-  <script src="js/pricing.js?v=20261111c"></script>
+  <script src="js/config.js?v=20261111m"></script>
+  <script src="js/pricing.js?v=20261111m"></script>
   <script src="js/engine.js?v=20261111c"></script>
   <script src="js/autocomplete.js?v=20261111c"></script>
-  <script src="js/app.js?v=20261111c"></script>
+  <script src="js/app.js?v=20261111m"></script>
   <script src="js/media.js?v=20261111a"></script>
 </body>
 </html>

@@ -1325,7 +1325,7 @@ html, body { margin: 0; padding: 0; width: 100%; }
 html.lb-open { overflow: hidden; }
 
 
-/* ===== Logo D wordmark in the header ===== */
+/* ===== Logo D (cypress, on-dark version) in the header ===== */
 .brand {
   min-width: 0;
   flex: 1 1 auto;
@@ -1335,10 +1335,9 @@ html.lb-open { overflow: hidden; }
   display: block;
   width: min(12.75rem, calc(100vw - 11rem));
   height: auto;
-  background: #fff;
-  border-radius: 10px;
-  padding: .22rem .35rem .25rem;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, .3);
+  background: transparent;
+  padding: 0;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, .45));
 }
 .call {
   flex: 0 0 auto;
@@ -1350,7 +1349,7 @@ html.lb-open { overflow: hidden; }
   .brand-logo { width: min(12.55rem, calc(100vw - 10.25rem)); }
 }
 @media (min-width: 640px) {
-  .brand-logo { width: 16.5rem; padding: .3rem .45rem .32rem; border-radius: 12px; }
+  .brand-logo { width: 16.5rem; }
 }
 @media (min-width: 1000px) {
   .brand-logo { width: 18rem; }
@@ -1361,4 +1360,52 @@ html.lb-open { overflow: hidden; }
 }
 @media (min-width: 640px) {
   .hero-inner { padding-top: 12.5rem; }
+}
+
+/* ===== Ballpark prices (How it works) ===== */
+.ballpark {
+  margin-top: 1.75rem;
+  background: #fff;
+  border: 1px solid rgba(20, 32, 24, .1);
+  box-shadow: 0 8px 24px rgba(20, 32, 24, .06);
+  border-radius: var(--rad);
+  padding: 1rem 1rem .9rem;
+}
+.ballpark h3 { font-family: var(--display); margin: 0 0 .35rem; font-size: 1.25rem; color: #142018; }
+.ballpark-lead { margin: 0 0 .75rem; color: #4d5a4c; font-size: .92rem; }
+.ballpark-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.ballpark-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: .75rem;
+  padding: .5rem 0;
+  border-bottom: 1px solid rgba(20, 32, 24, .1);
+  font-size: .92rem;
+  color: #1a241c;
+}
+.ballpark-list li span { min-width: 0; }
+.ballpark-list li b { white-space: nowrap; color: #2f6b3f; font-weight: 700; }
+.ballpark-fine { margin: .7rem 0 0; color: #4d5a4c; font-size: .82rem; }
+@media (min-width: 720px) {
+  .ballpark { padding: 1.25rem 1.4rem 1.1rem; }
+}
+@media (min-width: 1000px) {
+  .ballpark-list { grid-template-columns: 1fr 1fr; column-gap: 2.5rem; }
+}
+
+/* ===== Centered hero CTA (all breakpoints) ===== */
+.hero-inner {
+  margin-left: auto !important;
+  margin-right: auto !important;
+  text-align: center;
+}
+.hero .sub { margin-left: auto; margin-right: auto; max-width: 36ch; }
+.hero .addr-form { max-width: 640px; margin: 0 auto; text-align: left; }
+.hero .addr-hint, .hero .fine, .hero .form-status { text-align: center; }
+.hero .trust-chips { justify-content: center; }
+.hero-shade {
+  background:
+    linear-gradient(180deg, rgba(8,14,10,.62) 0%, rgba(8,14,10,.32) 32%, rgba(8,14,10,.5) 58%, rgba(8,14,10,.92) 100%),
+    radial-gradient(ellipse at center, rgba(8,14,10,.35) 0%, rgba(8,14,10,.15) 70%);
 }

@@ -4,7 +4,7 @@ window.SITE_VARIANTS = {
     id: "a",
     label: "Hero estimate (default)",
     headline: "Call for an estimate.",
-    subline: "Enter your address. We’ll show a satellite view of your lot and a planning range for tree work or skid steer dirt work. Blake will call you back.",
+    subline: "Big trees, trees over the house, storm damage: we handle the tough jobs. Enter your address and add photos to see a ballpark price range. Blake confirms the real price when we call you back.",
     cta: "Get started",
     heroImage: "img/hero-poster.jpg"
   }

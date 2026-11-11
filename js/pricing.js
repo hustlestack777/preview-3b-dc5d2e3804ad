@@ -1,24 +1,26 @@
-/* Placeholder tree/stump pricing — Blake confirms later.
-   Adapted from Hustle Stack PRD: stump grinding = per-stump custom;
-   tree service = custom vertical. Numbers are DEMO ONLY. */
+/* Ballpark tree/stump pricing (v1, Nov 11 2026).
+   Industry-standard Louisiana/US ranges approved by Shaun as up-front ballparks.
+   Sources: /workspace/blake_assets/price_ranges.md (CostPrism LA, TreeOps USA,
+   Angi, HomeGuide via Kingsport guide, US Home Costs, Big Cypress Land & Game, etc.).
+   Never a firm price. Blake confirms the real price on the callback. */
 window.TREE_PRICING = {
   currency: "USD",
-  disclaimer: "Placeholder ranges. Final price confirmed on-site.",
+  disclaimer: "Ballpark range, not a firm price. Blake confirms the real price on the callback.",
   trees: {
-    // base by estimated height (ft)
+    // removal, by estimated height (ft)
     heightBands: [
-      { maxFt: 25, low: 350, high: 800, label: "Small (<25 ft)" },
-      { maxFt: 50, low: 700, high: 1900, label: "Medium (25–50 ft)" },
-      { maxFt: 80, low: 1500, high: 3500, label: "Large (50–80 ft)" },
-      { maxFt: 999, low: 2500, high: 7000, label: "XL (80+ ft)" }
+      { maxFt: 30, low: 300, high: 700, label: "Small (under 30 ft)" },
+      { maxFt: 60, low: 700, high: 1500, label: "Medium (30–60 ft)" },
+      { maxFt: 80, low: 1500, high: 3000, label: "Large (60–80 ft)" },
+      { maxFt: 999, low: 3000, high: 6000, label: "Very large (80+ ft)" }
     ],
-    // multipliers
-    nearStructure: 1.35,   // within ~25 ft of house
-    nearLines: 1.45,       // near power lines
-    haulOff: { low: 150, high: 600 },
-    grindWithRemoval: { low: 150, high: 400 },
+    // hard jobs add about 25–50%
+    nearStructure: 1.25,   // leaning over / close to the house
+    nearLines: 1.5,        // near power lines
+    haulOff: { low: 100, high: 300 },          // per load
+    grindWithRemoval: { low: 125, high: 400 },
     speciesHardness: {
-      pine: 0.95,
+      pine: 1.0,
       oak: 1.1,
       cypress: 1.05,
       pecan: 1.1,
@@ -27,21 +29,27 @@ window.TREE_PRICING = {
     }
   },
   stumps: {
-    // diameter inches → price
+    // first stump, by diameter (inches)
     bands: [
-      { maxIn: 12, low: 125, high: 250 },
-      { maxIn: 24, low: 200, high: 450 },
-      { maxIn: 36, low: 350, high: 700 },
-      { maxIn: 999, low: 500, high: 1200 }
+      { maxIn: 12, low: 125, high: 200 },
+      { maxIn: 24, low: 150, high: 400 },
+      { maxIn: 36, low: 300, high: 600 },
+      { maxIn: 999, low: 500, high: 800 }
     ],
+    extraStump: { low: 50, high: 150 },  // each additional ordinary stump, same visit
     haulMulch: { low: 50, high: 150 }
   },
-  trim: { low: 400, high: 900 },
+  trim: { low: 250, high: 900 },           // per tree; big trees over a roof up to ~1,800
+  stormCleanup: { low: 300, high: 1500 },  // downed limbs / yard
+  treeOnStructure: { low: 1500, high: 5000 },
   stormEmergencyMult: 1.25,
+  haulLoad: { low: 100, high: 300 },
+  skidSteerHourly: { low: 100, high: 300 },
+  landClearingPerAcre: { low: 1500, high: 4000 },
   cabling: { low: 150, high: 800 },
   planting: { low: 200, high: 900 },
   transplanting: { low: 400, high: 2000 },
-  landClearing: { low: 400, high: 2000 },
+  landClearing: { low: 500, high: 2400 },
   // SHAUN TO CONFIRM — do not list these as public services until approved.
   // Public wording stays "skid steer dirt work and lot clearing." Footage supports
   // cleared lots and skid steers only. Do not show the items below, and do not
@@ -51,7 +59,7 @@ window.TREE_PRICING = {
   //   driveway or pad prep
   //   ditch work
   //   haul-off / fill
-  dirtWork: { low: 400, high: 2000 }
+  dirtWork: { low: 500, high: 2400 }  // half-day minimum to a full day of skid steer work
 };
 
 window.BLAKE_SERVICES = [
