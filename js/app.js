@@ -35,6 +35,109 @@
   const money = (n) =>
     new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 
+  const heroVideo = document.querySelector(".hero-video");
+  if (heroVideo && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    heroVideo.pause();
+    heroVideo.removeAttribute("autoplay");
+    heroVideo.style.display = "none";
+  }
+
+  function compressImage(file, maxDim = 1280, quality = 0.72) {
+    return new Promise((resolve) => {
+      if (!file || !file.type || !file.type.startsWith("image/")) {
+        resolve(null);
+        return;
+      }
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        const w = Math.max(1, Math.round(img.width * scale));
+        const h = Math.max(1, Math.round(img.height * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+        canvas.toBlob((blob) => {
+          URL.revokeObjectURL(url);
+          resolve(blob);
+        }, "image/jpeg", quality);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(null);
+      };
+      img.src = url;
+    });
+  }
+
+  async function emailLead(payload) {
+    const to = payload.to || defaults.leadEmailTo || "shaun.brasher@gmail.com";
+    const lines = [
+      "New tree-work lead from the 3 B's preview page",
+      "",
+      "Name: " + payload.name,
+      "Phone: " + payload.phone,
+      "Address: " + (payload.address || ""),
+      "Geocode: " + (payload.geocode || ""),
+      payload.lat && payload.lon ? "Map: https://maps.google.com/?q=" + payload.lat + "," + payload.lon : "",
+      "Storm / urgent: " + (payload.stormUrgent ? "yes" : "no"),
+      "Range: " + (payload.rangeLow != null ? "$" + payload.rangeLow + " – $" + payload.rangeHigh : "follow up"),
+      "Notes: " + (payload.notes || "(none)"),
+      "Photo count: " + (payload.photoCount || 0),
+      "Photo names: " + ((payload.photoNames || []).join(", ") || "(none)"),
+      "Marks: " + JSON.stringify(payload.marks || [], null, 2),
+      "Parcel: " + JSON.stringify(payload.parcel || {}, null, 2),
+      "Source: " + payload.source + " / variant " + payload.variant,
+      "Created: " + payload.createdAt,
+      "",
+      "Blake should review the info and the satellite view, then call the customer back."
+    ].filter((line, i, arr) => line !== "" || (arr[i - 1] !== ""));
+    const bodyText = lines.join("\n");
+    const fd = new FormData();
+    fd.append("_subject", "New tree-work lead — " + payload.name + " — " + (payload.address || "no address"));
+    fd.append("_template", "table");
+    fd.append("_captcha", "false");
+    fd.append("name", payload.name);
+    fd.append("phone", payload.phone);
+    fd.append("address", payload.address || "");
+    fd.append("geocode", payload.geocode || "");
+    fd.append("map", payload.lat && payload.lon ? "https://maps.google.com/?q=" + payload.lat + "," + payload.lon : "");
+    fd.append("stormUrgent", payload.stormUrgent ? "yes" : "no");
+    fd.append("range", payload.rangeLow != null ? "$" + payload.rangeLow + " – $" + payload.rangeHigh : "follow up");
+    fd.append("notes", payload.notes || "(none)");
+    fd.append("breakdown", (payload.breakdown || []).map((l) => l.label + ": $" + l.low + "–$" + l.high).join("; ") || "(none)");
+    fd.append("marks", JSON.stringify(payload.marks || [], null, 2));
+    fd.append("parcel", JSON.stringify(payload.parcel || {}, null, 2));
+    fd.append("source", (payload.source || "") + " / " + (payload.variant || ""));
+    fd.append("createdAt", payload.createdAt || "");
+    fd.append("message", bodyText);
+
+    const files = (state.photos || []).filter((f) => f && f.type && f.type.startsWith("image/")).slice(0, 4);
+    for (let i = 0; i < files.length; i++) {
+      const blob = await compressImage(files[i]);
+      if (blob) fd.append("photo" + (i + 1), blob, "photo-" + (i + 1) + ".jpg");
+    }
+
+    const endpoint = "https://formsubmit.co/ajax/" + encodeURIComponent(to);
+    const res = await fetch(endpoint, { method: "POST", body: fd, headers: { Accept: "application/json" } });
+    if (!res.ok) throw new Error("lead post failed");
+    const json = await res.json().catch(() => ({}));
+    if (json.success === "false" || json.success === false) throw new Error(json.message || "lead post failed");
+    return true;
+  }
+
+  function mailtoFallback(payload) {
+    const subject = encodeURIComponent("New tree-work lead — " + payload.name);
+    const body = encodeURIComponent(
+      "Name: " + payload.name + "\nPhone: " + payload.phone + "\nAddress: " + (payload.address || "") +
+      "\nNotes: " + (payload.notes || "") + "\nRange: $" + payload.rangeLow + " – $" + payload.rangeHigh
+    );
+    const a = document.createElement("a");
+    a.href = "mailto:" + (payload.to || defaults.leadEmailTo) + "?subject=" + subject + "&body=" + body;
+    a.click();
+  }
+
   if (variant.headline) $(".hero h1").textContent = variant.headline;
   if (variant.subline) $(".hero .sub").textContent = variant.subline;
   if (variant.cta) $("#btn-start").textContent = variant.cta;
@@ -43,7 +146,7 @@
   });
 
   const svcList = $("#services-list");
-  if (svcList && window.BLAKE_SERVICES) {
+  if (svcList && window.BLAKE_SERVICES && !svcList.hasAttribute("data-static")) {
     svcList.innerHTML = "";
     window.BLAKE_SERVICES.forEach((s) => {
       const li = document.createElement("li");
@@ -808,36 +911,62 @@
       localStorage.setItem(key, JSON.stringify(prev.slice(-50)));
     } catch (_) {}
 
-    state.rangeShown = true;
-    $("#range").hidden = false;
-    const ul = $("#breakdown");
-    ul.innerHTML = "";
-    const treeN = quoted.filter((m) => m.kind === "tree").length;
-    const stumpN = quoted.filter((m) => m.kind === "stump").length;
-    if (!quoted.length) {
-      $("#range-label").textContent = "We'll review what you sent";
-      $("#range-price").textContent = "Blake will follow up with a ballpark";
-    } else {
-      $("#range-label").textContent = `${plural(treeN, "tree", "trees")} · ${plural(stumpN, "stump", "stumps")}`;
-      $("#range-price").textContent = `${money(totals.low)} – ${money(totals.high)}`;
-      totals.lines.forEach((line) => {
+    const showRange = () => {
+      state.rangeShown = true;
+      $("#range").hidden = false;
+      const ul = $("#breakdown");
+      ul.innerHTML = "";
+      const treeN = quoted.filter((m) => m.kind === "tree").length;
+      const stumpN = quoted.filter((m) => m.kind === "stump").length;
+      if (!quoted.length) {
+        $("#range-label").textContent = "We'll review what you sent";
+        $("#range-price").textContent = "Planning range after Blake reviews";
+      } else {
+        $("#range-label").textContent = `${plural(treeN, "tree", "trees")} · ${plural(stumpN, "stump", "stumps")}`;
+        $("#range-price").textContent = `${money(totals.low)} – ${money(totals.high)}`;
+        totals.lines.forEach((line) => {
+          const li = document.createElement("li");
+          li.textContent = `${line.label}: ${money(line.low)} – ${money(line.high)}`;
+          ul.appendChild(li);
+        });
+      }
+      if (state.notes) {
         const li = document.createElement("li");
-        li.textContent = `${line.label}: ${money(line.low)} – ${money(line.high)}`;
+        li.textContent = "You wrote: " + state.notes;
         ul.appendChild(li);
+      }
+      const thanks = $("#thanks");
+      thanks.hidden = false;
+      thanks.textContent = "Thanks — we received your info. Blake will review your info and the satellite view and call you back.";
+      const cont = $("#blake-continue");
+      if (cont) {
+        cont.href = "tel:" + (defaults.phoneTel || "+13373784046");
+        cont.hidden = false;
+      }
+      $("#range").scrollIntoView({ behavior: "smooth", block: "nearest" });
+    };
+
+    const btn = $("#btn-range");
+    if (btn) btn.disabled = true;
+    status.textContent = "Sending your info…";
+    status.className = "form-status";
+    emailLead(payload)
+      .then(() => {
+        showRange();
+        status.textContent = "Estimate range ready.";
+        status.className = "form-status ok";
+      })
+      .catch(() => {
+        mailtoFallback(payload);
+        showRange();
+        const thanks = $("#thanks");
+        thanks.textContent = "If your email app opened, please hit send so we get your info. Blake will review your info and the satellite view and call you back.";
+        status.textContent = "Estimate range ready. Please send the email if it appeared.";
+        status.className = "form-status ok";
+      })
+      .finally(() => {
+        if (btn) btn.disabled = false;
       });
-    }
-    if (state.notes) {
-      const li = document.createElement("li");
-      li.textContent = "You wrote: " + state.notes;
-      ul.appendChild(li);
-    }
-    $("#thanks").hidden = false;
-    const cont = $("#blake-continue");
-    cont.href = blakeUrl("/");
-    cont.hidden = false;
-    status.textContent = "Estimate ready.";
-    status.className = "form-status ok";
-    $("#range").scrollIntoView({ behavior: "smooth", block: "nearest" });
   });
 
   $("#btn-jump").addEventListener("click", () => {

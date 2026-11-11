@@ -45,16 +45,10 @@ window.TREE_PRICING = {
 };
 
 window.BLAKE_SERVICES = [
-  { id: "removal", label: "Tree removal", live: true },
-  { id: "trim", label: "Trimming & pruning", live: true },
-  { id: "stump", label: "Stump grinding", live: true },
-  { id: "emergency", label: "Storm / emergency removal", live: true },
-  { id: "cabling", label: "Cabling & bracing", live: true },
-  { id: "planting", label: "Planting", live: true },
-  { id: "transplanting", label: "Transplanting", live: true },
-  { id: "land_clearing", label: "Land clearing", live: true },
-  { id: "firewood", label: "Firewood", live: true },
-  { id: "christmas_lights", label: "Christmas lights install", live: false, note: "Ask Blake — not live yet" }
+  { id: "removal", label: "Hazardous tree removal", live: true, blurb: "Taking down dangerous or unwanted trees, including work near homes." },
+  { id: "trim", label: "Professional trimming", live: true, blurb: "Pruning for health, clearance, and a cleaner look around your property." },
+  { id: "emergency", label: "Storm cleanup", live: true, blurb: "Downed limbs, storm-damaged trees, and urgent yard recovery." },
+  { id: "stump", label: "Stump grinding", live: true, blurb: "Grind stumps below grade so the yard can be used again." }
 ];
 
 window.HUSTLE_VERTICALS = [

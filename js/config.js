@@ -3,12 +3,11 @@ window.SITE_VARIANTS = {
   a: {
     id: "a",
     label: "Hero estimate (default)",
-    headline: "Get a tree-work estimate.",
-    subline: "Enter your property address to get started.",
+    headline: "Get a free tree-work estimate.",
+    subline: "Enter your address. We’ll show a satellite view of your lot and a planning range. Blake will call you back.",
     cta: "Get started",
-    heroImage: "img/hero.jpg"
+    heroImage: "img/hero-poster.jpg"
   }
-  /* b: add another look here when ready */
 };
 
 window.SITE_DEFAULTS = {
@@ -16,6 +15,6 @@ window.SITE_DEFAULTS = {
   variant: "a",
   blakeSite: "https://www.3bstreeremoval.com/",
   leadEmailTo: "shaun.brasher@gmail.com",
-  phoneDisplay: "(337) 378-4046",
+  phoneDisplay: "337-378-4046",
   phoneTel: "+13373784046"
 };

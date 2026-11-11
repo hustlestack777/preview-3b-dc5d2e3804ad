@@ -3,37 +3,41 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>3 B's Tree Removal | Get a tree-work estimate</title>
-  <meta name="description" content="Enter your address for a ballpark tree-work estimate. Licensed arborist serving Pitkin, Leesville, DeRidder, Oakdale & Alexandria." />
-  <meta name="robots" content="noindex,nofollow" />
-  <meta name="theme-color" content="#0c140e" />
-  <link rel="preload" as="image" href="img/hero.jpg" fetchpriority="high" />
+  <title>3 B's Tree Removal | Free estimates in Central Louisiana</title>
+  <meta name="description" content="Free estimates for hazardous tree removal, professional trimming, storm cleanup, and stump grinding. LDAF licensed arborist serving Central Louisiana." />
+  <meta name="robots" content="noindex,nofollow,noarchive" />
+  <meta name="theme-color" content="#0c1410" />
+  <link rel="preload" as="image" href="img/hero-poster.jpg" fetchpriority="high" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Fraunces:opsz,wght@9..144,500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-  <link rel="stylesheet" href="css/styles.css?v=20261107b" />
+  <link rel="stylesheet" href="css/styles.css?v=20261111b" />
 </head>
 <body>
-  <div class="demo-note">Demo — pricing is placeholder</div>
+  <div class="demo-note">Private preview — not public yet</div>
 
   <header class="topbar">
     <a class="brand" href="#top">
       <span class="mark">3B</span>
       <span class="brand-name">3 B's Tree Removal</span>
     </a>
-    <a class="call" href="tel:+13373784046">(337) 378-4046</a>
+    <a class="call" href="tel:+13373784046">337-378-4046</a>
   </header>
 
   <main id="top">
-    <!-- FULL-BLEED HERO -->
-    <section class="hero" aria-label="Get a tree-work estimate">
-      <img class="hero-bg" src="img/hero.jpg" alt="" width="1376" height="768" fetchpriority="high" />
+    <section class="hero" aria-label="Get a free tree-work estimate">
+      <div class="hero-media" aria-hidden="true">
+        <img class="hero-bg" src="img/hero-poster.jpg" alt="" width="1280" height="720" fetchpriority="high" />
+        <video class="hero-bg hero-video" autoplay muted loop playsinline preload="metadata" poster="img/hero-poster.jpg">
+          <source src="img/hero.mp4" type="video/mp4" />
+        </video>
+      </div>
       <div class="hero-shade" aria-hidden="true"></div>
       <div class="hero-inner">
-        <p class="eyebrow">Pitkin, LA · licensed arborist</p>
-        <h1>Get a tree-work estimate.</h1>
-        <p class="sub">Enter your property address to get started.</p>
+        <p class="eyebrow">Pitkin, LA · LDAF licensed arborist</p>
+        <h1>Get a free tree-work estimate.</h1>
+        <p class="sub">Enter your address. We’ll show a satellite view of your lot and a planning range. Blake will call you back.</p>
 
         <form class="addr-form" id="addr-form" autocomplete="off" action="javascript:void(0)" onsubmit="return false;">
           <label class="sr" for="address">Property address</label>
@@ -48,17 +52,16 @@
           </div>
           <p class="addr-hint" id="addr-hint">Pick your address from the list, then tap Get started</p>
           <p class="form-status" id="addr-status" role="status"></p>
-          <p class="fine">Final price is confirmed after an on-site assessment.</p>
+          <p class="fine">Planning range only. Blake confirms the work after reviewing your lot.</p>
         <div class="trust-chips" aria-label="Trust">
-          <span>Licensed arborist</span>
-          <span>Ballpark in under a minute</span>
-          <span>No obligation</span>
+          <span>Free estimates</span>
+          <span>LDAF licensed arborist</span>
+          <span>Serving Central Louisiana</span>
         </div>
         </form>
       </div>
     </section>
 
-    <!-- QUOTE FLOW (revealed after address) -->
     <section class="quote" id="quote" hidden>
       <div class="wrap">
         <div class="quote-card" id="quote-card">
@@ -156,13 +159,13 @@
 
           <div class="q-step" data-step="3" id="step-photos" hidden>
             <h2 class="step-title">Photos &amp; notes</h2>
-            <p class="sat-lead">A photo or short video of the tree helps us judge height and condition. Optional — skip anytime.</p>
+            <p class="sat-lead">A photo or short video of the tree helps Blake judge height and condition. Optional — skip anytime.</p>
             <label class="photo-label">Photos or a short video of the trees or stumps
               <span>Optional — snap or attach from your phone. Tap the × to remove one.</span>
               <input id="photos" type="file" accept="image/*,video/*" multiple />
             </label>
             <div class="photo-prev" id="photo-prev"></div>
-            <label class="notes-label">Notes
+            <label class="notes-label">Job details
               <textarea id="notes" rows="4" placeholder="Which trees, access, gates, pets, anything we should know…"></textarea>
             </label>
             <div class="step-nav">
@@ -173,18 +176,18 @@
 
           <div class="q-step" data-step="4" id="step-contact" hidden>
             <h2 class="step-title">Your contact info</h2>
-            <p class="sat-lead">We need this before we can show your estimate.</p>
+            <p class="sat-lead">We need this before we can show your estimate range.</p>
             <div class="fields">
               <label>Name<input id="name" type="text" autocomplete="name" required /></label>
               <label>Mobile<input id="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="(337) 555-0123" required /></label>
               <label class="check">
                 <input id="consent" type="checkbox" />
-                <span>I agree to be contacted about this estimate. Message/data rates may apply.</span>
+                <span>I agree to receive a call or text from 3 B’s Tree Removal about this estimate. Message and data rates may apply.</span>
               </label>
             </div>
             <div class="step-nav">
               <button type="button" class="btn-ghost" id="btn-back-photos">Back</button>
-              <button type="button" class="btn" id="btn-range">Show my estimate</button>
+              <button type="button" class="btn" id="btn-range">See my estimate range</button>
             </div>
             <p class="form-status" id="result-status" role="status"></p>
 
@@ -192,60 +195,116 @@
               <p class="range-label" id="range-label"></p>
               <div class="price" id="range-price"></div>
               <ul class="breakdown" id="breakdown"></ul>
-              <p class="range-note">Placeholder range for planning only — not a final quote. Confirmed on-site after assessment.</p>
-              <p class="thanks" id="thanks" hidden>Thanks — demo lead saved. Nothing was texted or emailed to a customer.</p>
-              <a class="btn btn-block" id="blake-continue" data-blake-link data-blake-path="/" href="https://www.3bstreeremoval.com/" rel="noopener" target="_blank" hidden style="margin-top:0.85rem;text-align:center;text-decoration:none">Continue to 3 B&apos;s site</a>
+              <p class="range-note">This is a planning range, not a final quote. Blake will review your info and the satellite view and call you back.</p>
+              <p class="thanks" id="thanks" hidden>Thanks — we received your info. Blake will review your info and the satellite view and call you back.</p>
+              <a class="btn btn-block" id="blake-continue" href="tel:+13373784046" style="margin-top:0.85rem;text-align:center;text-decoration:none" hidden>Call 337-378-4046</a>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-<!-- BELOW THE FOLD -->
-    <section class="how" id="how">
+    <section class="how light-band" id="how">
       <div class="wrap">
-        <h2>How it works</h2>
+        <p class="section-kicker">How it works</p>
+        <h2>A clear look at your lot, then a planning range.</h2>
         <div class="how-grid">
           <div><span class="n">1</span><strong>Enter your address</strong><p>Pick it from the list, then tap Get started.</p></div>
           <div><span class="n">2</span><strong>Confirm the count</strong><p>We estimate trees and stumps from the lot photo. Use + and − to adjust, or skip and just describe the work.</p></div>
-          <div><span class="n">3</span><strong>Get a ballpark</strong><p>Add a photo if you have one. See a range after your contact info — Blake confirms on-site.</p></div>
+          <div><span class="n">3</span><strong>See a planning range</strong><p>Add a photo if you have one. After your contact info, you’ll see a range. Blake confirms it when he calls you back.</p></div>
         </div>
       </div>
     </section>
 
-    <section class="gallery" id="work">
+    <section class="services-band light-band" id="services">
       <div class="wrap">
-        <h2>Recent work</h2>
-        <div class="grid">
-          <img src="img/g1.jpg" alt="Climber removing a tall tree" width="1000" height="1333" loading="lazy" />
-          <img src="img/g2.jpg" alt="Bucket truck tree removal" width="1000" height="1333" loading="lazy" />
-          <img src="img/g3.jpg" alt="Crew with oak logs" width="1200" height="900" loading="lazy" />
-          <img src="img/g4.jpg" alt="Stump and saw work" width="1000" height="1333" loading="lazy" />
-          <img src="img/g5.jpg" alt="Before and after tree work" width="1200" height="600" loading="lazy" />
-          <img src="img/g6.jpg" alt="3 B's crew on the job" width="1200" height="896" loading="lazy" />
+        <p class="section-kicker">Services</p>
+        <h2>Tree work done with care.</h2>
+        <p class="band-lead">Free estimates for homeowners across Central Louisiana.</p>
+        <ul class="svc-cards" id="services-list" data-static="true">
+          <li><strong>Hazardous tree removal</strong><p>Taking down dangerous or unwanted trees, including work near homes.</p></li>
+          <li><strong>Professional trimming</strong><p>Pruning for health, clearance, and a cleaner look around your property.</p></li>
+          <li><strong>Storm cleanup</strong><p>Downed limbs, storm-damaged trees, and urgent yard recovery.</p></li>
+          <li><strong>Stump grinding</strong><p>Grind stumps below grade so the yard can be used again.</p></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="signs-band" id="signs">
+      <div class="wrap">
+        <p class="section-kicker">Worth a closer look</p>
+        <h2>5 signs a tree may fall on your house</h2>
+        <p class="band-lead">If you notice these warning signs, it may be time to call a professional.</p>
+        <ol class="signs-grid">
+          <li>
+            <span class="sign-num">01</span>
+            <strong>Leaning toward a structure</strong>
+            <p>A tree that’s started to lean toward the house, garage, or a driveway is a warning, not just a quirk of the yard.</p>
+          </li>
+          <li>
+            <span class="sign-num">02</span>
+            <strong>Dead limbs falling</strong>
+            <p>Branches dropping in calm weather often mean there’s more dead wood waiting above.</p>
+          </li>
+          <li>
+            <span class="sign-num">03</span>
+            <strong>Hollow or rotting trunk</strong>
+            <p>Cavities, fungus, or soft, decaying wood can weaken the tree from the inside.</p>
+          </li>
+          <li>
+            <span class="sign-num">04</span>
+            <strong>Roots lifting out of the ground</strong>
+            <p>Heaving soil or exposed, lifting roots can mean the tree is losing its hold.</p>
+          </li>
+          <li>
+            <span class="sign-num">05</span>
+            <strong>Cracks running up the trunk</strong>
+            <p>Vertical splits in the trunk are a structural red flag, especially after storms.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="gallery light-band" id="work">
+      <div class="wrap">
+        <p class="section-kicker">Recent work</p>
+        <h2>Real jobs, real yards.</h2>
+        <div class="grid gallery-10">
+          <img src="img/gallery/g01.jpg" alt="Climber ascending a pine with climbing gear" width="678" height="1200" loading="lazy" />
+          <img src="img/gallery/g06.jpg" alt="Climber working high in a pine over a residential yard" width="900" height="1200" loading="lazy" />
+          <img src="img/gallery/g07.jpg" alt="Crew cutting a large fallen oak and loading brush" width="1200" height="900" loading="lazy" />
+          <img src="img/gallery/g10.jpg" alt="Bucket-truck operator taking down a tall trunk" width="900" height="1200" loading="lazy" />
+          <img src="img/gallery/g02.jpg" alt="Freshly cut stump with a chainsaw after a removal" width="900" height="1200" loading="lazy" />
+          <img src="img/gallery/g08.jpg" alt="Bucket-truck crew dismantling a large tree in a yard" width="900" height="1200" loading="lazy" />
+          <img src="img/gallery/g05.jpg" alt="Crew and chipper on a residential lot during a tall pine removal" width="900" height="1200" loading="lazy" />
+          <img src="img/gallery/g04.jpg" alt="Bucket truck set up for a residential tree removal at dusk" width="900" height="1200" loading="lazy" />
+          <img src="img/gallery/g09.jpg" alt="Arborist climbing a pine with ropes and a saw" width="552" height="1200" loading="lazy" />
+          <img src="img/gallery/g03.jpg" alt="Cleared lot with a stump in the foreground and equipment in the field" width="900" height="1200" loading="lazy" />
+          <img src="img/gallery/g11.jpg" alt="Bucket-truck crew removing a tree beside a house" width="892" height="1200" loading="lazy" />
         </div>
       </div>
     </section>
 
-    <section class="info">
+    <section class="info light-band">
       <div class="wrap info-grid">
         <div>
-          <h2>Services</h2>
-          <ul class="list" id="services-list"></ul>
+          <h2>Service area</h2>
+          <p class="area-line">Serving Central Louisiana</p>
+          <p class="area">Vernon · Beauregard · Rapides · Allen · Sabine · Calcasieu</p>
+          <p class="muted">Parish list is a starting coverage area and will be confirmed with Blake.</p>
         </div>
         <div>
-          <h2>Service area</h2>
-          <p class="area">Pitkin · Leesville · DeRidder · Oakdale · Alexandria · Lake Charles region</p>
-          <p class="muted">Family-owned. Licensed arborist. Central Louisiana.</p>
-          <p class="muted" style="margin-top:0.75rem">When storms hit the area, we flag yards that may need tree work.</p>
+          <h2>About the work</h2>
+          <p class="muted">Blake Berry is an LDAF licensed arborist based in Pitkin, Louisiana. You’ll see a planning range on this page. He reviews your information and the satellite view, then calls you back — this page never books the job for you.</p>
         </div>
       </div>
     </section>
 
     <section class="cta">
       <div class="wrap cta-inner">
-        <h2>Ready to talk?</h2>
-        <a class="btn btn-lg" href="tel:+13373784046">Call (337) 378-4046</a>
+        <p class="section-kicker">Ready when you are</p>
+        <h2>Free estimates. We’ll call you back.</h2>
+        <a class="btn btn-lg" href="tel:+13373784046">Call 337-378-4046</a>
         <button type="button" class="linkish" id="btn-jump">Or get an estimate online</button>
       </div>
     </section>
@@ -253,16 +312,18 @@
 
   <footer class="foot">
     <div class="wrap">
-      <strong>3 B's Tree Removal</strong> · Pitkin, Louisiana<br />
-      Demo preview — not the live site · <a data-blake-link data-blake-path="/" rel="noopener" target="_blank">3bstreeremoval.com</a>
+      <strong>3 B’s Tree Removal</strong> · Pitkin, Louisiana · 337-378-4046<br />
+      LDAF licensed arborist · Serving Central Louisiana<br />
+      <span class="credit">Marketing partner: Lagniappe Realm Labs</span><br />
+      Private preview — not indexed, not the public site
     </div>
   </footer>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="js/config.js?v=20261107b"></script>
-  <script src="js/pricing.js?v=20261107b"></script>
-  <script src="js/engine.js?v=20261107c"></script>
-  <script src="js/autocomplete.js?v=20261107b"></script>
-  <script src="js/app.js?v=20261107b"></script>
+  <script src="js/config.js?v=20261111b"></script>
+  <script src="js/pricing.js?v=20261111b"></script>
+  <script src="js/engine.js?v=20261111b"></script>
+  <script src="js/autocomplete.js?v=20261111b"></script>
+  <script src="js/app.js?v=20261111b"></script>
 </body>
 </html>
