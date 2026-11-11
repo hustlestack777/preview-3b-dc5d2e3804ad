@@ -1321,3 +1321,42 @@ html, body { margin: 0; padding: 0; width: 100%; }
 .lb-next { right: 12px; top: 50%; transform: translateY(-50%); }
 .lb-count { position: absolute; bottom: 14px; left: 0; right: 0; text-align: center; margin: 0; font-size: .85rem; color: #c9d6c8; }
 html.lb-open { overflow: hidden; }
+
+
+/* ===== Logo D wordmark in the header ===== */
+.brand {
+  min-width: 0;
+  flex: 1 1 auto;
+  margin-right: .5rem;
+}
+.brand-logo {
+  display: block;
+  width: min(12.75rem, calc(100vw - 11rem));
+  height: auto;
+  background: #fff;
+  border-radius: 10px;
+  padding: .22rem .35rem .25rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .3);
+}
+.call {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+@media (max-width: 399px) {
+  .topbar { padding: .65rem .7rem; }
+  .call { font-size: .8rem; padding: .45rem .58rem; }
+  .brand-logo { width: min(12.55rem, calc(100vw - 10.25rem)); }
+}
+@media (min-width: 640px) {
+  .brand-logo { width: 16.5rem; padding: .3rem .45rem .32rem; border-radius: 12px; }
+}
+@media (min-width: 1000px) {
+  .brand-logo { width: 18rem; }
+}
+/* Keep the hero headline below the taller wordmark */
+@media (max-width: 639px) {
+  .hero-inner { padding-top: 13.5rem; }
+}
+@media (min-width: 640px) {
+  .hero-inner { padding-top: 12.5rem; }
+}
