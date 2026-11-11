@@ -921,14 +921,24 @@ button, input { font: inherit; }
   overflow: hidden;
   background: #0c1410;
 }
+.hero {
+  min-height: 100svh;
+}
 .hero-media .hero-bg {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 45%;
+  object-position: center 58%;
   transform: none;
+  background: #0c1410;
+}
+@media (min-width: 800px) {
+  .hero-media .hero-bg {
+    object-fit: contain;
+    object-position: center center;
+  }
 }
 .hero-video {
   z-index: 1;
@@ -1023,7 +1033,10 @@ button, input { font: inherit; }
   gap: 1rem;
 }
 @media (min-width: 800px) {
-  .svc-cards { grid-template-columns: repeat(4, 1fr); gap: 1.1rem; }
+  .svc-cards { grid-template-columns: repeat(3, 1fr); gap: 1.1rem; }
+}
+@media (min-width: 1100px) {
+  .svc-cards { grid-template-columns: repeat(5, 1fr); gap: 1.1rem; }
 }
 .svc-cards li {
   background: #fff;
@@ -1140,3 +1153,53 @@ button, input { font: inherit; }
   color: #d7c197;
 }
 .foot a { color: #e8efe6; }
+
+/* Job type chips */
+.job-types {
+  border: 0;
+  margin: 1rem 0 0;
+  padding: 0;
+}
+.job-types-label {
+  font-weight: 750;
+  font-size: 1.05rem;
+  margin: 0 0 .55rem;
+  padding: 0;
+  color: inherit;
+}
+.job-type-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem;
+}
+.job-type {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid rgba(20,32,24,.16);
+  background: #fff;
+  border-radius: 999px;
+  padding: .48rem .9rem;
+  font-size: .92rem;
+  font-weight: 600;
+  color: #142018;
+  cursor: pointer;
+  user-select: none;
+}
+.job-type input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+.job-type.is-on,
+.job-type:has(input:checked) {
+  background: #142018;
+  color: #f4f1ea;
+  border-color: #142018;
+}
+.job-type:focus-within {
+  outline: 3px solid #c4a36a;
+  outline-offset: 2px;
+}
+

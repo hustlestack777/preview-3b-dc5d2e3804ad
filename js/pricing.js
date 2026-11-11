@@ -41,14 +41,25 @@ window.TREE_PRICING = {
   cabling: { low: 150, high: 800 },
   planting: { low: 200, high: 900 },
   transplanting: { low: 400, high: 2000 },
-  landClearing: { low: 400, high: 2000 }
+  landClearing: { low: 400, high: 2000 },
+  // SHAUN TO CONFIRM — do not list these as public services until approved.
+  // Public wording stays "skid steer dirt work and lot clearing." Footage supports
+  // cleared lots and skid steers only. Do not show the items below, and do not
+  // imply a contractor license (Blake has no LSLBC license):
+  //   land clearing (beyond lot clearing already in the blurb)
+  //   grading / leveling
+  //   driveway or pad prep
+  //   ditch work
+  //   haul-off / fill
+  dirtWork: { low: 400, high: 2000 }
 };
 
 window.BLAKE_SERVICES = [
   { id: "removal", label: "Hazardous tree removal", live: true, blurb: "Taking down dangerous or unwanted trees, including work near homes." },
   { id: "trim", label: "Professional trimming", live: true, blurb: "Pruning for health, clearance, and a cleaner look around your property." },
   { id: "emergency", label: "Storm cleanup", live: true, blurb: "Downed limbs, storm-damaged trees, and urgent yard recovery." },
-  { id: "stump", label: "Stump grinding", live: true, blurb: "Grind stumps below grade so the yard can be used again." }
+  { id: "stump", label: "Stump grinding", live: true, blurb: "Grind stumps below grade so the yard can be used again." },
+  { id: "dirt", label: "Skid steer & dirt work", live: true, blurb: "Skid steer dirt work and lot clearing." }
 ];
 
 window.HUSTLE_VERTICALS = [

@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>3 B's Tree Removal | Free estimates in Central Louisiana</title>
-  <meta name="description" content="Free estimates for hazardous tree removal, professional trimming, storm cleanup, and stump grinding. LDAF licensed arborist serving Central Louisiana." />
+  <meta name="description" content="Free estimates for hazardous tree removal, professional trimming, storm cleanup, and stump grinding from an LDAF licensed arborist, plus skid steer dirt work and lot clearing. Serving Central Louisiana." />
   <meta name="robots" content="noindex,nofollow,noarchive" />
   <meta name="theme-color" content="#0c1410" />
   <link rel="preload" as="image" href="img/hero-poster.jpg" fetchpriority="high" />
@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Fraunces:opsz,wght@9..144,500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-  <link rel="stylesheet" href="css/styles.css?v=20261111b" />
+  <link rel="stylesheet" href="css/styles.css?v=20261111c" />
 </head>
 <body>
   <div class="demo-note">Private preview — not public yet</div>
@@ -26,9 +26,9 @@
   </header>
 
   <main id="top">
-    <section class="hero" aria-label="Get a free tree-work estimate">
+    <section class="hero" aria-label="Get a free estimate">
       <div class="hero-media" aria-hidden="true">
-        <img class="hero-bg" src="img/hero-poster.jpg" alt="" width="1280" height="720" fetchpriority="high" />
+        <img class="hero-bg" src="img/hero-poster.jpg" alt="" width="720" height="1280" fetchpriority="high" />
         <video class="hero-bg hero-video" autoplay muted loop playsinline preload="metadata" poster="img/hero-poster.jpg">
           <source src="img/hero.mp4" type="video/mp4" />
         </video>
@@ -36,8 +36,8 @@
       <div class="hero-shade" aria-hidden="true"></div>
       <div class="hero-inner">
         <p class="eyebrow">Pitkin, LA · LDAF licensed arborist</p>
-        <h1>Get a free tree-work estimate.</h1>
-        <p class="sub">Enter your address. We’ll show a satellite view of your lot and a planning range. Blake will call you back.</p>
+        <h1>Get a free estimate.</h1>
+        <p class="sub">Enter your address. We’ll show a satellite view of your lot and a planning range for tree work or skid steer dirt work. Blake will call you back.</p>
 
         <form class="addr-form" id="addr-form" autocomplete="off" action="javascript:void(0)" onsubmit="return false;">
           <label class="sr" for="address">Property address</label>
@@ -119,6 +119,16 @@
                     </div>
                   </div>
                 </div>
+                <fieldset class="job-types" id="job-types">
+                  <legend class="job-types-label">What kind of work?</legend>
+                  <div class="job-type-row" role="group" aria-label="Job type">
+                    <label class="job-type is-on"><input type="checkbox" name="job-type" value="removal" checked /> Tree removal</label>
+                    <label class="job-type"><input type="checkbox" name="job-type" value="trim" /> Trimming</label>
+                    <label class="job-type"><input type="checkbox" name="job-type" value="emergency" /> Storm cleanup</label>
+                    <label class="job-type"><input type="checkbox" name="job-type" value="stump" /> Stump grinding</label>
+                    <label class="job-type"><input type="checkbox" name="job-type" value="dirt" /> Skid steer &amp; dirt work</label>
+                  </div>
+                </fieldset>
                 <label class="notes-label comments-label" for="work-comments">Anything we should know?
                   <span>Optional — gates, pets, access, which trees. Never required.</span>
                   <textarea id="work-comments" rows="3" placeholder="e.g. Gate code, dogs in the yard, the oak by the driveway"></textarea>
@@ -210,7 +220,7 @@
         <h2>A clear look at your lot, then a planning range.</h2>
         <div class="how-grid">
           <div><span class="n">1</span><strong>Enter your address</strong><p>Pick it from the list, then tap Get started.</p></div>
-          <div><span class="n">2</span><strong>Confirm the count</strong><p>We estimate trees and stumps from the lot photo. Use + and − to adjust, or skip and just describe the work.</p></div>
+          <div><span class="n">2</span><strong>Confirm the count</strong><p>Tell us the kind of work, then confirm trees and stumps from the lot photo. Use + and − to adjust, or skip and just describe it.</p></div>
           <div><span class="n">3</span><strong>See a planning range</strong><p>Add a photo if you have one. After your contact info, you’ll see a range. Blake confirms it when he calls you back.</p></div>
         </div>
       </div>
@@ -219,13 +229,26 @@
     <section class="services-band light-band" id="services">
       <div class="wrap">
         <p class="section-kicker">Services</p>
-        <h2>Tree work done with care.</h2>
+        <h2>Tree work and skid steer dirt work.</h2>
         <p class="band-lead">Free estimates for homeowners across Central Louisiana.</p>
+        <!--
+          SHAUN TO CONFIRM — do not show the list below on the page until you approve it.
+          Public wording stays generic: "skid steer dirt work and lot clearing."
+          Footage supports cleared lots and skid steers (IMG_7138, IMG_8399, end of IMG_8472).
+          Do not add these unless confirmed, and do not attach "licensed" or a contractor
+          license to dirt work (Blake has no LSLBC license):
+            - land clearing (beyond lot clearing already in the blurb)
+            - grading / leveling
+            - driveway or pad prep
+            - ditch work
+            - haul-off / fill
+        -->
         <ul class="svc-cards" id="services-list" data-static="true">
           <li><strong>Hazardous tree removal</strong><p>Taking down dangerous or unwanted trees, including work near homes.</p></li>
           <li><strong>Professional trimming</strong><p>Pruning for health, clearance, and a cleaner look around your property.</p></li>
           <li><strong>Storm cleanup</strong><p>Downed limbs, storm-damaged trees, and urgent yard recovery.</p></li>
           <li><strong>Stump grinding</strong><p>Grind stumps below grade so the yard can be used again.</p></li>
+          <li><strong>Skid steer &amp; dirt work</strong><p>Skid steer dirt work and lot clearing.</p></li>
         </ul>
       </div>
     </section>
@@ -270,17 +293,17 @@
         <p class="section-kicker">Recent work</p>
         <h2>Real jobs, real yards.</h2>
         <div class="grid gallery-10">
-          <img src="img/gallery/g01.jpg" alt="Climber ascending a pine with climbing gear" width="678" height="1200" loading="lazy" />
-          <img src="img/gallery/g06.jpg" alt="Climber working high in a pine over a residential yard" width="900" height="1200" loading="lazy" />
-          <img src="img/gallery/g07.jpg" alt="Crew cutting a large fallen oak and loading brush" width="1200" height="900" loading="lazy" />
-          <img src="img/gallery/g10.jpg" alt="Bucket-truck operator taking down a tall trunk" width="900" height="1200" loading="lazy" />
-          <img src="img/gallery/g02.jpg" alt="Freshly cut stump with a chainsaw after a removal" width="900" height="1200" loading="lazy" />
-          <img src="img/gallery/g08.jpg" alt="Bucket-truck crew dismantling a large tree in a yard" width="900" height="1200" loading="lazy" />
-          <img src="img/gallery/g05.jpg" alt="Crew and chipper on a residential lot during a tall pine removal" width="900" height="1200" loading="lazy" />
-          <img src="img/gallery/g04.jpg" alt="Bucket truck set up for a residential tree removal at dusk" width="900" height="1200" loading="lazy" />
-          <img src="img/gallery/g09.jpg" alt="Arborist climbing a pine with ropes and a saw" width="552" height="1200" loading="lazy" />
-          <img src="img/gallery/g03.jpg" alt="Cleared lot with a stump in the foreground and equipment in the field" width="900" height="1200" loading="lazy" />
-          <img src="img/gallery/g11.jpg" alt="Bucket-truck crew removing a tree beside a house" width="892" height="1200" loading="lazy" />
+          <img src="img/gallery/g01.jpg" alt="Climber ascending a tall pine with climbing gear" width="792" height="1400" loading="lazy" />
+          <img src="img/gallery/g02.jpg" alt="Chainsaw resting on a freshly cut stump" width="1050" height="1400" loading="lazy" />
+          <img src="img/gallery/g03.jpg" alt="Fresh stump in the foreground with a skid steer on the cleared lot" width="1050" height="1400" loading="lazy" />
+          <img src="img/gallery/g04.jpg" alt="Stump grinding a large oak in a residential yard" width="1400" height="1050" loading="lazy" />
+          <img src="img/gallery/g05.jpg" alt="Bucket truck reaching into a tree on a residential lot" width="1050" height="1400" loading="lazy" />
+          <img src="img/gallery/g06.jpg" alt="Climber topping a tall pine from the trunk" width="787" height="1400" loading="lazy" />
+          <img src="img/gallery/g07.jpg" alt="Bucket truck cutting high in a tree with a lowering rope" width="787" height="1400" loading="lazy" />
+          <img src="img/gallery/g08.jpg" alt="Work truck and dump trailer staged on a job" width="787" height="1400" loading="lazy" />
+          <img src="img/gallery/g09.jpg" alt="Cleared lot behind a residential fence" width="787" height="1400" loading="lazy" />
+          <img src="img/gallery/g10.jpg" alt="Storm-damaged trees and debris beside a house" width="1041" height="1400" loading="lazy" />
+          <img src="img/gallery/g11.jpg" alt="Cleared dirt pad with a skid steer and a felled tree in the field" width="787" height="1400" loading="lazy" />
         </div>
       </div>
     </section>
@@ -295,7 +318,7 @@
         </div>
         <div>
           <h2>About the work</h2>
-          <p class="muted">Blake Berry is an LDAF licensed arborist based in Pitkin, Louisiana. You’ll see a planning range on this page. He reviews your information and the satellite view, then calls you back — this page never books the job for you.</p>
+          <p class="muted">Blake Berry is an LDAF licensed arborist based in Pitkin, Louisiana. He also does skid steer dirt work and lot clearing. You’ll see a planning range on this page. He reviews your information and the satellite view, then calls you back — this page never books the job for you.</p>
         </div>
       </div>
     </section>
@@ -320,10 +343,10 @@
   </footer>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="js/config.js?v=20261111b"></script>
-  <script src="js/pricing.js?v=20261111b"></script>
-  <script src="js/engine.js?v=20261111b"></script>
-  <script src="js/autocomplete.js?v=20261111b"></script>
-  <script src="js/app.js?v=20261111b"></script>
+  <script src="js/config.js?v=20261111c"></script>
+  <script src="js/pricing.js?v=20261111c"></script>
+  <script src="js/engine.js?v=20261111c"></script>
+  <script src="js/autocomplete.js?v=20261111c"></script>
+  <script src="js/app.js?v=20261111c"></script>
 </body>
 </html>

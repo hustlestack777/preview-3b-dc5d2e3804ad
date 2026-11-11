@@ -82,6 +82,7 @@
       "Geocode: " + (payload.geocode || ""),
       payload.lat && payload.lon ? "Map: https://maps.google.com/?q=" + payload.lat + "," + payload.lon : "",
       "Storm / urgent: " + (payload.stormUrgent ? "yes" : "no"),
+      "Job types: " + ((payload.jobTypeLabels || []).join(", ") || "(none)"),
       "Range: " + (payload.rangeLow != null ? "$" + payload.rangeLow + " – $" + payload.rangeHigh : "follow up"),
       "Notes: " + (payload.notes || "(none)"),
       "Photo count: " + (payload.photoCount || 0),
@@ -104,6 +105,7 @@
     fd.append("geocode", payload.geocode || "");
     fd.append("map", payload.lat && payload.lon ? "https://maps.google.com/?q=" + payload.lat + "," + payload.lon : "");
     fd.append("stormUrgent", payload.stormUrgent ? "yes" : "no");
+    fd.append("jobTypes", (payload.jobTypeLabels || []).join(", ") || "(none)");
     fd.append("range", payload.rangeLow != null ? "$" + payload.rangeLow + " – $" + payload.rangeHigh : "follow up");
     fd.append("notes", payload.notes || "(none)");
     fd.append("breakdown", (payload.breakdown || []).map((l) => l.label + ": $" + l.low + "–$" + l.high).join("; ") || "(none)");
@@ -167,6 +169,7 @@
     marks: [],
     treeCount: 2,
     stumpCount: 0,
+    jobTypes: ["removal"],
     countsTouched: false,
     spottedTrees: null,
     spottedStumps: null,
@@ -312,6 +315,35 @@
   }
   bindStepper("#trees-minus", "#trees-plus", "treeCount", MAX_TREES);
   bindStepper("#stumps-minus", "#stumps-plus", "stumpCount", MAX_STUMPS);
+
+  const JOB_TYPE_LABELS = {
+    removal: "Tree removal",
+    trim: "Trimming",
+    emergency: "Storm cleanup",
+    stump: "Stump grinding",
+    dirt: "Skid steer & dirt work"
+  };
+  function selectedJobTypes() {
+    return Array.from(document.querySelectorAll('input[name="job-type"]:checked')).map((el) => el.value);
+  }
+  function jobTypeLabels(ids) {
+    return (ids || []).map((id) => JOB_TYPE_LABELS[id] || id);
+  }
+  function syncJobTypeUi() {
+    const selected = new Set(state.jobTypes || []);
+    document.querySelectorAll('input[name="job-type"]').forEach((el) => {
+      el.checked = selected.has(el.value);
+      const lab = el.closest(".job-type");
+      if (lab) lab.classList.toggle("is-on", el.checked);
+    });
+  }
+  document.querySelectorAll('input[name="job-type"]').forEach((el) => {
+    el.addEventListener("change", () => {
+      state.jobTypes = selectedJobTypes();
+      syncJobTypeUi();
+      renderEstimate();
+    });
+  });
   renderEstimate();
 
   function initMap(lat, lon) {
@@ -608,6 +640,16 @@
         });
       }
     });
+    if ((state.jobTypes || []).includes("dirt")) {
+      const dirt = (pricing && (pricing.dirtWork || pricing.landClearing)) || { low: 400, high: 2000 };
+      low += dirt.low;
+      high += dirt.high;
+      lines.push({
+        label: "Skid steer dirt work and lot clearing",
+        low: dirt.low,
+        high: dirt.high
+      });
+    }
     return { low, high, lines };
   }
 
@@ -773,6 +815,8 @@
         state.countsTouched = false;
         state.treeCount = DEFAULT_TREES;
         state.stumpCount = DEFAULT_STUMPS;
+        state.jobTypes = ["removal"];
+        syncJobTypeUi();
         state.spottedTrees = null;
         state.spottedStumps = null;
         state.comments = "";
@@ -876,6 +920,8 @@
       lon: state.lon,
       treeCount: state.treeCount,
       stumpCount: state.stumpCount,
+      jobTypes: state.jobTypes || selectedJobTypes(),
+      jobTypeLabels: jobTypeLabels(state.jobTypes || selectedJobTypes()),
       spottedTrees: state.spottedTrees,
       spottedStumps: state.spottedStumps,
       comments: state.comments,
@@ -918,11 +964,16 @@
       ul.innerHTML = "";
       const treeN = quoted.filter((m) => m.kind === "tree").length;
       const stumpN = quoted.filter((m) => m.kind === "stump").length;
-      if (!quoted.length) {
-        $("#range-label").textContent = "We'll review what you sent";
+      const typeBits = jobTypeLabels(state.jobTypes || selectedJobTypes());
+      const countBits = [];
+      if (treeN) countBits.push(plural(treeN, "tree", "trees"));
+      if (stumpN) countBits.push(plural(stumpN, "stump", "stumps"));
+      const rangeLead = typeBits.length ? typeBits.join(" · ") : (countBits.join(" · ") || "We'll review what you sent");
+      if (!totals.lines.length) {
+        $("#range-label").textContent = rangeLead;
         $("#range-price").textContent = "Planning range after Blake reviews";
       } else {
-        $("#range-label").textContent = `${plural(treeN, "tree", "trees")} · ${plural(stumpN, "stump", "stumps")}`;
+        $("#range-label").textContent = countBits.length ? rangeLead + " · " + countBits.join(" · ") : rangeLead;
         $("#range-price").textContent = `${money(totals.low)} – ${money(totals.high)}`;
         totals.lines.forEach((line) => {
           const li = document.createElement("li");
