@@ -1321,3 +1321,8 @@ html, body { margin: 0; padding: 0; width: 100%; }
 .lb-next { right: 12px; top: 50%; transform: translateY(-50%); }
 .lb-count { position: absolute; bottom: 14px; left: 0; right: 0; text-align: center; margin: 0; font-size: .85rem; color: #c9d6c8; }
 html.lb-open { overflow: hidden; }
+/* Featured reel removed for now: clips use the full width */
+@media (min-width: 900px) {
+  .reels-layout { grid-template-columns: 1fr; }
+  .reels-row { grid-template-columns: repeat(6, 1fr); }
+}
