@@ -2,10 +2,10 @@
    Industry-standard Louisiana/US ranges approved by Shaun as up-front ballparks.
    Sources: /workspace/blake_assets/price_ranges.md (CostPrism LA, TreeOps USA,
    Angi, HomeGuide via Kingsport guide, US Home Costs, Big Cypress Land & Game, etc.).
-   Never a firm price. Blake confirms the real price on the callback. */
+   Never a firm price. We'll confirm your real price when we call you back. */
 window.TREE_PRICING = {
   currency: "USD",
-  disclaimer: "Ballpark range, not a firm price. Blake confirms the real price on the callback.",
+  disclaimer: "Ballpark range, not a firm price. We'll confirm your real price when we call you back.",
   trees: {
     // removal, by estimated height (ft)
     heightBands: [
