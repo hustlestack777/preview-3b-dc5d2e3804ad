@@ -489,6 +489,8 @@ button, input { font: inherit; }
   background: rgba(255,255,255,.12);
   border: 1px solid rgba(255,255,255,.18);
   color: #e8f5ea;
+  white-space: nowrap;
+  max-width: 100%;
 }
 .how { padding: 2rem 0 1rem; }
 .how h2 { font-family: var(--display); margin: 0 0 1rem; }
