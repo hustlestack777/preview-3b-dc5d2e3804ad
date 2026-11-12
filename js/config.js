@@ -17,6 +17,6 @@ window.SITE_DEFAULTS = {
   leadEmailTo: "shaun.brasher@gmail.com",
   // Shared lead intake (Render). FormSubmit above stays as the fallback.
   leadApi: "https://tree-leads-3b-4omg.onrender.com",
-  phoneDisplay: "337-378-4046",
-  phoneTel: "+13373784046"
+  phoneDisplay: "318-712-8733",
+  phoneTel: "+13187128733"
 };
