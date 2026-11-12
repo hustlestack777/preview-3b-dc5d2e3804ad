@@ -67,12 +67,19 @@
     if (!closeBtn || closeBtn.hidden) return;
     const sr = convai && convai.shadowRoot;
     const sheet = sr && sr.querySelector(".sheet");
-    const r = sheet && sheet.getBoundingClientRect();
+    let r = sheet && sheet.getBoundingClientRect();
+    let above = false;
+    if (!r || !r.width) {
+      // First open shows the Terms box (Cancel / Accept): put the X just above it.
+      const terms = sr && sr.querySelector('.overlay > div[class*="max-w-"]');
+      r = terms && terms.getBoundingClientRect();
+      above = true;
+    }
     if (!r || !r.width) { closeBtn.style.top = ""; closeBtn.style.left = ""; closeBtn.style.bottom = ""; closeBtn.style.right = ""; return; }
     closeBtn.style.bottom = "auto";
     closeBtn.style.right = "auto";
-    closeBtn.style.top = Math.round(r.top + 10) + "px";
-    closeBtn.style.left = Math.round(Math.min(r.right, window.innerWidth) - 54) + "px";
+    closeBtn.style.top = Math.round(above ? Math.max(8, r.top - 52) : r.top + 10) + "px";
+    closeBtn.style.left = Math.round(Math.min(r.right, window.innerWidth) - (above ? 44 : 54)) + "px";
   }
   function placeCloseSoon() {
     [0, 120, 300, 600, 1200].forEach(function (t) { setTimeout(placeClose, t); });

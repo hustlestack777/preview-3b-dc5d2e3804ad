@@ -8,22 +8,15 @@
   const MIN_CHARS = 3;
   const DEBOUNCE_MS = 220;
   const LIMIT = 6;
-  const EXTENT = { xmin: -106.7, ymin: 25.8, xmax: -88.8, ymax: 36.5 };
+  // Louisiana only (3 B's serves Central & Southwest Louisiana).
+  const EXTENT = { xmin: -94.05, ymin: 28.9, xmax: -88.8, ymax: 33.03 };
 
   function preferLocal(list) {
-    const local = (list || []).filter((s) =>
-      /\b(LA|TX|Louisiana|Texas)\b/i.test(s.label || "")
-    );
-    return local.length ? local : list;
+    return (list || []).filter((s) => /,\s*(LA|Louisiana)\b/i.test(s.label || ""));
   }
 
   function inServiceBox(lat, lon) {
-    return (
-      lat >= EXTENT.ymin - 0.5 &&
-      lat <= EXTENT.ymax + 0.5 &&
-      lon >= EXTENT.xmin - 0.5 &&
-      lon <= EXTENT.xmax + 0.5
-    );
+    return lat >= EXTENT.ymin && lat <= EXTENT.ymax && lon >= EXTENT.xmin && lon <= EXTENT.xmax;
   }
 
   async function fetchJson(url, opts, ms) {
@@ -71,7 +64,7 @@
         maxSuggestions: String(LIMIT),
         countryCode: "USA",
         location: PROXIMITY.lon + "," + PROXIMITY.lat,
-        distance: "850000"
+        searchExtent: JSON.stringify({ xmin: EXTENT.xmin, ymin: EXTENT.ymin, xmax: EXTENT.xmax, ymax: EXTENT.ymax, spatialReference: { wkid: 4326 } })
       };
       if (extra.category) params.category = extra.category;
       const url =
@@ -109,6 +102,7 @@
     } else {
       params.singleLine = (item && item.label) || String(item || "");
       params.location = PROXIMITY.lon + "," + PROXIMITY.lat;
+      params.searchExtent = JSON.stringify({ xmin: EXTENT.xmin, ymin: EXTENT.ymin, xmax: EXTENT.xmax, ymax: EXTENT.ymax, spatialReference: { wkid: 4326 } });
     }
     const url =
       "https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?" +
@@ -116,6 +110,7 @@
     const data = await fetchJson(url);
     const c = (data.candidates || [])[0];
     if (!c || !c.location) throw new Error("not found");
+    if (!inServiceBox(Number(c.location.y), Number(c.location.x))) throw new Error("outside Louisiana");
     return {
       id: item && item.id,
       label: c.address || (item && item.label) || "",
@@ -142,8 +137,7 @@
       .filter((f) => {
         const c = (f.raw.properties && f.raw.properties.countrycode) || "";
         if (c && c.toLowerCase() !== "us") return false;
-        if (!c) return inServiceBox(f.lat, f.lon);
-        return true;
+        return inServiceBox(f.lat, f.lon);
       })
       .slice(0, LIMIT);
   }
@@ -158,10 +152,10 @@
         countrycodes: "us",
         q: query,
         viewbox: [EXTENT.xmin, EXTENT.ymax, EXTENT.xmax, EXTENT.ymin].join(","),
-        bounded: "0"
+        bounded: "1"
       });
     const data = await fetchJson(url, { headers: { Accept: "application/json" } });
-    return (data || []).map((r, i) => ({
+    return (data || []).filter((r) => inServiceBox(parseFloat(r.lat), parseFloat(r.lon))).map((r, i) => ({
       id: "nom-" + (r.place_id || i),
       label: r.display_name,
       lat: parseFloat(r.lat),
@@ -420,6 +414,7 @@
     };
   }
 
+  global.inLouisiana = inServiceBox;
   global.AddressAutocomplete = {
     attach,
     fetchSuggestions,
