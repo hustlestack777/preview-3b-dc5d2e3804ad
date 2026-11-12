@@ -815,9 +815,15 @@ button, input { font: inherit; }
 }
 @media (max-width: 639px) {
   .hero-inner { padding: 6.4rem 0 6.25rem; }
+  /* Leave a clear strip under the satellite map so the GG "Message"
+     bubble and "Powered by ElevenAgents" line do not cover it. */
+  .map-shell {
+    padding-bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px));
+    background: #0a120c;
+  }
   .leaflet-map {
-    height: 48vh;
-    min-height: 320px;
+    height: calc(48vh - 6.5rem);
+    min-height: 240px;
   }
   .addr-opt { padding: .8rem .9rem; font-size: .95rem; }
 }

@@ -7,8 +7,8 @@
   <meta name="description" content="Call for an estimate on hazardous tree removal, professional trimming, storm cleanup, and stump grinding from an LDAF licensed arborist, plus skid steer dirt work and lot clearing. Serving Central &amp; Southwest Louisiana." />
   <meta name="robots" content="noindex,nofollow,noarchive" />
   <meta name="theme-color" content="#0c1410" />
-  <link rel="preload" as="image" href="img/hero-poster.jpg?v=2" media="(max-width: 767px) and (orientation: portrait)" fetchpriority="high" />
-  <link rel="preload" as="image" href="img/hero-desktop-poster.jpg?v=1" media="(min-width: 768px), (orientation: landscape)" fetchpriority="high" />
+  <link rel="preload" as="image" href="img/hero-poster.jpg?v=4" media="(max-width: 767px) and (orientation: portrait)" fetchpriority="high" />
+  <link rel="preload" as="image" href="img/hero-desktop-poster.jpg?v=4" media="(min-width: 768px), (orientation: landscape)" fetchpriority="high" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Fraunces:opsz,wght@9..144,500;600;700&display=swap" rel="stylesheet" />
@@ -19,7 +19,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="img/logo/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="img/logo/icon-512.png" />
   <link rel="apple-touch-icon" href="img/logo/apple-touch-icon.png" />
-  <link rel="stylesheet" href="css/styles.css?v=20261112tree2" />
+  <link rel="stylesheet" href="css/styles.css?v=20261112hero4" />
 </head>
 <body>
   <div class="demo-note">Private preview — not public yet</div>
@@ -38,30 +38,64 @@
     <section class="hero" aria-label="Call for an estimate">
       <div class="hero-media" aria-hidden="true">
         <picture>
-          <source media="(min-width: 768px), (orientation: landscape)" srcset="img/hero-desktop-poster.jpg?v=1" width="1920" height="1080" />
-          <img class="hero-bg" src="img/hero-poster.jpg?v=2" alt="" width="720" height="1280" fetchpriority="high" />
+          <source media="(min-width: 768px), (orientation: landscape)" srcset="img/hero-desktop-poster.jpg?v=4" width="1920" height="1080" />
+          <img class="hero-bg" src="img/hero-poster.jpg?v=4" alt="" width="1080" height="1920" fetchpriority="high" />
         </picture>
         <video class="hero-bg hero-video" autoplay muted loop playsinline preload="metadata"
-          data-src-mobile="img/hero.mp4?v=2" data-poster-mobile="img/hero-poster.jpg?v=2"
-          data-src-desktop="img/hero-desktop.mp4?v=1" data-poster-desktop="img/hero-desktop-poster.jpg?v=1"></video>
+          poster="img/hero-desktop-poster.jpg?v=4"
+          data-poster-desktop="img/hero-desktop-poster.jpg?v=4"
+          data-poster-mobile="img/hero-poster.jpg?v=4"
+          data-webm-desktop="img/hero-desktop.webm?v=4"
+          data-mp4-desktop="img/hero-desktop.mp4?v=4"
+          data-webm-mobile="img/hero.webm?v=4"
+          data-mp4-mobile="img/hero.mp4?v=4">
+          <source media="(min-width: 768px), (orientation: landscape)" src="img/hero-desktop.webm?v=4" type="video/webm" />
+          <source media="(min-width: 768px), (orientation: landscape)" src="img/hero-desktop.mp4?v=4" type="video/mp4" />
+          <source media="(max-width: 767px) and (orientation: portrait)" src="img/hero.webm?v=4" type="video/webm" />
+          <source media="(max-width: 767px) and (orientation: portrait)" src="img/hero.mp4?v=4" type="video/mp4" />
+        </video>
         <script>
           (function () {
             var v = document.currentScript.previousElementSibling;
             var mq = window.matchMedia("(min-width: 768px), (orientation: landscape)");
+            var reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
             var cur = "";
+            function setSources(k) {
+              v.poster = v.getAttribute("data-poster-" + k);
+              while (v.firstChild) v.removeChild(v.firstChild);
+              [
+                { type: "video/webm", src: v.getAttribute("data-webm-" + k) },
+                { type: "video/mp4", src: v.getAttribute("data-mp4-" + k) }
+              ].forEach(function (s) {
+                var el = document.createElement("source");
+                el.type = s.type;
+                el.src = s.src;
+                v.appendChild(el);
+              });
+              v.load();
+              v.muted = true;
+              if (!reduce.matches) {
+                var pr = v.play();
+                if (pr && pr.catch) pr.catch(function () {});
+              } else {
+                v.pause();
+              }
+            }
             function pick() {
               var k = mq.matches ? "desktop" : "mobile";
               if (k === cur) return;
               cur = k;
-              v.poster = v.getAttribute("data-poster-" + k);
-              v.src = v.getAttribute("data-src-" + k);
-              v.muted = true;
-              if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-                var pr = v.play(); if (pr && pr.catch) pr.catch(function () {});
-              }
+              setSources(k);
             }
             pick();
-            if (mq.addEventListener) mq.addEventListener("change", pick); else if (mq.addListener) mq.addListener(pick);
+            function onChange() { cur = ""; pick(); }
+            if (mq.addEventListener) mq.addEventListener("change", pick);
+            else if (mq.addListener) mq.addListener(pick);
+            window.addEventListener("orientationchange", onChange);
+            window.addEventListener("resize", function () {
+              var k = mq.matches ? "desktop" : "mobile";
+              if (k !== cur) pick();
+            });
           })();
         </script>
       </div>
@@ -621,7 +655,7 @@
   <script src="js/pricing.js?v=20261111p"></script>
   <script src="js/engine.js?v=20261111p"></script>
   <script src="js/autocomplete.js?v=20261111c"></script>
-  <script src="js/app.js?v=20261111s"></script>
+  <script src="js/app.js?v=20261112hero4"></script>
   <script src="js/scope.js?v=20261111s"></script>
   <script src="js/media.js?v=20261111a"></script>
   <script src="js/lrl-credit.js?v=20261111-lrl2"></script>
