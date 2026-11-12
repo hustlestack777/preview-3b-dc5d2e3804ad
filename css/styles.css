@@ -1203,7 +1203,8 @@ button, input { font: inherit; }
 .foot {
   background: #0c1410;
   color: #aebaae;
-  padding: 2.2rem 0 2.8rem;
+  /* Extra bottom space so the GG chat bubble does not cover the phone or LRL credit. */
+  padding: 2.2rem 0 7.5rem;
 }
 .foot .credit {
   display: inline-block;
