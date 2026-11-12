@@ -701,6 +701,10 @@
     let high = 0;
     const lines = [];
     const add = (label, r) => {
+      if (r && r.callForBallpark) {
+        lines.push({ label, callForBallpark: true });
+        return;
+      }
       low += r.low;
       high += r.high;
       lines.push({ label, low: Math.round(r.low), high: Math.round(r.high) });
@@ -729,7 +733,12 @@
       const dirt = (pricing && (pricing.dirtWork || pricing.landClearing)) || { low: 500, high: 2400 };
       add("Skid steer dirt work (half day to a full day)", dirt);
     }
-    return { low: Math.round(low), high: Math.round(high), lines };
+    return {
+      low: Math.round(low),
+      high: Math.round(high),
+      lines,
+      callForBallpark: lines.some((line) => line.callForBallpark)
+    };
   }
 
   function renderMedia() {
@@ -1050,8 +1059,8 @@
       photoCount: state.photos.length,
       photoNames: state.photos.map((p) => p.name),
       stormUrgent: !!(document.getElementById("opt-storm") && document.getElementById("opt-storm").checked),
-      rangeLow: totals.low,
-      rangeHigh: totals.high,
+      rangeLow: totals.callForBallpark && !totals.lines.some((line) => line.low != null) ? null : totals.low,
+      rangeHigh: totals.callForBallpark && !totals.lines.some((line) => line.high != null) ? null : totals.high,
       breakdown: totals.lines,
       storms: state.storms,
       source: params.src,
@@ -1094,10 +1103,19 @@
         $("#range-price").textContent = "We’ll give you a ballpark on the callback";
       } else {
         $("#range-label").textContent = countBits.length ? rangeLead + " · " + countBits.join(" · ") : rangeLead;
-        $("#range-price").textContent = `${money(totals.low)} – ${money(totals.high)}`;
+        const priced = totals.lines.filter((line) => !line.callForBallpark);
+        if (!priced.length) {
+          $("#range-price").textContent = "Call for a ballpark";
+        } else if (totals.callForBallpark) {
+          $("#range-price").textContent = `${money(totals.low)} – ${money(totals.high)}, plus a larger tree we’ll quote on the call`;
+        } else {
+          $("#range-price").textContent = `${money(totals.low)} – ${money(totals.high)}`;
+        }
         totals.lines.forEach((line) => {
           const li = document.createElement("li");
-          li.textContent = `${line.label}: ${money(line.low)} – ${money(line.high)}`;
+          li.textContent = line.callForBallpark
+            ? `${line.label}: Call for a ballpark`
+            : `${line.label}: ${money(line.low)} – ${money(line.high)}`;
           ul.appendChild(li);
         });
       }
