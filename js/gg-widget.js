@@ -1,8 +1,7 @@
 /* Camille full-torso chat launcher for the 3 B's preview.
    Conversation stays on the ElevenLabs preview agent. This file only
-   handles the cutout, greeting, motion, and opening/closing the widget. */
+   handles the cutout, greeting, and opening/closing the widget. */
 (function () {
-  const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)");
   const TALK_DELAY_MS = 1500;
   const widget = document.getElementById("gg-widget");
   const talk = document.getElementById("gg-talk");
@@ -13,10 +12,6 @@
   if (!widget || !launcher) return;
   let seenPanelOpen = false;
 
-  function reduced() {
-    return REDUCED.matches;
-  }
-
   function setOpen(open) {
     seenPanelOpen = false;
     widget.classList.toggle("is-open", open);
@@ -25,12 +20,6 @@
     if (talk) talk.hidden = open ? true : talk.hidden;
     if (open) {
       hideTalk();
-      if (!reduced()) {
-        widget.classList.remove("is-waving");
-        void widget.offsetWidth;
-        widget.classList.add("is-waving");
-        window.setTimeout(() => widget.classList.remove("is-waving"), 800);
-      }
       loadFullCutout();
     }
   }
@@ -103,29 +92,6 @@
     window.setTimeout(showTalk, TALK_DELAY_MS);
   }
 
-  // Subtle parallax on the cutout. CSS transforms only; skip if reduced motion.
-  const life = widget.querySelector(".gg-parallax");
-  if (life && !reduced() && window.matchMedia("(pointer: fine)").matches) {
-    let raf = 0;
-    let targetX = 0;
-    let targetY = 0;
-    window.addEventListener(
-      "mousemove",
-      function (event) {
-        const cx = window.innerWidth * 0.75;
-        const cy = window.innerHeight * 0.7;
-        targetX = Math.max(-6, Math.min(6, (event.clientX - cx) / 80));
-        targetY = Math.max(-4, Math.min(4, (event.clientY - cy) / 100));
-        if (raf) return;
-        raf = window.requestAnimationFrame(function () {
-          raf = 0;
-          life.style.transform =
-            "translate3d(" + targetX + "px," + targetY + "px,0)";
-        });
-      },
-      { passive: true },
-    );
-  }
 
   // When the official widget closes, drop our open state. When it shows a
   // typing/listening indicator, nod.
