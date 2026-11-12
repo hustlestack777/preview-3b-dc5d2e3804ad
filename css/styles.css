@@ -1597,3 +1597,202 @@ html.lb-open { overflow: hidden; }
 .scope-drawing { cursor: crosshair !important; outline: 3px solid #c9892b; outline-offset: -3px; }
 .scope-panel, .scope-panel label, .scope-panel strong, .scope-panel legend, .scope-panel .scope-q > span, .scope-panel .choice { color: #16241b; }
 .scope-panel [hidden], #scope-panel[hidden] { display: none !important; }
+
+/* ===== GG full-torso chat launcher (Nov 12) ===== */
+
+/* Always-visible cutout at the bottom right. The default ElevenLabs
+   round bubble is hidden unless the chat is open, so it cannot cover
+   the hero trust chips or the map. */
+.gg-widget {
+  position: fixed;
+  right: 16px;
+  bottom: 0;
+  z-index: 40;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  pointer-events: none;
+}
+.gg-widget > * { pointer-events: auto; }
+.gg-stage {
+  position: relative;
+  width: 300px;
+  height: 480px;
+  flex: 0 0 300px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.gg-ground {
+  position: absolute;
+  left: 36px;
+  right: 24px;
+  bottom: 4px;
+  height: 18px;
+  background: radial-gradient(ellipse at center, rgba(15,36,22,.28), transparent 70%);
+  filter: blur(4px);
+  pointer-events: none;
+}
+.gg-sway, .gg-breathe, .gg-react, .gg-parallax {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-origin: 50% 100%;
+  pointer-events: none;
+}
+.gg-parallax { will-change: transform; }
+.gg-cutout {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: auto;
+  height: 500px;
+  max-width: none;
+  transform: translateX(-50%) translateZ(0);
+  filter: drop-shadow(0 18px 24px rgba(15,36,22,.28));
+  -webkit-mask-image: linear-gradient(to bottom, #000 86%, rgba(0,0,0,.45) 95%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 86%, rgba(0,0,0,.45) 95%, transparent 100%);
+  pointer-events: none;
+  user-select: none;
+}
+.gg-talk {
+  position: relative;
+  width: 260px;
+  background: #fff;
+  color: #1c1a14;
+  border-radius: 18px;
+  padding: 16px 40px 16px 16px;
+  margin-bottom: 200px;
+  box-shadow: 0 16px 40px rgba(28,26,20,.14);
+}
+.gg-talk[hidden] { display: none !important; }
+.gg-talk:after {
+  content: "";
+  position: absolute;
+  right: -8px;
+  bottom: 28px;
+  width: 16px;
+  height: 16px;
+  background: #fff;
+  transform: rotate(45deg);
+  box-shadow: 4px 4px 10px rgba(28,26,20,.04);
+}
+.gg-talk-x {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(28,26,20,.06);
+  color: #1c1a14;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.gg-talk-label {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: #5e594e;
+  margin-bottom: 6px;
+}
+.gg-talk-greet {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.4;
+  color: #1c1a14;
+}
+.gg-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.gg-chip {
+  background: #eef6ef;
+  color: #16351f;
+  border: 1px solid #d5e8d7;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+/* Subtle life: nested wrappers so transforms do not clobber each other. */
+@keyframes gg-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.018); }
+}
+@keyframes gg-sway {
+  0%, 100% { transform: rotate(-0.65deg); }
+  50% { transform: rotate(0.65deg); }
+}
+@keyframes gg-wave {
+  0% { transform: rotate(0) scale(1); }
+  30% { transform: rotate(-6deg) scale(1.03); }
+  60% { transform: rotate(3deg) scale(1.01); }
+  100% { transform: rotate(0) scale(1); }
+}
+@keyframes gg-nod {
+  0%, 100% { transform: rotate(0) translateY(0); }
+  40% { transform: rotate(3deg) translateY(4px); }
+  70% { transform: rotate(-0.5deg) translateY(0); }
+}
+.gg-breathe { animation: gg-breathe 4.8s ease-in-out infinite; }
+.gg-sway { animation: gg-sway 6.8s ease-in-out infinite; }
+.gg-widget.is-waving .gg-react { animation: gg-wave .75s ease-out; }
+.gg-widget.is-typing .gg-react { animation: gg-nod .9s ease-in-out infinite; transform-origin: 50% 18%; }
+@media (prefers-reduced-motion: reduce) {
+  .gg-breathe, .gg-sway, .gg-react, .gg-parallax { animation: none !important; transform: none !important; }
+}
+
+/* Hide the default ElevenLabs round "Message" bubble until the chat is open,
+   so it cannot cover the hero trust chip or the map. */
+elevenlabs-convai {
+  position: fixed !important;
+  right: 20px;
+  bottom: 20px;
+  z-index: 45;
+}
+body:not(.gg-chat-open) elevenlabs-convai {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: scale(0.01);
+  transform-origin: bottom right;
+}
+body.gg-chat-open elevenlabs-convai {
+  right: 300px;
+  bottom: 120px;
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+}
+
+/* Room under the hero trust chips, map, and footer at phone widths. */
+@media (max-width: 639px) {
+  .hero-inner {
+    padding-bottom: calc(18.5rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .map-shell {
+    padding-bottom: calc(16rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .foot {
+    padding-bottom: calc(17rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .gg-widget { right: 0; }
+  .gg-stage { width: 168px; height: 280px; flex-basis: 168px; }
+  .gg-cutout { height: 290px; }
+  .gg-talk {
+    width: 168px;
+    margin-bottom: 96px;
+    margin-left: 8px;
+    padding: 12px 28px 12px 12px;
+  }
+  .gg-talk:after { right: -7px; bottom: 22px; }
+  body.gg-chat-open elevenlabs-convai {
+    right: 8px;
+    left: 8px;
+    bottom: 290px;
+  }
+}
