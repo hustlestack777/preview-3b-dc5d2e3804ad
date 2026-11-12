@@ -144,6 +144,11 @@
       attached += 1;
       fd.append("photo" + attached, blob, "photo-" + attached + ".jpg");
     }
+    if (window.BlakeScope && payload.scope && payload.scope.area) {
+      const areaBlob = await window.BlakeScope.areaImageBlob();
+      if (areaBlob && usedBytes + areaBlob.size <= MAX_ATTACH_BYTES) fd.append("workArea", areaBlob, "work-area-outline.jpg");
+    }
+    if (payload.scopeSummary) fd.append("scope", payload.scopeSummary);
     fd.append("photosAttached", String(attached));
     if (skippedNames.length) {
       fd.append("photosOmitted", skippedNames.length + " photo(s) omitted (10 MB email limit): " + skippedNames.join(", "));
@@ -176,6 +181,12 @@
     if (!defaults.leadApi) throw new Error("no lead api");
     const images = (state.media || []).filter((m) => m && m.kind === "image" && m.file).slice(0, 6);
     const photos = [];
+    // Outlined work area (satellite + outline + acreage) goes first so the team sees it.
+    if (window.BlakeScope && payload.scope && payload.scope.area) {
+      const areaBlob = await window.BlakeScope.areaImageBlob();
+      const areaUrl = areaBlob ? await blobToDataUrl(areaBlob) : null;
+      if (areaUrl) photos.push({ name: "work-area-outline.jpg", dataUrl: areaUrl });
+    }
     for (const m of images) {
       const blob = await compressImage(m.file);
       if (!blob) continue;
@@ -398,7 +409,13 @@
     trim: "Trimming",
     emergency: "Storm cleanup",
     stump: "Stump grinding",
-    dirt: "Skid steer & dirt work"
+    dirt: "Skid steer & dirt work",
+    clearing: "Lot or land clearing",
+    grading: "Grading or leveling",
+    pad: "House pad or driveway pad",
+    drainage: "Drainage or ditch work",
+    haul: "Debris haul-off",
+    other: "Other"
   };
   function selectedJobTypes() {
     return Array.from(document.querySelectorAll('input[name="job-type"]:checked')).map((el) => el.value);
@@ -1015,6 +1032,8 @@
     state.comments = readComments();
     state.notes = ($("#notes") && $("#notes").value.trim()) || combinedPropertyNotes();
     const quoted = quoteItems();
+    const scope = window.BlakeScope ? window.BlakeScope.collect() : null;
+    const scopeSummary = scope ? window.BlakeScope.summaryText(scope, JOB_TYPE_LABELS) : "";
     const payload = {
       business: "3 B's Tree Removal",
       to: defaults.leadEmailTo || "shaun.brasher@gmail.com",
@@ -1038,7 +1057,6 @@
       spottedStumps: state.spottedStumps,
       comments: state.comments,
       marks: quoted,
-      notes: state.notes,
       photoCount: state.photos.length,
       photoNames: state.photos.map((p) => p.name),
       stormUrgent: !!(document.getElementById("opt-storm") && document.getElementById("opt-storm").checked),
@@ -1046,6 +1064,11 @@
       rangeHigh: null,
       ballparkStatus: "pending",
       breakdown: [],
+      scope,
+      scopeSummary,
+      // Lead server keeps notes as the description, so the scope answers ride along there.
+      notes: [scopeSummary, state.notes].filter(Boolean).join("\n\n"),
+      access: scope ? ["Gate: " + (scope.gateWidth || "?"), "Skid steer can get in: " + (scope.skidSteer || "?"), state.comments].filter(Boolean).join(" · ") : undefined,
       storms: state.storms,
       source: params.src,
       variant: params.v,
@@ -1106,7 +1129,7 @@
           ? `${money(ballpark.range.low)} – ${money(ballpark.range.high)}, plus a larger tree we’ll quote on the call`
           : `${money(ballpark.range.low)} – ${money(ballpark.range.high)}`;
       } else {
-        priceEl.textContent = "We’ll give you a ballpark on the callback";
+        priceEl.textContent = scope ? "Our team will call you back with a quote" : "We’ll give you a ballpark on the callback";
       }
       ((ballpark && ballpark.lines) || []).forEach((line) => {
         const li = document.createElement("li");
@@ -1130,7 +1153,9 @@
       }
       const thanks = $("#thanks");
       thanks.hidden = false;
-      thanks.textContent = "Thanks, we got your info. We’ll review your photos and the satellite view, and we’ll confirm your real price when we call you back.";
+      thanks.textContent = scope
+        ? "Thanks! Our team will review your satellite view and photos, and we’ll call you back at the time you picked to go over it. Bigger jobs may need a quick site visit."
+        : "Thanks, we got your info. We’ll review your photos and the satellite view, and we’ll confirm your real price when we call you back.";
       $("#range").scrollIntoView({ behavior: "smooth", block: "nearest" });
     };
     const readyText = () => (ballpark && ballpark.range ? "Your ballpark range is ready." : "Thanks, we got your info.");
