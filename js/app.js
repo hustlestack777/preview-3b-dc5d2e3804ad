@@ -162,11 +162,12 @@
     return true;
   }
 
-  // Wake the free lead server while the customer fills in the form.
-  // no-cors avoids a console CORS error when /health has no Allow-Origin;
-  // the request still wakes the server. Lead submission is unchanged.
+  // Wake the lead server while the customer fills in the form.
+  // The lead API's /health sends Access-Control-Allow-Origin for this page,
+  // so a normal CORS GET reads cleanly. (no-cors made Chrome block the JSON
+  // reply and log a failed request.) Lead submission is unchanged.
   if (defaults.leadApi) {
-    fetch(defaults.leadApi.replace(/\/$/, "") + "/health", { mode: "no-cors", cache: "no-store" }).catch(() => {});
+    fetch(defaults.leadApi.replace(/\/$/, "") + "/health", { cache: "no-store" }).catch(() => {});
   }
 
   function blobToDataUrl(blob) {
