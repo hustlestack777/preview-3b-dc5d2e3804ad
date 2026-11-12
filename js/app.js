@@ -705,9 +705,9 @@
         lines.push({ label, callForBallpark: true });
         return;
       }
-      low += r.low;
-      high += r.high;
-      lines.push({ label, low: Math.round(r.low), high: Math.round(r.high) });
+      const price = Math.round((r && (r.price != null ? r.price : r.low)) || 0);
+      low += price;
+      lines.push({ label, price, low: price, high: price });
     };
     let stumpIdx = 0;
     quoteItems().forEach((m, index) => {
@@ -733,9 +733,10 @@
       const dirt = (pricing && (pricing.dirtWork || pricing.landClearing)) || { low: 500, high: 2400 };
       add("Skid steer dirt work (half day to a full day)", dirt);
     }
+    const blakeTotal = Math.round(low);
     return {
-      low: Math.round(low),
-      high: Math.round(high),
+      low: blakeTotal,
+      high: Eng.rangeHighFromBlakePrice(blakeTotal, pricing),
       lines,
       callForBallpark: lines.some((line) => line.callForBallpark)
     };
@@ -1115,7 +1116,7 @@
           const li = document.createElement("li");
           li.textContent = line.callForBallpark
             ? `${line.label}: Call for a ballpark`
-            : `${line.label}: ${money(line.low)} – ${money(line.high)}`;
+            : `${line.label}: ${money(line.price != null ? line.price : line.low)}`;
           ul.appendChild(li);
         });
       }
