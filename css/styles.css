@@ -1788,9 +1788,13 @@ body.gg-chat-open elevenlabs-convai {
     padding-bottom: calc(13.5rem + env(safe-area-inset-bottom, 0px)) !important;
   }
   .hero .trust-chips {
-    max-width: calc(100% - 8rem);
-    margin-right: auto;
-    margin-left: auto;
+    /* Reserve the right side for the 108px torso. Do not center a
+       narrower max-width box (that only leaves half the gutter). */
+    max-width: none;
+    margin-left: 0;
+    margin-right: 0;
+    padding-right: 8.25rem;
+    box-sizing: border-box;
   }
   .map-shell {
     padding-bottom: calc(13.5rem + env(safe-area-inset-bottom, 0px)) !important;
@@ -1808,7 +1812,7 @@ body.gg-chat-open elevenlabs-convai {
   .gg-stage {
     width: 108px;
     height: 148px;
-    flex: 0 0 108px;
+    flex: 0 0 148px;
     overflow: hidden;
     border: 0;
     border-radius: 0;
