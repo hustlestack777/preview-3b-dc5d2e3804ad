@@ -30,7 +30,7 @@
   <meta name="twitter:title" content="3 B's Tree Removal | Enter Your Address for a Tree Quote" />
   <meta name="twitter:description" content="Enter your address to start a tree quote. Trees, stumps, land clearing, dirt work and storm cleanup in Central &amp; Southwest Louisiana. Our team calls you back with your real price." />
   <meta name="twitter:image" content="https://3bs.getpros.xyz/og-image.jpg" />
-  <link rel="stylesheet" href="css/styles.css?v=20261112simple1" />
+  <link rel="stylesheet" href="css/styles.css?v=20261112full2" />
   <link rel="stylesheet" href="css/motion.css?v=20261112motion1" />
 </head>
 <body>
@@ -119,12 +119,15 @@
           <label class="sr" for="address">Property address</label>
           <div class="addr-wrap">
             <div class="addr-row">
-              <input id="address" name="address" type="text" inputmode="text" autocomplete="off"
-                placeholder="Start typing your address..." required minlength="3"
-                aria-autocomplete="list" aria-controls="addr-suggestions" aria-expanded="false" />
+              <div class="addr-field">
+                <input id="address" name="address" type="text" inputmode="text" autocomplete="off"
+                  placeholder="Start typing your address..." required minlength="3"
+                  aria-autocomplete="list" aria-controls="addr-suggestions" aria-expanded="false" />
+                <!-- List sits right under the field (not under the button) on phones and desktop. -->
+                <ul class="addr-suggestions" id="addr-suggestions" role="listbox" hidden></ul>
+              </div>
               <button type="button" class="btn" id="btn-start">Start my quote</button>
             </div>
-            <ul class="addr-suggestions" id="addr-suggestions" role="listbox" hidden></ul>
           </div>
           <p class="addr-hint" id="addr-hint">Pick your address from the list</p>
           <p class="form-status" id="addr-status" role="status"></p>
@@ -175,7 +178,7 @@
                     <span class="stepper-label" id="trees-step-label">How many trees?</span>
                     <div class="stepper-ctrl" role="group" aria-labelledby="trees-step-label">
                       <button type="button" class="step-btn" id="trees-minus" aria-label="Fewer trees or limbs">−</button>
-                      <output id="trees-count" for="trees-minus trees-plus" aria-live="polite">2</output>
+                      <output id="trees-count" for="trees-minus trees-plus" aria-live="polite">0</output>
                       <button type="button" class="step-btn" id="trees-plus" aria-label="More trees or limbs">+</button>
                     </div>
                   </div>
@@ -192,7 +195,7 @@
                   <legend class="job-types-label">What kind of work?</legend>
                   <div class="job-type-row" role="group" aria-label="Job type">
                     <label class="job-type"><input type="checkbox" name="job-type" value="trim" /> Trimming / pruning</label>
-                    <label class="job-type is-on"><input type="checkbox" name="job-type" value="removal" checked /> Tree removal</label>
+                    <label class="job-type"><input type="checkbox" name="job-type" value="removal" /> Tree removal</label>
                     <label class="job-type"><input type="checkbox" name="job-type" value="stump" /> Stump grinding</label>
                     <label class="job-type"><input type="checkbox" name="job-type" value="emergency" /> Storm cleanup</label>
                     <label class="job-type"><input type="checkbox" name="job-type" value="clearing" /> Lot or land clearing</label>
@@ -201,6 +204,15 @@
                     <label class="job-type"><input type="checkbox" name="job-type" value="drainage" /> Drainage or ditch work</label>
                     <label class="job-type"><input type="checkbox" name="job-type" value="haul" /> Debris haul-off</label>
                     <label class="job-type"><input type="checkbox" name="job-type" value="other" /> Other (describe)</label>
+                  </div>
+                </fieldset>
+                <fieldset class="tree-size" id="tree-size" hidden>
+                  <legend class="job-types-label">How big are the trees to trim?</legend>
+                  <p class="tree-size-note">Pick the closest. Mixed sizes? Pick the biggest one.</p>
+                  <div class="tree-size-row">
+                    <label class="tree-size-opt"><input type="radio" name="tree-size" value="small" /><svg viewBox="0 0 84 64" width="84" height="64" aria-hidden="true"><line x1="2" y1="61" x2="82" y2="61" stroke="#6b6b6b" stroke-width="2"/><path d="M8 42 L22 31 L36 42 Z" fill="#c9c9c9"/><rect x="11" y="42" width="22" height="19" fill="#c9c9c9"/><rect x="18" y="49" width="6" height="12" fill="#1a1a1a"/><rect x="59" y="38" width="5" height="23" fill="#8a5a2b"/><circle cx="61.5" cy="38" r="8" fill="#3fbf6a"/></svg><strong>Small</strong><span>About as tall as a one-story house</span></label>
+                    <label class="tree-size-opt"><input type="radio" name="tree-size" value="medium" /><svg viewBox="0 0 84 64" width="84" height="64" aria-hidden="true"><line x1="2" y1="61" x2="82" y2="61" stroke="#6b6b6b" stroke-width="2"/><path d="M8 42 L22 31 L36 42 Z" fill="#c9c9c9"/><rect x="11" y="42" width="22" height="19" fill="#c9c9c9"/><rect x="18" y="49" width="6" height="12" fill="#1a1a1a"/><rect x="59" y="25" width="5" height="36" fill="#8a5a2b"/><circle cx="61.5" cy="25" r="11" fill="#3fbf6a"/></svg><strong>Medium</strong><span>About as tall as a two-story house</span></label>
+                    <label class="tree-size-opt"><input type="radio" name="tree-size" value="large" /><svg viewBox="0 0 84 64" width="84" height="64" aria-hidden="true"><line x1="2" y1="61" x2="82" y2="61" stroke="#6b6b6b" stroke-width="2"/><path d="M8 42 L22 31 L36 42 Z" fill="#c9c9c9"/><rect x="11" y="42" width="22" height="19" fill="#c9c9c9"/><rect x="18" y="49" width="6" height="12" fill="#1a1a1a"/><rect x="59" y="17" width="5" height="44" fill="#8a5a2b"/><circle cx="61.5" cy="17" r="14" fill="#3fbf6a"/></svg><strong>Large</strong><span>Taller than a two-story house</span></label>
                   </div>
                 </fieldset>
                 <div class="scope-panel" id="scope-panel" hidden>
@@ -306,7 +318,11 @@
               <label>Mobile<input id="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="(318) 555-0123" required /></label>
               <label>Email <span class="opt">(optional, for your copy)</span><input id="email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" /></label>
               <input id="website" name="website" type="text" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0" />
-              <label>Town or job address<input id="town" type="text" autocomplete="address-level2" placeholder="e.g. Leesville or 412 Magnolia Ln" /></label>
+              <label for="town">Job address</label>
+              <div class="addr-wrap town-wrap">
+                <input id="town" type="text" autocomplete="off" placeholder="Start typing the job address" aria-autocomplete="list" aria-controls="town-suggestions" aria-expanded="false" />
+                <ul class="addr-suggestions" id="town-suggestions" role="listbox" hidden></ul>
+              </div>
               <fieldset class="choice-group" id="best-day">
                 <legend>Best day to call</legend>
                 <div class="choice-row">
@@ -344,11 +360,12 @@
             <p class="form-status" id="result-status" role="status"></p>
 
             <div class="range" id="range" hidden>
+              <h3 class="thanks-title" id="thanks-title" tabindex="-1">Thanks, we got your info.</h3>
               <p class="range-label" id="range-label"></p>
               <div class="price" id="range-price"></div>
               <ul class="breakdown" id="breakdown"></ul>
-              <p class="range-note">This is a ballpark, not a firm price. We’ll review your photos and a satellite view of your lot, and we’ll confirm your real price when we call you back.</p>
-              <p class="range-disclaimer">Ballpark only; we’ll confirm your real price when we call you back.</p>
+              <p class="range-note" id="range-note">This is a ballpark, not a firm price. We’ll review your photos and a satellite view of your lot, and we’ll confirm your real price when we call you back.</p>
+              <p class="range-disclaimer" id="range-disclaimer">Ballpark only; we’ll confirm your real price when we call you back.</p>
               <p class="thanks" id="thanks" hidden>Thanks, we got your info. We’ll confirm your real price when we call you back.</p>
             </div>
           </div>
@@ -545,7 +562,7 @@
         </div>
         <div>
           <h2>About the work</h2>
-          <p class="muted">We take on the big, tough jobs. Our owner, Blake Berry, is an LDAF licensed arborist for tree work, based in Pitkin, Louisiana. We also do skid steer dirt work and lot clearing. For trimming, you’ll see a ballpark price range here; removals are quoted on the callback. We review your photos and a satellite view of your lot, and we’ll confirm your real price when we call you back. This page never books the job for you.</p>
+          <p class="muted">We take on the big, tough jobs. Our owner, Blake Berry, is an LDAF licensed arborist for tree work, based in Pitkin, Louisiana. We also do skid steer dirt work and lot clearing. For trimming, you’ll see a ballpark price range here; removals, stumps and dirt work are call for a ballpark. We review your photos and a satellite view of your lot, and we’ll confirm your real price when we call you back. This page never books the job for you.</p>
         </div>
       </div>
     </section>
@@ -641,7 +658,7 @@
   <script src="js/pricing.js?v=20261111p"></script>
   <script src="js/engine.js?v=20261112s"></script>
   <script src="js/autocomplete.js?v=20261112la1"></script>
-  <script src="js/app.js?v=20261112la1"></script>
+  <script src="js/app.js?v=20261112full2"></script>
   <script src="js/scope.js?v=20261112simple1"></script>
   <script src="js/media.js?v=20261111a"></script>
   <script src="js/lrl-credit.js?v=20261111-lrl2"></script>
@@ -658,13 +675,13 @@
     </div>
     <button type="button" class="gg-stage" id="gg-launcher" aria-label="Chat with Camille" aria-expanded="false">
       <picture>
-        <img class="gg-cutout" src="img/gg/gg-outdoor-auburn-sm.webp" width="253" height="520" alt="" decoding="async" />
+        <picture><source media="(min-width: 640px)" srcset="img/gg/gg-outdoor-auburn.webp" /><img class="gg-cutout" src="img/gg/gg-outdoor-auburn-sm.webp" width="253" height="520" alt="" decoding="async" /></picture>
       </picture>
     </button>
   </div>
   <button type="button" class="gg-close" id="gg-close" aria-label="Close chat with Camille" hidden>&times;</button>
   <elevenlabs-convai agent-id="agent_2301m76zjc0dfm2afvx1y2z980k7"></elevenlabs-convai>
   <script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
-  <script src="js/gg-widget.js?v=20261112s2" defer></script>
+  <script src="js/gg-widget.js?v=20261112full2" defer></script>
 </body>
 </html>

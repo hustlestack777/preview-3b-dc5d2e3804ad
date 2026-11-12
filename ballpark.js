@@ -74,13 +74,19 @@ export function computeBallpark(input, pricing, markups) {
   const stumps = items.filter((m) => m && m.kind === "stump");
   const lines = [];
 
-  // Removals (and storm-damaged trees that aren't a trim) get a callback quote, no range.
+  // Only pruning / trimming ever gets a price range (Shaun, Nov 12). Removal, stumps, storm
+  // cleanup, land clearing and dirt work are "call for a ballpark": any of them in the job,
+  // or no trimming at all, means a callback with no price.
   const removal = types.has("removal") || (trees.length > 0 && !types.has("trim") && types.has("emergency"));
-  if (removal) {
+  const trimOnly = types.size === 1 && types.has("trim") && stumps.length === 0;
+  if (removal || !trimOnly) {
     trees.forEach((t, i) => lines.push({ label: `Tree removal ${i + 1}`, callback: true }));
     stumps.forEach((s, i) => lines.push({ label: `Stump grinding ${i + 1}`, callback: true }));
     ["clearing", "grading", "pad", "drainage", "haul", "other", "dirt", "emergency"].forEach((t) => { if (types.has(t)) lines.push({ label: CALLBACK_LABELS[t], callback: true }); });
-    return { range: null, callback: true, reason: "removal", lines };
+    if (!removal && types.has("trim")) {
+      lines.splice(0, 0, ...trees.map((t, i) => ({ label: `Trim tree ${i + 1}`, callback: true })));
+    }
+    return { range: null, callback: true, reason: removal ? "removal" : "call", lines };
   }
 
   if (!pricing) {
@@ -99,11 +105,14 @@ export function computeBallpark(input, pricing, markups) {
   if (types.has("trim")) {
     const bands = (pricing.pruning && pricing.pruning.bands) || [];
     trees.forEach((t, i) => {
+      // The customer picks Small / Medium / Large; fall back to height only if no pick came in.
+      const size = ["small", "medium", "large"].includes(String(t.size)) ? String(t.size) : null;
       const h = clampInt(t.heightFt, 5, 200, 40);
-      const band = bands.find((b) => h <= num(b.maxFt)) || bands[bands.length - 1];
+      const band = (size && bands.find((b) => b.key === size)) || bands.find((b) => h <= num(b.maxFt)) || bands[bands.length - 1];
+      const sizeName = size ? size[0].toUpperCase() + size.slice(1) : null;
       if (!band || band.callForBallpark || band.price == null) {
         callForBallpark = true;
-        lines.push({ label: `Trim tree ${i + 1} · ~${h} ft${band && band.label ? " · " + band.label : ""}`, callForBallpark: true });
+        lines.push({ label: `Trim tree ${i + 1}${sizeName ? " · " + sizeName : band && band.label ? " · " + band.label : ""}`, callForBallpark: true });
         return;
       }
       const markup = Number.isFinite(sizes[band.key]) ? sizes[band.key] : otherMarkup;
@@ -119,7 +128,7 @@ export function computeBallpark(input, pricing, markups) {
       opt.withCleanup.low += clean + extra(clean);
       opt.withCleanup.high += roundHigh(clean, markup, roundTo) + extra(clean);
       prunedTrees += 1;
-      lines.push({ label: `Trim tree ${i + 1} · ~${h} ft · ${band.label || ""}`.trim() + (mult !== 1 ? " · access/storm add-on, we'll confirm on the call" : "") });
+      lines.push({ label: `Trim tree ${i + 1} · ${sizeName || band.label || ""}`.trim() + (mult !== 1 ? " · access/storm add-on, we'll confirm on the call" : "") });
     });
   }
 

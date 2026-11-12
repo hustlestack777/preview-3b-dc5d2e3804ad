@@ -16,7 +16,7 @@
     .sheet {
       position: fixed !important; top: auto !important; left: auto !important;
       right: 16px !important; bottom: 16px !important;
-      width: 380px !important; max-width: calc(100vw - 32px) !important;
+      width: 300px !important; max-width: 300px !important;
       height: min(560px, calc(100dvh - 32px)) !important; max-height: none !important;
       border-radius: 18px !important; box-shadow: 0 18px 50px rgba(0,0,0,.45) !important;
       pointer-events: auto !important;
@@ -25,6 +25,17 @@
     .sheet::before {
       content: "Camille \\00B7  3 B\\2019s Tree Removal"; position: absolute; top: 20px; left: 18px; z-index: 30;
       font: 700 15px/1.2 "DM Sans", system-ui, sans-serif; color: #1A1A1A;
+    }
+    /* Desktop: chat and its Terms box open inside Camille's own column, never over the form. */
+    @media (min-width: 640px) {
+      .overlay > div[class*="max-w-"] {
+        position: fixed !important; right: 16px !important; bottom: 16px !important; left: auto !important; top: auto !important;
+        width: 300px !important; max-width: 300px !important; margin: 0 !important; pointer-events: auto !important;
+        translate: none !important; transform: none !important;
+      }
+    }
+    @media (max-width: 639px) {
+      .sheet { right: 124px !important; max-width: calc(100vw - 140px) !important; width: 380px !important; }
     }
     @media (max-width: 479px) {
       .sheet {
@@ -159,20 +170,33 @@
     window.setTimeout(showTalk, TALK_DELAY_MS);
   }
 
-  // Phones: tuck Camille away while a field, list or select is in use, so she
-  // never sits on top of what they're typing or picking.
-  const phone = window.matchMedia("(max-width: 900px)");
-  function isField(el) {
-    return el && el.matches && el.matches("input:not([type=checkbox]):not([type=radio]):not([type=file]), select, textarea");
+  // Phones: keep the area step's buttons ("Tap to outline", "Use my whole lot
+  // instead") left of Camille's 108px column so she never covers them.
+  const phone = window.matchMedia("(max-width: 639px)");
+  function clearColumn() {
+    // Keep the whole land-clearing panel (Tap to outline, gate width, etc.) left of
+    // Camille's column on phones, so she never sits over a control.
+    const q = document.getElementById("scope-panel");
+    if (!q) return;
+    q.style.paddingRight = "";
+    if (!phone.matches) { q.style.paddingRight = ""; return; }
+    const lr = launcher.getBoundingClientRect();
+    const colLeft = (lr.width ? lr.left : window.innerWidth - 116) - 8;
+    const right = q.getBoundingClientRect().right;
+    if (!right) return;
+    q.style.paddingRight = Math.max(0, Math.ceil(right - colLeft)) + "px";
   }
-  document.addEventListener("focusin", function (e) {
-    if (phone.matches && isField(e.target)) document.body.classList.add("gg-field-focus");
-  });
-  document.addEventListener("focusout", function (e) {
-    if (isField(e.target)) setTimeout(function () {
-      if (!isField(document.activeElement)) document.body.classList.remove("gg-field-focus");
-    }, 120);
-  });
+  // The greeting bubble pokes out left of her column; tuck it away while the quote tool is
+  // on screen so it never sits over a quote button.
+  const quoteCard = document.getElementById("quote-card");
+  if (quoteCard && "IntersectionObserver" in window) {
+    new IntersectionObserver(function (entries) {
+      document.body.classList.toggle("gg-quote-in-view", entries.some(function (e) { return e.isIntersecting; }));
+    }).observe(quoteCard);
+  }
+  window.addEventListener("resize", clearColumn);
+  document.addEventListener("change", function () { setTimeout(clearColumn, 30); });
+  clearColumn();
 
   if (convai) {
     if (!styleShadow()) {

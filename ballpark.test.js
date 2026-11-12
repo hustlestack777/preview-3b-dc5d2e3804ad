@@ -15,11 +15,36 @@ test("trim: each option starts at Blake's price, top is price plus the size mark
   assert.deepEqual(r.options.map((o) => [o.low, o.high]), [[100, 120], [140, 170]]);
 });
 
-test("stumps are call for a ballpark, pruning range unchanged", () => {
+test("trim plus stumps: no range at all, callback only", () => {
   const r = computeBallpark({ jobTypes: ["trim", "stump"], items: [{ kind: "tree", heightFt: 20 }, { kind: "stump", diameterIn: 10 }] }, fake, m);
-  assert.deepEqual(r.options.map((o) => [o.low, o.high]), [[100, 120], [140, 170]]);
-  assert.equal(r.callForBallpark, true);
+  assert.equal(r.range, null);
+  assert.equal(r.options, undefined);
   assert.equal(computeBallpark({ jobTypes: ["stump"], items: [{ kind: "stump", diameterIn: 10 }] }, fake, m).range, null);
+});
+
+test("removal, stumps, storm, clearing and dirt work never get a range, even with trimming", () => {
+  for (const extra of ["removal", "stump", "emergency", "clearing", "grading", "pad", "drainage", "haul", "dirt", "other"]) {
+    const r = computeBallpark({ jobTypes: ["trim", extra], items: [{ kind: "tree", heightFt: 20, size: "small" }] }, fake, m);
+    assert.equal(r.range, null, extra);
+    assert.equal(r.options, undefined, extra);
+    assert.equal(r.callback, true, extra);
+  }
+});
+
+test("trim-only with stump count gets no range", () => {
+  const r = computeBallpark({ jobTypes: ["trim"], items: [{ kind: "tree", heightFt: 20 }, { kind: "stump", diameterIn: 10 }] }, fake, m);
+  assert.equal(r.range, null);
+});
+
+test("no job type picked gets no range", () => {
+  assert.equal(computeBallpark({ jobTypes: [], items: [{ kind: "tree", heightFt: 20 }] }, fake, m).range, null);
+});
+
+test("size pick chooses the band by key and labels the line with the size", () => {
+  const r = computeBallpark({ jobTypes: ["trim"], items: [{ kind: "tree", heightFt: 80, size: "small" }] }, fake, m);
+  assert.deepEqual(r.options.map((o) => [o.low, o.high]), [[100, 120], [140, 170]]);
+  assert.match(r.lines[0].label, /Small/);
+  assert.doesNotMatch(r.lines[0].label, /ft/);
 });
 
 test("removal gets no range and a callback", () => {
