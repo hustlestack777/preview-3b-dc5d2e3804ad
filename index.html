@@ -19,7 +19,7 @@
   <link rel="icon" type="image/png" sizes="192x192" href="img/logo/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="img/logo/icon-512.png" />
   <link rel="apple-touch-icon" href="img/logo/apple-touch-icon.png" />
-  <link rel="stylesheet" href="css/styles.css?v=20261111o" />
+  <link rel="stylesheet" href="css/styles.css?v=20261111-lrl" />
 </head>
 <body>
   <div class="demo-note">Private preview — not public yet</div>
@@ -490,10 +490,68 @@
     <div class="wrap">
       <strong>3 B’s Tree Removal</strong> · Pitkin, Louisiana · 337-378-4046<br />
       LDAF licensed arborist · Serving Central &amp; Southwest Louisiana<br />
-      <span class="credit">Marketing partner: Lagniappe Realm Labs</span><br />
+      <button type="button" class="credit" id="lrl-credit">Designed &amp; marketed by Lagniappe Realm Labs</button><br />
       Private preview — not indexed, not the public site
     </div>
   </footer>
+
+
+  <div class="lrl-backdrop" id="lrl-modal" hidden>
+    <div class="lrl-card" role="dialog" aria-modal="true" aria-labelledby="lrl-inquiry-title">
+      <div id="lrl-thanks" class="lrl-thanks" hidden>
+        <h2 id="lrl-thanks-title" tabindex="-1">Got it. Shaun will reach out personally.</h2>
+        <button type="button" class="btn" data-lrl-close>Close</button>
+      </div>
+      <form id="lrl-form" class="lrl-form">
+        <div class="lrl-head">
+          <div>
+            <p class="lrl-byline">Shaun Brasher · shaun@lagniapperealmlabs.com</p>
+            <h2 id="lrl-inquiry-title">Want a site like this? Tell Shaun what you need.</h2>
+          </div>
+          <button type="button" class="lrl-close" data-lrl-close aria-label="Close">Close</button>
+        </div>
+        <label>Name
+          <input name="name" type="text" autocomplete="name" autocapitalize="words" required />
+        </label>
+        <label>Best phone number
+          <input name="phone" type="tel" inputmode="tel" autocomplete="tel" required />
+          <span class="lrl-consent">By submitting, you agree Shaun may call or text you about your request. Msg and data rates may apply. <a href="lrl-privacy.html" target="_blank" rel="noopener noreferrer">Privacy note</a></span>
+        </label>
+        <label>Email <span class="opt">(optional)</span>
+          <input name="email" type="email" autocomplete="email" />
+        </label>
+        <label>Business name <span class="opt">(optional)</span>
+          <input name="organization" type="text" autocomplete="organization" autocapitalize="words" />
+        </label>
+        <label>What's it about?
+          <select name="topic" required>
+            <option value="">Choose one</option>
+            <option value="website">Website</option>
+            <option value="leads">Getting more leads</option>
+            <option value="ai">AI or automation</option>
+            <option value="other">Something else</option>
+          </select>
+        </label>
+        <label>Best time to reach you
+          <select name="reachTime" required>
+            <option value="">Choose one</option>
+            <option value="morning">Morning</option>
+            <option value="afternoon">Afternoon</option>
+            <option value="evening">Evening</option>
+            <option value="anytime">Anytime</option>
+          </select>
+        </label>
+        <label>Anything else?
+          <textarea name="comment" rows="3"></textarea>
+        </label>
+        <div class="lrl-hp" aria-hidden="true">
+          <label>Company fax <input name="company_fax" type="text" tabindex="-1" autocomplete="off" /></label>
+        </div>
+        <p class="lrl-error" id="lrl-error" hidden></p>
+        <button type="submit" class="btn btn-block" id="lrl-submit">Send to Shaun</button>
+      </form>
+    </div>
+  </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="js/config.js?v=20261111n"></script>
@@ -502,5 +560,6 @@
   <script src="js/autocomplete.js?v=20261111c"></script>
   <script src="js/app.js?v=20261111n"></script>
   <script src="js/media.js?v=20261111a"></script>
+  <script src="js/lrl-credit.js?v=20261111-lrl"></script>
 </body>
 </html>

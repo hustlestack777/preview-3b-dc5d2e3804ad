@@ -1428,3 +1428,92 @@ html.lb-open { overflow: hidden; }
     radial-gradient(ellipse at center, rgba(8,14,10,.35) 0%, rgba(8,14,10,.15) 70%);
 }
 .fields .opt{font-weight:400;color:#6b6b6b;font-size:.9em}
+
+
+/* LRL credit + contact form */
+.foot .credit {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  display: inline-block;
+  margin-top: .55rem;
+  color: #d7c197;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.foot .credit:hover,
+.foot .credit:focus-visible { color: #f0e2b8; }
+.lrl-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(6, 12, 8, .62);
+}
+@media (min-width: 640px) {
+  .lrl-backdrop { align-items: center; }
+}
+.lrl-card {
+  width: min(34rem, 100%);
+  max-height: 92vh;
+  overflow: auto;
+  background: #f4f1ea;
+  color: #1c241e;
+  border-radius: 20px;
+  padding: 1.25rem 1.2rem 1.4rem;
+  box-shadow: 0 24px 60px rgba(0,0,0,.35);
+}
+.lrl-card h2 {
+  margin: .35rem 0 0;
+  font-family: var(--display, Georgia, serif);
+  font-size: clamp(1.4rem, 4vw, 1.85rem);
+  line-height: 1.25;
+  color: #122018;
+}
+.lrl-byline {
+  margin: 0;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: #6b6253;
+}
+.lrl-head { display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start; margin-bottom: .4rem; }
+.lrl-close {
+  appearance: none;
+  background: none;
+  border: 0;
+  color: #5c655c;
+  cursor: pointer;
+  font: inherit;
+  padding: .2rem .3rem;
+}
+.lrl-form { display: grid; gap: .75rem; margin-top: .6rem; }
+.lrl-form label { display: grid; gap: .35rem; font-weight: 600; font-size: .9rem; }
+.lrl-form .opt { font-weight: 400; color: #5c655c; }
+.lrl-form input[type="text"],
+.lrl-form input[type="tel"],
+.lrl-form input[type="email"],
+.lrl-form select,
+.lrl-form textarea {
+  border: 1px solid #cfc6b6;
+  background: #fff;
+  color: #1c241e;
+  border-radius: 12px;
+  padding: .8rem .9rem;
+  font: inherit;
+  width: 100%;
+}
+.lrl-form textarea { min-height: 5.5rem; resize: vertical; }
+.lrl-consent { margin: .15rem 0 0; font-weight: 400; font-size: .8rem; line-height: 1.45; color: #5c655c; }
+.lrl-consent a { color: #1f5130; }
+.lrl-error { margin: 0; color: #9b1c1c; font-size: .92rem; }
+.lrl-thanks { text-align: center; padding: 1.2rem .4rem 0.4rem; }
+.lrl-thanks h2 { margin-bottom: 1.1rem; }
+.lrl-hp { position: absolute; left: -9999px; height: 0; overflow: hidden; }
