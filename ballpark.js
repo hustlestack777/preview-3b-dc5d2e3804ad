@@ -13,6 +13,7 @@
    - Tight-access add-ons go on top ("we'll confirm on the call").
    - Removals, stumps, storm cleanup and dirt work: no range, "call for a ballpark." */
 
+const CALLBACK_LABELS = { emergency: "Storm cleanup", dirt: "Skid steer dirt work", clearing: "Lot or land clearing", grading: "Grading or leveling", pad: "House pad or driveway pad", drainage: "Drainage or ditch work", haul: "Debris haul-off", other: "Other work" };
 const DEFAULT_MARKUP = 0.15;
 const DEFAULT_ROUND = 50;
 
@@ -78,7 +79,7 @@ export function computeBallpark(input, pricing, markups) {
   if (removal) {
     trees.forEach((t, i) => lines.push({ label: `Tree removal ${i + 1}`, callback: true }));
     stumps.forEach((s, i) => lines.push({ label: `Stump grinding ${i + 1}`, callback: true }));
-    if (types.has("dirt")) lines.push({ label: "Skid steer dirt work", callback: true });
+    ["clearing", "grading", "pad", "drainage", "haul", "other", "dirt", "emergency"].forEach((t) => { if (types.has(t)) lines.push({ label: CALLBACK_LABELS[t], callback: true }); });
     return { range: null, callback: true, reason: "removal", lines };
   }
 
@@ -130,8 +131,9 @@ export function computeBallpark(input, pricing, markups) {
     lines.push({ label: `Stump grinding ${i + 1} · ${d}"`, callForBallpark: true });
   });
   if (stumps.length) callForBallpark = true;
-  if (types.has("emergency") && !lines.length) { lines.push({ label: "Storm cleanup", callForBallpark: true }); callForBallpark = true; }
-  if (types.has("dirt")) { lines.push({ label: "Skid steer dirt work", callForBallpark: true }); callForBallpark = true; }
+  Object.keys(CALLBACK_LABELS).forEach((t) => {
+    if (types.has(t)) { lines.push({ label: CALLBACK_LABELS[t], callForBallpark: true }); callForBallpark = true; }
+  });
 
   if (prunedTrees) {
     const options = [

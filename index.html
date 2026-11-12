@@ -151,13 +151,75 @@
                 <fieldset class="job-types" id="job-types">
                   <legend class="job-types-label">What kind of work?</legend>
                   <div class="job-type-row" role="group" aria-label="Job type">
+                    <label class="job-type"><input type="checkbox" name="job-type" value="trim" /> Trimming / pruning</label>
                     <label class="job-type is-on"><input type="checkbox" name="job-type" value="removal" checked /> Tree removal</label>
-                    <label class="job-type"><input type="checkbox" name="job-type" value="trim" /> Trimming</label>
-                    <label class="job-type"><input type="checkbox" name="job-type" value="emergency" /> Storm cleanup</label>
                     <label class="job-type"><input type="checkbox" name="job-type" value="stump" /> Stump grinding</label>
-                    <label class="job-type"><input type="checkbox" name="job-type" value="dirt" /> Skid steer &amp; dirt work</label>
+                    <label class="job-type"><input type="checkbox" name="job-type" value="emergency" /> Storm cleanup</label>
+                    <label class="job-type"><input type="checkbox" name="job-type" value="clearing" /> Lot or land clearing</label>
+                    <label class="job-type"><input type="checkbox" name="job-type" value="grading" /> Grading or leveling</label>
+                    <label class="job-type"><input type="checkbox" name="job-type" value="pad" /> House pad or driveway pad</label>
+                    <label class="job-type"><input type="checkbox" name="job-type" value="drainage" /> Drainage or ditch work</label>
+                    <label class="job-type"><input type="checkbox" name="job-type" value="haul" /> Debris haul-off</label>
+                    <label class="job-type"><input type="checkbox" name="job-type" value="other" /> Other (describe)</label>
                   </div>
                 </fieldset>
+                <div class="scope-panel" id="scope-panel" hidden>
+                  <p class="scope-lead">Trimming gets a ballpark range. For everything else, our team will call you back with a quote, so tell us a little about the job.</p>
+                  <label class="notes-label" id="scope-other-wrap" hidden for="scope-other">Other: what do you need?
+                    <input id="scope-other" type="text" maxlength="200" placeholder="e.g. Clear a fence line" />
+                  </label>
+                  <div class="scope-q">
+                    <strong>Outline it on the satellite map</strong>
+                    <span>Hit Draw, then drag your finger around the work area on the map above. We close the shape and work out the square feet and acres. Hit Move map to pan or zoom.</span>
+                    <div class="scope-actions" role="group" aria-label="Map tools">
+                      <button type="button" class="scope-btn" data-scope-mode="draw">Draw</button>
+                      <button type="button" class="scope-btn is-on" data-scope-mode="move">Move map</button>
+                      <button type="button" class="scope-btn" data-scope-mode="corners">Tap corners</button>
+                      <button type="button" class="scope-btn" id="btn-scope-undo">Undo</button>
+                      <button type="button" class="scope-btn" id="btn-scope-clear">Clear</button>
+                      <button type="button" class="scope-btn" id="btn-scope-lot">Use my whole lot</button>
+                    </div>
+                    <p class="scope-hint" id="scope-draw-hint" hidden></p>
+                    <p class="scope-area" id="scope-area" aria-live="polite">No area outlined yet.</p>
+                    <label class="scope-check"><input type="checkbox" id="scope-not-sure" /> Not sure, just call me</label>
+                  </div>
+                  <fieldset class="scope-q"><legend>What’s on it?</legend>
+                    <label class="choice"><input type="checkbox" name="scope-cover" value="Grass" /> Grass</label>
+                    <label class="choice"><input type="checkbox" name="scope-cover" value="Brush" /> Brush</label>
+                    <label class="choice"><input type="checkbox" name="scope-cover" value="Small trees" /> Small trees</label>
+                    <label class="choice"><input type="checkbox" name="scope-cover" value="Big timber" /> Big timber</label>
+                  </fieldset>
+                  <div id="scope-clearing" hidden>
+                    <fieldset class="scope-q"><legend>Debris</legend>
+                      <label class="choice"><input type="radio" name="scope-debris" value="Haul off" /> Haul off</label>
+                      <label class="choice"><input type="radio" name="scope-debris" value="Burn on site" /> Burn on site</label>
+                    </fieldset>
+                    <fieldset class="scope-q"><legend>Stumps out?</legend>
+                      <label class="choice"><input type="radio" name="scope-stumps" value="Yes" /> Yes</label>
+                      <label class="choice"><input type="radio" name="scope-stumps" value="No" /> No</label>
+                    </fieldset>
+                    <fieldset class="scope-q"><legend>Leveling after?</legend>
+                      <label class="choice"><input type="radio" name="scope-level" value="Yes" /> Yes</label>
+                      <label class="choice"><input type="radio" name="scope-level" value="No" /> No</label>
+                    </fieldset>
+                  </div>
+                  <fieldset class="scope-q"><legend>Access</legend>
+                    <label class="scope-inline">Gate width
+                      <select id="scope-gate">
+                        <option value="">Pick one</option>
+                        <option>No gate / wide open</option>
+                        <option>Under 6 ft</option>
+                        <option>6 to 8 ft</option>
+                        <option>Over 8 ft</option>
+                        <option>Not sure</option>
+                      </select>
+                    </label>
+                    <span class="scope-sub">Can a skid steer get in?</span>
+                    <label class="choice"><input type="radio" name="scope-skid" value="Yes" /> Yes</label>
+                    <label class="choice"><input type="radio" name="scope-skid" value="No" /> No</label>
+                    <label class="choice"><input type="radio" name="scope-skid" value="Not sure" /> Not sure</label>
+                  </fieldset>
+                </div>
                 <label class="notes-label comments-label" for="work-comments">Anything we should know?
                   <span>Optional — gates, pets, access, which trees. Never required.</span>
                   <textarea id="work-comments" rows="3" placeholder="e.g. Gate code, dogs in the yard, the oak by the driveway"></textarea>
@@ -546,7 +608,8 @@
   <script src="js/pricing.js?v=20261111p"></script>
   <script src="js/engine.js?v=20261111p"></script>
   <script src="js/autocomplete.js?v=20261111c"></script>
-  <script src="js/app.js?v=20261111r"></script>
+  <script src="js/app.js?v=20261111s"></script>
+  <script src="js/scope.js?v=20261111s"></script>
   <script src="js/media.js?v=20261111a"></script>
   <script src="js/lrl-credit.js?v=20261111-lrl2"></script>
   <!-- GG, the 3 B's AI chat assistant (text-only ElevenLabs agent; preview only) -->
