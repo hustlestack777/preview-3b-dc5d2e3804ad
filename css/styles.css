@@ -55,10 +55,63 @@ button, input { font: inherit; }
 .brand-name { font-size: .95rem; }
 .call {
   text-decoration: none; font-weight: 700; font-size: .92rem;
-  padding: .55rem .85rem; border-radius: 999px;
+  padding: .4rem .8rem; border-radius: 999px;
   background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2);
   backdrop-filter: blur(8px);
+  flex-direction: column;
+  gap: .12rem;
+  line-height: 1.05;
+  text-align: center;
 }
+.call-vanity {
+  font-weight: 800;
+  font-size: 1.02rem;
+  letter-spacing: .03em;
+}
+.call-digits {
+  display: block;
+  font-weight: 600;
+  font-size: .68rem;
+  opacity: .82;
+  letter-spacing: .02em;
+}
+.btn-call {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .15rem;
+  line-height: 1.1;
+  text-align: center;
+  text-decoration: none;
+}
+.btn-call .call-vanity { font-size: 1.12rem; }
+.btn-call .call-digits { font-size: .75rem; font-weight: 650; opacity: .8; }
+.foot-phone {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .12rem;
+  margin: .4rem 0 .2rem;
+  text-decoration: none;
+  color: inherit;
+  line-height: 1.1;
+}
+.foot-phone .call-vanity { font-size: 1.2rem; color: #f4f7f2; }
+.foot-phone .call-digits {
+  font-size: .78rem;
+  color: #c9d6c8;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  opacity: 1;
+}
+.foot a.credit {
+  color: #d7c197;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.foot a.credit:hover,
+.foot a.credit:focus-visible { color: #f0e2b8; }
 
 /* ===== HERO ===== */
 .hero {
@@ -1347,14 +1400,17 @@ html.lb-open { overflow: hidden; }
   flex: 0 0 auto;
   white-space: nowrap;
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 44px;
 }
 @media (max-width: 399px) {
   .topbar { padding: .65rem .7rem; }
-  .call { font-size: .8rem; padding: .45rem .75rem; min-height: 44px; }
-  .brand-logo { width: min(12.55rem, calc(100vw - 10.25rem)); }
+  .call { padding: .35rem .6rem; min-height: 44px; }
+  .call-vanity { font-size: .9rem; }
+  .call-digits { font-size: .62rem; }
+  .brand-logo { width: min(11.5rem, calc(100vw - 11.25rem)); }
 }
 @media (min-width: 640px) {
   .brand-logo { width: 16.5rem; }
