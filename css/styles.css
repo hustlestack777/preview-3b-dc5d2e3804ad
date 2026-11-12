@@ -1446,6 +1446,12 @@ html.lb-open { overflow: hidden; }
 }
 .foot .credit:hover,
 .foot .credit:focus-visible { color: #f0e2b8; }
+.lrl-backdrop[hidden],
+#lrl-form[hidden],
+#lrl-thanks[hidden],
+.lrl-error[hidden] {
+  display: none !important;
+}
 .lrl-backdrop {
   position: fixed;
   inset: 0;
