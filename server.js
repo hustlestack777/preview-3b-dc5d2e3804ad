@@ -33,7 +33,7 @@ function rateLimited(ip) {
   return false;
 }
 
-const BALLPARK_ORIGINS = new Set(["https://hustlestack777.github.io", "https://tree-lrl-credit-preview.onrender.com"]);
+const BALLPARK_ORIGINS = new Set(["https://hustlestack777.github.io", "https://tree-lrl-credit-preview.onrender.com", "https://3bs.getpros.xyz"]);
 const ballparkHits = new Map();
 
 // Server-only files are never served as static pages.
