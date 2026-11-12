@@ -1503,6 +1503,40 @@ html.lb-open { overflow: hidden; }
 }
 .foot .credit:hover,
 .foot .credit:focus-visible { color: #f0e2b8; }
+
+.foot a.credit {
+  display: inline-block;
+  max-width: 17.5rem;
+  margin-top: .7rem;
+  color: #c4b48a;
+  text-decoration: none;
+  text-align: inherit;
+  font: inherit;
+}
+.foot a.credit .credit-title {
+  display: block;
+  font-size: .78rem;
+  line-height: 1.35;
+  letter-spacing: .02em;
+}
+.foot a.credit .credit-sub {
+  display: block;
+  margin-top: .2rem;
+  font-size: .68rem;
+  line-height: 1.4;
+  color: #a89b78;
+  text-wrap: pretty;
+}
+.foot a.credit:hover .credit-title,
+.foot a.credit:focus-visible .credit-title {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  color: #f0e2b8;
+}
+@media (min-width: 640px) {
+  .foot a.credit { max-width: none; }
+}
+
 .lrl-backdrop[hidden],
 #lrl-form[hidden],
 #lrl-thanks[hidden],
