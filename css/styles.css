@@ -1773,7 +1773,7 @@ body.gg-chat-open elevenlabs-convai {
    Get started button, and trust chips stay clear. Full torso on desktop. */
 @media (max-width: 639px) {
   .hero-inner {
-    padding-bottom: calc(6.25rem + env(safe-area-inset-bottom, 0px)) !important;
+    padding-bottom: calc(13.5rem + env(safe-area-inset-bottom, 0px)) !important;
   }
   .map-shell {
     padding-bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px)) !important;
@@ -1818,8 +1818,9 @@ body.gg-chat-open elevenlabs-convai {
   .gg-talk {
     width: min(220px, calc(100vw - 5.5rem));
     margin: 0;
-    padding: 12px 28px 12px 12px;
+    padding: 10px 28px 10px 12px;
   }
+  .gg-talk .gg-chips { display: none; }
   .gg-talk:after { right: 22px; bottom: -7px; left: auto; }
   body.gg-chat-open elevenlabs-convai {
     right: 8px;
