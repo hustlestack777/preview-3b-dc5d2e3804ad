@@ -1098,7 +1098,7 @@
         });
         if (ballpark.callForBallpark) {
           const row = document.createElement("div");
-          row.textContent = "Plus a larger tree we’ll quote on the call";
+          row.textContent = "Plus the items marked below, which we’ll ballpark on the call";
           priceEl.appendChild(row);
         }
       } else if (ballpark.range) {

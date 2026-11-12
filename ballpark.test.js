@@ -15,9 +15,11 @@ test("trim: each option starts at Blake's price, top is price plus the size mark
   assert.deepEqual(r.options.map((o) => [o.low, o.high]), [[100, 120], [140, 170]]);
 });
 
-test("stump add-on goes on top of both ends", () => {
+test("stumps are call for a ballpark, pruning range unchanged", () => {
   const r = computeBallpark({ jobTypes: ["trim", "stump"], items: [{ kind: "tree", heightFt: 20 }, { kind: "stump", diameterIn: 10 }] }, fake, m);
-  assert.deepEqual(r.options.map((o) => [o.low, o.high]), [[140, 160], [180, 210]]);
+  assert.deepEqual(r.options.map((o) => [o.low, o.high]), [[100, 120], [140, 170]]);
+  assert.equal(r.callForBallpark, true);
+  assert.equal(computeBallpark({ jobTypes: ["stump"], items: [{ kind: "stump", diameterIn: 10 }] }, fake, m).range, null);
 });
 
 test("removal gets no range and a callback", () => {

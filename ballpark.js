@@ -10,8 +10,8 @@
      price for that option. The top is his price plus the size's markup, rounded to the
      nearest roundTo (default $50). Markups are env settings: RANGE_MARKUP_SMALL (0.25),
      RANGE_MARKUP_MEDIUM (0.35), RANGE_MARKUP_LARGE (0.35).
-   - Stump and tight-access add-ons go on top at Blake's price ("we'll confirm on the call").
-   - Jobs with no tree pruning (stump only, storm cleanup, dirt work) use RANGE_MARKUP. */
+   - Tight-access add-ons go on top ("we'll confirm on the call").
+   - Removals, stumps, storm cleanup and dirt work: no range, "call for a ballpark." */
 
 const DEFAULT_MARKUP = 0.15;
 const DEFAULT_ROUND = 50;
@@ -122,35 +122,16 @@ export function computeBallpark(input, pricing, markups) {
     });
   }
 
-  // Add-ons and non-pruning items.
-  let addOn = 0;
-  let otherLow = 0;
-  let otherHigh = 0;
-  const stumpBands = (pricing.stumps && pricing.stumps.bands) || [];
+  // Only pruning has Blake-approved ranges. Stumps, storm cleanup and dirt work are
+  // "call for a ballpark" (Shaun, 11/11 10:20 PM CT).
+  const addOn = 0;
   stumps.forEach((st, i) => {
     const d = clampInt(st.diameterIn, 2, 120, 18);
-    const band = stumpBands.find((b) => d <= num(b.maxIn)) || stumpBands[stumpBands.length - 1];
-    const extra = pricing.stumps && pricing.stumps.extraStump;
-    let price = i > 0 && extra != null && d <= 24 ? num(extra) : num(band && band.price);
-    if (st.haulMulch && pricing.stumps && pricing.stumps.haulMulch != null) price += num(pricing.stumps.haulMulch);
-    if (!price) {
-      callForBallpark = true;
-      lines.push({ label: `Stump grinding · ${d}"`, callForBallpark: true });
-      return;
-    }
-    addOn += price;
-    otherLow += price;
-    otherHigh += roundHigh(price, otherMarkup, roundTo);
-    lines.push({ label: `Stump grinding · ${d}"` + (prunedTrees ? " · add-on, we'll confirm on the call" : "") });
+    lines.push({ label: `Stump grinding ${i + 1} · ${d}"`, callForBallpark: true });
   });
-  const addOther = (p, label) => {
-    addOn += p;
-    otherLow += p;
-    otherHigh += roundHigh(p, otherMarkup, roundTo);
-    lines.push({ label: label + (prunedTrees ? " · add-on, we'll confirm on the call" : "") });
-  };
-  if (types.has("emergency") && !lines.length && pricing.stormCleanup != null) addOther(num(pricing.stormCleanup), "Storm cleanup (downed limbs)");
-  if (types.has("dirt") && pricing.dirtWork != null) addOther(num(pricing.dirtWork), "Skid steer dirt work (half day to a full day)");
+  if (stumps.length) callForBallpark = true;
+  if (types.has("emergency") && !lines.length) { lines.push({ label: "Storm cleanup", callForBallpark: true }); callForBallpark = true; }
+  if (types.has("dirt")) { lines.push({ label: "Skid steer dirt work", callForBallpark: true }); callForBallpark = true; }
 
   if (prunedTrees) {
     const options = [
@@ -166,8 +147,5 @@ export function computeBallpark(input, pricing, markups) {
       lines,
     };
   }
-  const low = Math.round(otherLow);
-  const high = Math.max(Math.round(otherHigh), low);
-  if (!low) return { range: null, callback: true, reason: callForBallpark ? "large" : "none", lines };
-  return { range: { low, high }, options: null, callback: false, callForBallpark, lines };
+  return { range: null, callback: true, reason: callForBallpark ? "call" : "none", lines };
 }
