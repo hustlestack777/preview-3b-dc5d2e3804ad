@@ -1,31 +1,33 @@
-/* Ballpark tree/stump pricing for the preview quote form (Nov 11 2026).
-   After the customer sends the form, the range uses Blake's prices:
-   low = removal with no cleanup, high = removal + cleanup (no stump grinding).
-   Stump grinding and tight-access (near a house or power lines) are add-ons.
-   Very large trees (80+ ft) are quoted on the callback, not with a dollar range.
-   These numbers are for the after-form range only, not a public price list.
-   Never a firm price. We'll confirm the real price when we call back. */
+/* Ballpark pricing for the preview quote form only (not a public price list).
+   After the form, the low end is Blake's price for the job they picked.
+   The high end is about 15% over that, rounded to the nearest $50, and never
+   below his price. Change rangeMarkup, rangeRoundTo, and the price fields
+   when Blake updates his numbers. Very large trees (80+ ft) are quoted on
+   the callback. We'll confirm the real price when we call back. */
 window.TREE_PRICING = {
   currency: "USD",
+  // Adjust these when Blake changes how wide the shown range should be.
+  rangeMarkup: 0.15,
+  rangeRoundTo: 50,
   disclaimer: "Ballpark range, not a firm price. We'll confirm your real price when we call you back.",
   trees: {
-    // removal, by estimated height (ft)
+    // Blake's removal price (no cleanup). cleanupPrice is ready if we add that choice later.
     heightBands: [
-      { maxFt: 30, low: 700, high: 1000, label: "Small (under 30 ft)" },
-      { maxFt: 60, low: 1250, high: 1750, label: "Medium (30–60 ft)" },
-      { maxFt: 80, low: 2000, high: 2500, label: "Large (60–80 ft)" },
+      { maxFt: 30, price: 700, cleanupPrice: 1000, label: "Small (under 30 ft)" },
+      { maxFt: 60, price: 1250, cleanupPrice: 1750, label: "Medium (30–60 ft)" },
+      { maxFt: 80, price: 2000, cleanupPrice: 2500, label: "Large (60–80 ft)" },
       { maxFt: 999, callForBallpark: true, label: "Very large (80+ ft)" }
     ],
-    // tight-access add-ons
+    // tight-access add-ons, applied to Blake's price before the 15% range
     nearStructure: 1.25,   // close to the house or tight drop space
     nearLines: 1.5,        // near power lines
-    haulOff: { low: 100, high: 300 },          // per load
+    haulOff: { price: 100 },
     // stump grinding added on top of removal, by tree size (150 to 2000)
     grindWithRemoval: [
-      { maxFt: 30, low: 150, high: 400 },
-      { maxFt: 60, low: 250, high: 800 },
-      { maxFt: 80, low: 400, high: 1500 },
-      { maxFt: 999, low: 800, high: 2000 }
+      { maxFt: 30, price: 150 },
+      { maxFt: 60, price: 250 },
+      { maxFt: 80, price: 400 },
+      { maxFt: 999, price: 800 }
     ],
     speciesHardness: {
       pine: 1.0,
@@ -37,27 +39,28 @@ window.TREE_PRICING = {
     }
   },
   stumps: {
-    // first stump, by diameter (inches); Blake's range is 150 to 2000
+    // first stump, by diameter (inches); Blake's floor by size, 150 to 2000
     bands: [
-      { maxIn: 12, low: 150, high: 400 },
-      { maxIn: 24, low: 250, high: 800 },
-      { maxIn: 36, low: 400, high: 1500 },
-      { maxIn: 999, low: 800, high: 2000 }
+      { maxIn: 12, price: 150 },
+      { maxIn: 24, price: 250 },
+      { maxIn: 36, price: 400 },
+      { maxIn: 999, price: 800 }
     ],
-    extraStump: { low: 150, high: 400 },  // each additional ordinary stump, same visit
-    haulMulch: { low: 50, high: 150 }
+    extraStump: { price: 150 },
+    haulMulch: { price: 50 }
   },
-  trim: { low: 250, high: 900 },           // per tree; no new Blake number yet
-  stormCleanup: { low: 300, high: 1500 },  // downed limbs / yard
-  treeOnStructure: { low: 1500, high: 5000 },
+  // Placeholders until Blake gives a single price for these jobs.
+  trim: { price: 250 },
+  stormCleanup: { price: 300 },
+  treeOnStructure: { price: 1500 },
   stormEmergencyMult: 1.25,
-  haulLoad: { low: 100, high: 300 },
-  skidSteerHourly: { low: 100, high: 300 },
-  landClearingPerAcre: { low: 1500, high: 9000 },
-  cabling: { low: 150, high: 800 },
-  planting: { low: 200, high: 900 },
-  transplanting: { low: 400, high: 2000 },
-  landClearing: { low: 500, high: 2400 },
+  haulLoad: { price: 100 },
+  skidSteerHourly: { price: 100 },
+  landClearingPerAcre: { price: 1500 },
+  cabling: { price: 150 },
+  planting: { price: 200 },
+  transplanting: { price: 400 },
+  landClearing: { price: 500 },
   // SHAUN TO CONFIRM — do not list these as public services until approved.
   // Public wording stays "skid steer dirt work and lot clearing." Footage supports
   // cleared lots and skid steers only. Do not show the items below, and do not
@@ -67,7 +70,7 @@ window.TREE_PRICING = {
   //   driveway or pad prep
   //   ditch work
   //   haul-off / fill
-  dirtWork: { low: 500, high: 2400 }  // half-day minimum to a full day of skid steer work
+  dirtWork: { price: 500 }
 };
 
 window.BLAKE_SERVICES = [
