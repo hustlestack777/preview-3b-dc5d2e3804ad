@@ -192,6 +192,9 @@ out center tags;`;
   function priceTree(t, pricing, opts) {
     const bands = pricing.trees.heightBands;
     const band = bands.find((b) => t.heightFt <= b.maxFt) || bands[bands.length - 1];
+    if (band.callForBallpark) {
+      return { low: null, high: null, band: band.label, callForBallpark: true };
+    }
     let low = band.low;
     let high = band.high;
     const sp = pricing.trees.speciesHardness[t.species] || 1;
@@ -210,8 +213,14 @@ out center tags;`;
       high += pricing.trees.haulOff.high;
     }
     if (t.grind) {
-      low += pricing.trees.grindWithRemoval.low;
-      high += pricing.trees.grindWithRemoval.high;
+      const grindBands = pricing.trees.grindWithRemoval;
+      const grind = Array.isArray(grindBands)
+        ? (grindBands.find((b) => t.heightFt <= b.maxFt) || grindBands[grindBands.length - 1])
+        : grindBands;
+      if (grind) {
+        low += grind.low;
+        high += grind.high;
+      }
     }
     if (opts && opts.emergency) {
       low *= pricing.stormEmergencyMult;

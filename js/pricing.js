@@ -1,51 +1,59 @@
-/* Ballpark tree/stump pricing (v1, Nov 11 2026).
-   Industry-standard Louisiana/US ranges approved by Shaun as up-front ballparks.
-   Sources: /workspace/blake_assets/price_ranges.md (CostPrism LA, TreeOps USA,
-   Angi, HomeGuide via Kingsport guide, US Home Costs, Big Cypress Land & Game, etc.).
-   Never a firm price. We'll confirm your real price when we call you back. */
+/* Ballpark tree/stump pricing for the preview quote form (Nov 11 2026).
+   After the customer sends the form, the range uses Blake's prices:
+   low = removal with no cleanup, high = removal + cleanup (no stump grinding).
+   Stump grinding and tight-access (near a house or power lines) are add-ons.
+   Very large trees (80+ ft) are quoted on the callback, not with a dollar range.
+   These numbers are for the after-form range only, not a public price list.
+   Never a firm price. We'll confirm the real price when we call back. */
 window.TREE_PRICING = {
   currency: "USD",
   disclaimer: "Ballpark range, not a firm price. We'll confirm your real price when we call you back.",
   trees: {
     // removal, by estimated height (ft)
     heightBands: [
-      { maxFt: 30, low: 300, high: 700, label: "Small (under 30 ft)" },
-      { maxFt: 60, low: 700, high: 1500, label: "Medium (30–60 ft)" },
-      { maxFt: 80, low: 1500, high: 3000, label: "Large (60–80 ft)" },
-      { maxFt: 999, low: 3000, high: 6000, label: "Very large (80+ ft)" }
+      { maxFt: 30, low: 700, high: 1000, label: "Small (under 30 ft)" },
+      { maxFt: 60, low: 1250, high: 1750, label: "Medium (30–60 ft)" },
+      { maxFt: 80, low: 2000, high: 2500, label: "Large (60–80 ft)" },
+      { maxFt: 999, callForBallpark: true, label: "Very large (80+ ft)" }
     ],
-    // hard jobs add about 25–50%
-    nearStructure: 1.25,   // leaning over / close to the house
+    // tight-access add-ons
+    nearStructure: 1.25,   // close to the house or tight drop space
     nearLines: 1.5,        // near power lines
     haulOff: { low: 100, high: 300 },          // per load
-    grindWithRemoval: { low: 125, high: 400 },
+    // stump grinding added on top of removal, by tree size (150 to 2000)
+    grindWithRemoval: [
+      { maxFt: 30, low: 150, high: 400 },
+      { maxFt: 60, low: 250, high: 800 },
+      { maxFt: 80, low: 400, high: 1500 },
+      { maxFt: 999, low: 800, high: 2000 }
+    ],
     speciesHardness: {
       pine: 1.0,
-      oak: 1.1,
-      cypress: 1.05,
-      pecan: 1.1,
+      oak: 1.0,
+      cypress: 1.0,
+      pecan: 1.0,
       sweetgum: 1.0,
       unknown: 1.0
     }
   },
   stumps: {
-    // first stump, by diameter (inches)
+    // first stump, by diameter (inches); Blake's range is 150 to 2000
     bands: [
-      { maxIn: 12, low: 125, high: 200 },
-      { maxIn: 24, low: 150, high: 400 },
-      { maxIn: 36, low: 300, high: 600 },
-      { maxIn: 999, low: 500, high: 800 }
+      { maxIn: 12, low: 150, high: 400 },
+      { maxIn: 24, low: 250, high: 800 },
+      { maxIn: 36, low: 400, high: 1500 },
+      { maxIn: 999, low: 800, high: 2000 }
     ],
-    extraStump: { low: 50, high: 150 },  // each additional ordinary stump, same visit
+    extraStump: { low: 150, high: 400 },  // each additional ordinary stump, same visit
     haulMulch: { low: 50, high: 150 }
   },
-  trim: { low: 250, high: 900 },           // per tree; big trees over a roof up to ~1,800
+  trim: { low: 250, high: 900 },           // per tree; no new Blake number yet
   stormCleanup: { low: 300, high: 1500 },  // downed limbs / yard
   treeOnStructure: { low: 1500, high: 5000 },
   stormEmergencyMult: 1.25,
   haulLoad: { low: 100, high: 300 },
   skidSteerHourly: { low: 100, high: 300 },
-  landClearingPerAcre: { low: 1500, high: 4000 },
+  landClearingPerAcre: { low: 1500, high: 9000 },
   cabling: { low: 150, high: 800 },
   planting: { low: 200, high: 900 },
   transplanting: { low: 400, high: 2000 },

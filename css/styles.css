@@ -1370,33 +1370,30 @@ html.lb-open { overflow: hidden; }
   .hero-inner { padding-top: 12.5rem; }
 }
 
-/* ===== Ballpark prices (How it works) ===== */
-.ballpark {
+/* ===== Ballpark CTA (How it works) — no public price list ===== */
+.ballpark-cta {
   margin-top: 1.75rem;
   background: #fff;
   border: 1px solid rgba(20, 32, 24, .1);
   box-shadow: 0 8px 24px rgba(20, 32, 24, .06);
   border-radius: var(--rad);
-  padding: 1rem 1rem .9rem;
+  padding: 1rem 1rem 1.1rem;
 }
-.ballpark h3 { font-family: var(--display); margin: 0 0 .35rem; font-size: 1.25rem; color: #142018; }
-.ballpark-lead { margin: 0 0 .75rem; color: #4d5a4c; font-size: .92rem; }
-.ballpark-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
-.ballpark-list li {
+.ballpark-cta h3 { font-family: var(--display); margin: 0 0 .4rem; font-size: 1.35rem; color: #142018; }
+.ballpark-lead { margin: 0 0 1rem; color: #4d5a4c; font-size: .98rem; line-height: 1.5; }
+.ballpark-cta-actions {
   display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: .75rem;
-  padding: .5rem 0;
-  border-bottom: 1px solid rgba(20, 32, 24, .1);
-  font-size: .92rem;
-  color: #1a241c;
+  flex-wrap: wrap;
+  gap: .7rem;
 }
-.ballpark-list li span { min-width: 0; }
-.ballpark-list li b { white-space: nowrap; color: #2f6b3f; font-weight: 700; }
-.ballpark-fine { margin: .7rem 0 0; color: #4d5a4c; font-size: .82rem; }
-
-.ballpark-disclaimer { margin: .7rem 0 0; color: #1a241c; font-size: .92rem; line-height: 1.45; }
+.ballpark-cta-actions .btn {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  padding: .9rem 1.15rem;
+}
 .range-disclaimer, .photo-limit {
   margin: .45rem 0 0;
   color: var(--muted);
@@ -1406,10 +1403,7 @@ html.lb-open { overflow: hidden; }
 .photo-limit { color: #4d5a4c; }
 
 @media (min-width: 720px) {
-  .ballpark { padding: 1.25rem 1.4rem 1.1rem; }
-}
-@media (min-width: 1000px) {
-  .ballpark-list { grid-template-columns: 1fr 1fr; column-gap: 2.5rem; }
+  .ballpark-cta { padding: 1.25rem 1.4rem 1.25rem; }
 }
 
 /* ===== Centered hero CTA (all breakpoints) ===== */
