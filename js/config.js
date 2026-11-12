@@ -4,7 +4,7 @@ window.SITE_VARIANTS = {
     id: "a",
     label: "Hero estimate (default)",
     headline: "Call for an estimate.",
-    subline: "Big trees, trees over the house, storm damage: we handle the tough jobs. Enter your address and add photos. Trimming jobs see a ballpark price range; removals get a quote on the callback. We’ll confirm your real price when we call you back.",
+    subline: "Trees, stumps, land clearing and dirt work, plus storm cleanup when weather hits. We handle the tough jobs. Enter your address and add photos. Trimming jobs see a ballpark price range; removals get a quote on the callback. We’ll confirm your real price when we call you back.",
     cta: "Get started",
     heroImage: "img/hero-poster.jpg"
   }

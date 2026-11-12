@@ -1,0 +1,73 @@
+/* Nov 12 motion-hero mockup (review only, not for deploy) */
+
+/* Gentle blaze-orange glow on the B2 cypress lockup, matching the logo rim. */
+.brand-logo {
+  animation: logoGlow 3.2s ease-in-out infinite;
+  will-change: filter;
+}
+@keyframes logoGlow {
+  0%, 100% {
+    filter:
+      drop-shadow(0 2px 6px rgba(0, 0, 0, .45))
+      drop-shadow(0 0 5px rgba(248, 106, 2, .28));
+  }
+  50% {
+    filter:
+      drop-shadow(0 2px 6px rgba(0, 0, 0, .45))
+      drop-shadow(0 0 12px rgba(248, 106, 2, .75))
+      drop-shadow(0 0 26px rgba(248, 106, 2, .40));
+  }
+}
+
+/* Option A: slow Ken Burns on the climber still. Overflow is already hidden
+   on .hero-media. Start slightly over-scaled so a soft pan never shows an edge. */
+.hero-kenburns .hero-bg {
+  transform-origin: 70% 38%;
+  animation: kenburnsDesk 20s ease-in-out infinite alternate;
+  will-change: transform;
+}
+@media (max-width: 799px) {
+  .hero-kenburns .hero-bg {
+    transform-origin: 100% 32%;
+    animation-name: kenburnsMob;
+  }
+}
+@keyframes kenburnsDesk {
+  from { transform: scale(1.04) translate(0, 0); }
+  to   { transform: scale(1.14) translate(-1.6%, -1.1%); }
+}
+@keyframes kenburnsMob {
+  from { transform: scale(1.05) translate(0, 0); }
+  to   { transform: scale(1.14) translate(-1.2%, -1.4%); }
+}
+
+/* Options B and C: restore the looping hero video (the orange reskin hid it). */
+.hero-media .hero-video {
+  display: block !important;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #0A0A0A;
+  z-index: 1;
+}
+.hero-media .hero-video {
+  object-position: 58% 45%;
+}
+@media (max-width: 799px) {
+  .hero-media .hero-video { object-position: 50% 40%; }
+}
+
+/* A slightly deeper shade so bright truck sky does not wash the headline. */
+.hero-has-video .hero-shade {
+  background:
+    linear-gradient(180deg, rgba(10,10,10,.70) 0%, rgba(10,10,10,.38) 30%, rgba(10,10,10,.55) 58%, rgba(10,10,10,.94) 100%),
+    radial-gradient(ellipse at center, rgba(10,10,10,.32) 0%, rgba(10,10,10,.14) 70%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-logo { animation: none !important; }
+  .hero-kenburns .hero-bg { animation: none !important; transform: none !important; }
+  .hero-media .hero-video { display: none !important; }
+}
