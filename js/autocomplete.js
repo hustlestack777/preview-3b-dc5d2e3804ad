@@ -206,35 +206,22 @@
       if (onStatus) onStatus(msg, ok);
     }
 
+    // Keep the list in the page flow under the input (CSS: position absolute). The old
+    // position:fixed math used window.innerHeight, which on iPhones ignores the keyboard,
+    // so the list could land behind it. Only cap the height to the visible viewport.
     function placeList() {
       if (!listEl || listEl.hidden) return;
       const r = input.getBoundingClientRect();
-      const vw = document.documentElement.clientWidth;
-      const vh = window.innerHeight;
-      const left = Math.max(8, Math.min(r.left, vw - Math.min(r.width, vw - 16) - 8));
-      const width = Math.min(Math.max(r.width, 260), vw - left - 8);
-      const spaceBelow = vh - r.bottom - 10;
-      const spaceAbove = r.top - 10;
-      const flip = spaceBelow < 140 && spaceAbove > spaceBelow;
-      const maxH = Math.max(120, Math.min(280, flip ? spaceAbove : spaceBelow));
-      listEl.style.position = "fixed";
-      listEl.style.left = left + "px";
-      listEl.style.width = width + "px";
-      listEl.style.zIndex = "80";
-      listEl.style.maxHeight = maxH + "px";
-      listEl.style.right = "auto";
-      if (flip) {
-        listEl.style.top = "auto";
-        listEl.style.bottom = vh - r.top + 4 + "px";
-      } else {
-        listEl.style.bottom = "auto";
-        listEl.style.top = r.bottom + 4 + "px";
-      }
+      const vv = window.visualViewport;
+      const visibleBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+      const spaceBelow = visibleBottom - r.bottom - 12;
+      listEl.style.maxHeight = Math.max(150, Math.min(280, spaceBelow)) + "px";
     }
 
     function render() {
       if (!listEl) return;
       listEl.innerHTML = "";
+      document.body.classList.toggle("addr-list-open", !!(open && suggestions.length));
       if (!open || !suggestions.length) {
         listEl.hidden = true;
         input.setAttribute("aria-expanded", "false");
@@ -401,6 +388,7 @@
     });
 
     window.addEventListener("resize", placeList);
+    if (window.visualViewport) window.visualViewport.addEventListener("resize", placeList);
     window.addEventListener("scroll", placeList, true);
 
     if (form) {

@@ -452,11 +452,22 @@
       setTimeout(() => state.map.invalidateSize(), 150);
       return;
     }
+    // Locked map: zoom in/out only, always around the house. No panning or dragging,
+    // so one finger still scrolls the page on phones.
     state.map = L.map(el, {
-      zoomControl: true,
+      zoomControl: false,
       attributionControl: true,
-      scrollWheelZoom: true
+      dragging: false,
+      touchZoom: "center",
+      scrollWheelZoom: false,
+      doubleClickZoom: "center",
+      boxZoom: false,
+      keyboard: false,
+      tap: false,
+      minZoom: 16,
+      maxZoom: 21
     }).setView([lat, lon], 20);
+    L.control.zoom({ position: "topleft", zoomInTitle: "Zoom in", zoomOutTitle: "Zoom out" }).addTo(state.map);
     if (state.map.attributionControl) state.map.attributionControl.setPrefix("");
     // Google satellite tiles go to z21 and stay sharp when the map is fitted
     // tightly to the lot (same source GetMowed uses via Static Maps).
@@ -558,6 +569,7 @@
       if (caption) caption.textContent = parcel.label || "Property line from parish records";
       try {
         state.map.fitBounds(state.parcelLayer.getBounds(), { padding: [26, 26], maxZoom: 21 });
+        if (state.map.getZoom() < 16) state.map.setView([lat, lon], 18);
       } catch (_) {
         state.map.setView([lat, lon], 20);
       }
@@ -569,53 +581,9 @@
 
     housePin(lat, lon);
 
-    state.statusLine = "Looking for trees on the lot…";
+    // No automatic tree spotting (Shaun, Nov 12): the customer just sets the counts.
     renderEstimate();
-    let detected = [];
-    try {
-      const overlayUrl = Eng.esriBBoxExportUrl(detectBounds);
-      detected = await Eng.detectTreesFromExport(overlayUrl, detectBounds);
-    } catch (err) {
-      console.warn("detectTrees", err);
-      detected = [];
-    }
-    if (parcel && (parcel.ring || (parcel.rings && parcel.rings.length))) {
-      detected = detected.filter((t) => Eng.pointInParcel(t.lon, t.lat, parcel, 4));
-    }
-
-    detected.forEach((t) => {
-      addMark(t.lat, t.lon, "tree", {
-        source: "detected",
-        canopyFt: t.canopyFt,
-        heightFt: Eng.estimateHeightFt(t.canopyFt || 24, "unknown")
-      });
-    });
-    applyDetectedCounts();
-
-    const parcelAtScan = parcel;
-    Eng.fetchOsmTrees(lat, lon, 70).then((osm) => {
-      if (state.lat !== lat || state.lon !== lon) return;
-      let treesAdded = countKind("tree");
-      let stumpsAdded = countKind("stump");
-      (osm || []).forEach((t) => {
-        const kind = t.kind === "stump" ? "stump" : "tree";
-        const inside = !parcelAtScan || !(parcelAtScan.ring || (parcelAtScan.rings && parcelAtScan.rings.length))
-          ? true
-          : Eng.pointInParcel(t.lon, t.lat, parcelAtScan, 4);
-        if (!inside) return;
-        if (state.marks.some((m) => m.kind === kind && Eng.haversineM(m, t) < 6)) return;
-        if (kind === "tree" && treesAdded >= 16) return;
-        if (kind === "stump" && stumpsAdded >= 8) return;
-        addMark(t.lat, t.lon, kind, {
-          source: "detected",
-          canopyFt: t.canopyFt,
-          heightFt: kind === "tree" ? Eng.estimateHeightFt(t.canopyFt || 24, "unknown") : 0
-        });
-        if (kind === "tree") treesAdded += 1;
-        else stumpsAdded += 1;
-      });
-      applyDetectedCounts();
-    }).catch(() => {});
+    if (window.BlakeScope) window.BlakeScope.show();
     setTimeout(() => state.map.invalidateSize(), 200);
   }
 
@@ -900,6 +868,8 @@
       state.lon = s.lon;
       state.displayName = s.label;
       markAddressReady(s.label);
+      // Picking an address starts the quote right away: one less tap.
+      startFromAddress();
     }
   });
 

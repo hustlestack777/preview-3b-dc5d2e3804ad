@@ -2,10 +2,10 @@
 window.SITE_VARIANTS = {
   a: {
     id: "a",
-    label: "Hero estimate (default)",
-    headline: "Call for an estimate.",
-    subline: "Trees, stumps, land clearing and dirt work, plus storm cleanup when weather hits. We handle the tough jobs. Enter your address and add photos. Trimming jobs see a ballpark price range; removals get a quote on the callback. We’ll confirm your real price when we call you back.",
-    cta: "Get started",
+    label: "Address-first (default)",
+    headline: "Enter your address.",
+    subline: "Start with your address. We pull up your property, you tell us the work, and our team calls you back with your real price. Trees, stumps, land clearing, dirt work and storm cleanup.",
+    cta: "Start my quote",
     heroImage: "img/hero-poster.jpg"
   }
 };
@@ -17,8 +17,8 @@ window.SITE_DEFAULTS = {
   leadEmailTo: "shaun.brasher@gmail.com",
   // Shared lead intake (Render). FormSubmit above stays as the fallback.
   leadApi: "https://tree-leads-3b-4omg.onrender.com",
-  // Ballpark ranges are worked out on this server after the form (no prices on the page).
-  ballparkApi: "https://tree-lrl-credit-preview.onrender.com",
+  // Same-origin so it works on any host (onrender or 3bs.getpros.xyz). Ballpark ranges are worked out on this server after the form (no prices on the page).
+  ballparkApi: window.location.origin,
   phoneVanity: "(318) 712-TREE",
   phoneDisplay: "318-712-8733",
   phoneTel: "+13187128733"
