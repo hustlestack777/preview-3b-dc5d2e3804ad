@@ -1769,14 +1769,20 @@ body.gg-chat-open elevenlabs-convai {
   transform: none;
 }
 
-/* Desktop: sit the auto greeting beside Camille's mid-torso so it
-   does not cover the address field or Get started button. Phone
-   layout below is unchanged. */
+/* Desktop: tuck the greeting onto Camille's mid-torso, clear of the
+   address field, Get started button, ballpark disclaimer, and the
+   last trust chip. */
 @media (min-width: 640px) {
   .gg-talk {
-    width: 220px;
-    margin-bottom: 56px;
+    width: 200px;
+    margin-bottom: 72px;
+    margin-right: -72px;
     padding: 12px 32px 12px 14px;
+  }
+  .hero .fine,
+  .hero .trust-chips {
+    padding-right: 11rem;
+    box-sizing: border-box;
   }
 }
 
@@ -1851,5 +1857,10 @@ body.gg-chat-open elevenlabs-convai {
     right: 8px;
     left: 8px;
     bottom: calc(168px + env(safe-area-inset-bottom, 0px));
+  }
+  /* Keep the cutout off the satellite map and its Satellite control. */
+  body.gg-map-step .gg-widget,
+  body.gg-map-step elevenlabs-convai {
+    display: none !important;
   }
 }

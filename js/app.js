@@ -313,6 +313,8 @@
       setTimeout(() => state.map.invalidateSize(), 80);
       setTimeout(() => state.map.invalidateSize(), 400);
     }
+    const quote = $("#quote");
+    document.body.classList.toggle("gg-map-step", step === 2 && quote && !quote.hidden);
     const card = $("#quote-card");
     if (card && step > 1) card.scrollIntoView({ behavior: "smooth", block: "start" });
   }
