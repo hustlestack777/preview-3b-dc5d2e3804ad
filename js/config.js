@@ -19,6 +19,7 @@ window.SITE_DEFAULTS = {
   leadApi: "https://tree-leads-3b-4omg.onrender.com",
   // Ballpark ranges are worked out on this server after the form (no prices on the page).
   ballparkApi: "https://tree-lrl-credit-preview.onrender.com",
+  phoneVanity: "(318) 712-TREE",
   phoneDisplay: "318-712-8733",
   phoneTel: "+13187128733"
 };
