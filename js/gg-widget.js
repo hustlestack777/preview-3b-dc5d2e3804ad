@@ -1,4 +1,4 @@
-/* GG full-torso chat launcher for the 3 B's preview.
+/* Camille full-torso chat launcher for the 3 B's preview.
    Conversation stays on the ElevenLabs preview agent. This file only
    handles the cutout, greeting, motion, and opening/closing the widget. */
 (function () {
