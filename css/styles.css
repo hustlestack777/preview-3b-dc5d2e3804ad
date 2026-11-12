@@ -1773,7 +1773,12 @@ body.gg-chat-open elevenlabs-convai {
    Get started button, and trust chips stay clear. Full torso on desktop. */
 @media (max-width: 639px) {
   .hero-inner {
-    padding-bottom: calc(13.5rem + env(safe-area-inset-bottom, 0px)) !important;
+    padding-bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .hero .trust-chips {
+    max-width: calc(100% - 4.75rem);
+    margin-right: auto;
+    margin-left: auto;
   }
   .map-shell {
     padding-bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px)) !important;

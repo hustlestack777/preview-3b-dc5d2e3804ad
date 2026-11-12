@@ -95,7 +95,11 @@
     });
   });
 
-  window.setTimeout(showTalk, TALK_DELAY_MS);
+  // On phones the compact launcher stays clear of the address field,
+  // Get started button, and trust chips. The greeting bubble is desktop-only.
+  if (window.matchMedia("(min-width: 640px)").matches) {
+    window.setTimeout(showTalk, TALK_DELAY_MS);
+  }
 
   // Subtle parallax on the cutout. CSS transforms only; skip if reduced motion.
   const life = widget.querySelector(".gg-parallax");
