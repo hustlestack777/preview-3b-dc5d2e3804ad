@@ -33,20 +33,32 @@ function rateLimited(ip) {
   return false;
 }
 
-const BALLPARK_ORIGINS = new Set(["https://hustlestack777.github.io", "https://tree-lrl-credit-preview.onrender.com"]);
+const DEFAULT_CORS_ORIGINS = [
+  "https://hustlestack777.github.io",
+  "https://tree-lrl-credit-preview.onrender.com",
+  "https://getpros.xyz",
+  "https://www.getpros.xyz",
+];
+function corsOrigins(env = process.env) {
+  const extra = String(env.ALLOWED_ORIGINS || "").split(",").map((s) => s.trim()).filter(Boolean);
+  return new Set([...DEFAULT_CORS_ORIGINS, ...extra]);
+}
 const ballparkHits = new Map();
 
 // Server-only files are never served as static pages.
+const MAGNET_BASE = "/3bs-tree-removal";
+
 app.use((req, res, next) => {
-  if (/^\/(server|ballpark|lrl-inquiry(\.test)?)\.js$|^\/package(-lock)?\.json$|^\/\.env|^\/node_modules\//i.test(req.path)) {
+  const path = req.path.replace(/^\/3bs-tree-removal(?=\/|$)/, "") || "/";
+  if (/^\/(server|ballpark|lrl-inquiry(\.test)?|magnet)\.js$|^\/package(-lock)?\.json$|^\/\.env|^\/node_modules\//i.test(path)) {
     return res.status(404).type("text/plain").send("Not found");
   }
   return next();
 });
 
-app.use("/api/ballpark", (req, res, next) => {
+app.use(["/api/ballpark", "/api/lrl-inquiry"], (req, res, next) => {
   const origin = req.get("origin");
-  if (origin && BALLPARK_ORIGINS.has(origin)) {
+  if (origin && corsOrigins().has(origin)) {
     res.set("Access-Control-Allow-Origin", origin);
     res.set("Vary", "Origin");
     res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
@@ -127,6 +139,19 @@ app.post("/api/lrl-inquiry", async (req, res) => {
 
   return res.json({ ok: true });
 });
+
+app.get([MAGNET_BASE, MAGNET_BASE + "/", MAGNET_BASE + "/index.html", MAGNET_BASE + "/index"], (req, res) => {
+  // Express treats /3bs-tree-removal and /3bs-tree-removal/ as the same route unless
+  // we inspect the raw URL. Relative assets need the trailing slash.
+  const path = String(req.originalUrl || req.url || "").split("?")[0];
+  if (path !== MAGNET_BASE + "/") {
+    return res.redirect(302, MAGNET_BASE + "/");
+  }
+  res.set("X-Robots-Tag", "noindex, nofollow");
+  res.set("Cache-Control", "no-store");
+  return res.sendFile(join(__dirname, "magnet.html"));
+});
+app.use(MAGNET_BASE, express.static(__dirname, { extensions: ["html"], index: false }));
 
 app.use(express.static(__dirname, { extensions: ["html"] }));
 
