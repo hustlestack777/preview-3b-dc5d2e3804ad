@@ -1769,6 +1769,17 @@ body.gg-chat-open elevenlabs-convai {
   transform: none;
 }
 
+/* Desktop: sit the auto greeting beside Camille's mid-torso so it
+   does not cover the address field or Get started button. Phone
+   layout below is unchanged. */
+@media (min-width: 640px) {
+  .gg-talk {
+    width: 220px;
+    margin-bottom: 56px;
+    padding: 12px 32px 12px 14px;
+  }
+}
+
 /* Phones: compact head-and-shoulders bubble so the address field,
    Get started button, and trust chips stay clear. Full torso on desktop. */
 @media (max-width: 639px) {
