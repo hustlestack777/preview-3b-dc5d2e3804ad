@@ -80,12 +80,10 @@ export function computeBallpark(input, pricing, markups) {
   const removal = types.has("removal") || (trees.length > 0 && !types.has("trim") && types.has("emergency"));
   const trimOnly = types.size === 1 && types.has("trim") && stumps.length === 0;
   if (removal || !trimOnly) {
-    trees.forEach((t, i) => lines.push({ label: `Tree removal ${i + 1}`, callback: true }));
+    const treeWord = removal ? "Tree removal" : types.has("trim") ? "Trim tree" : "Tree";
+    trees.forEach((t, i) => lines.push({ label: `${treeWord} ${i + 1}`, callback: true }));
     stumps.forEach((s, i) => lines.push({ label: `Stump grinding ${i + 1}`, callback: true }));
     ["clearing", "grading", "pad", "drainage", "haul", "other", "dirt", "emergency"].forEach((t) => { if (types.has(t)) lines.push({ label: CALLBACK_LABELS[t], callback: true }); });
-    if (!removal && types.has("trim")) {
-      lines.splice(0, 0, ...trees.map((t, i) => ({ label: `Trim tree ${i + 1}`, callback: true })));
-    }
     return { range: null, callback: true, reason: removal ? "removal" : "call", lines };
   }
 
