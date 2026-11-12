@@ -897,6 +897,11 @@
           }
         }
       }
+      if (window.inLouisiana && !window.inLouisiana(geo.lat, geo.lon)) {
+        status.textContent = "We serve Central & Southwest Louisiana. Pick a Louisiana address from the list.";
+        status.className = "form-status err";
+        return;
+      }
       const moved = state.lat !== geo.lat || state.lon !== geo.lon;
       state.address = address;
       state.lat = geo.lat;
