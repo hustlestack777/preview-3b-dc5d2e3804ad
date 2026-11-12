@@ -189,58 +189,6 @@ out center tags;`;
     return Math.round(Math.min(120, Math.max(12, canopyFt * r)));
   }
 
-  function blakeAmount(item) {
-    if (!item) return 0;
-    const value = item.price != null ? item.price : item.low;
-    return Number(value) || 0;
-  }
-
-  /** High end is about rangeMarkup over Blake's price, rounded to rangeRoundTo, never below his price. */
-  function rangeHighFromBlakePrice(price, pricing) {
-    const amount = Math.round(Number(price) || 0);
-    const markup = Number(pricing && pricing.rangeMarkup);
-    const step = Number(pricing && pricing.rangeRoundTo);
-    const factor = Number.isFinite(markup) ? markup : 0.15;
-    const roundTo = Number.isFinite(step) && step > 0 ? step : 50;
-    const high = Math.round((amount * (1 + factor)) / roundTo) * roundTo;
-    return Math.max(high, amount);
-  }
-
-  function priceTree(t, pricing, opts) {
-    const bands = pricing.trees.heightBands;
-    const band = bands.find((b) => t.heightFt <= b.maxFt) || bands[bands.length - 1];
-    if (band.callForBallpark) {
-      return { price: null, low: null, high: null, band: band.label, callForBallpark: true };
-    }
-    const useCleanup = Boolean(t.cleanup) && band.cleanupPrice != null;
-    let price = useCleanup ? band.cleanupPrice : blakeAmount(band);
-    const sp = pricing.trees.speciesHardness[t.species] || 1;
-    price *= sp;
-    if (t.nearHouse) price *= pricing.trees.nearStructure;
-    if (t.nearLines) price *= pricing.trees.nearLines;
-    if (t.haulOff) price += blakeAmount(pricing.trees.haulOff);
-    if (t.grind) {
-      const grindBands = pricing.trees.grindWithRemoval;
-      const grind = Array.isArray(grindBands)
-        ? (grindBands.find((b) => t.heightFt <= b.maxFt) || grindBands[grindBands.length - 1])
-        : grindBands;
-      if (grind) price += blakeAmount(grind);
-    }
-    if (opts && opts.emergency) price *= pricing.stormEmergencyMult;
-    price = Math.round(price);
-    return { price, low: price, high: price, band: band.label };
-  }
-
-  function priceStump(s, pricing) {
-    const band =
-      pricing.stumps.bands.find((b) => s.diameterIn <= b.maxIn) ||
-      pricing.stumps.bands[pricing.stumps.bands.length - 1];
-    let price = blakeAmount(band);
-    if (s.haulMulch) price += blakeAmount(pricing.stumps.haulMulch);
-    price = Math.round(price);
-    return { price, low: price, high: price };
-  }
-
   async function stormAlertsForPoint(lat, lon) {
     const headers = {
       Accept: "application/geo+json",
@@ -1010,10 +958,6 @@ out center tags;`;
     overpassContext,
     nearestM,
     estimateHeightFt,
-    priceTree,
-    priceStump,
-    rangeHighFromBlakePrice,
-    blakeAmount,
     stormAlertsForPoint,
     haversineM,
     fetchParcel,

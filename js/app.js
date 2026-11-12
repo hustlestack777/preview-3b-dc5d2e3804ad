@@ -1,7 +1,6 @@
 (() => {
   const defaults = window.SITE_DEFAULTS || {};
   const variants = window.SITE_VARIANTS || {};
-  const pricing = window.TREE_PRICING;
   const Eng = window.TreeEngine;
 
   function readParams() {
@@ -121,7 +120,7 @@
     fd.append("treesOrLimbs", String(payload.treeCount != null ? payload.treeCount : ""));
     fd.append("stumps", String(payload.stumpCount != null ? payload.stumpCount : ""));
     fd.append("notes", payload.notes || "(none)");
-    fd.append("breakdown", (payload.breakdown || []).map((l) => l.label + ": $" + l.low + "–$" + l.high).join("; ") || "(none)");
+    fd.append("breakdown", (payload.ballparkLines || []).join("; ") || "(none)");
     fd.append("marks", JSON.stringify(payload.marks || [], null, 2));
     fd.append("parcel", JSON.stringify(payload.parcel || {}, null, 2));
     fd.append("source", (payload.source || "") + " / " + (payload.variant || ""));
@@ -211,7 +210,7 @@
     const subject = encodeURIComponent("New tree-work lead — " + payload.name);
     const body = encodeURIComponent(
       "Name: " + payload.name + "\nPhone: " + payload.phone + "\nAddress: " + (payload.address || "") +
-      "\nNotes: " + (payload.notes || "") + "\nRange: $" + payload.rangeLow + " – $" + payload.rangeHigh
+      "\nNotes: " + (payload.notes || "") + "\nRange: " + (payload.rangeLow ? "$" + payload.rangeLow + " – $" + payload.rangeHigh : "none (quote on callback)")
     );
     const a = document.createElement("a");
     a.href = "mailto:" + (payload.to || defaults.leadEmailTo) + "?subject=" + subject + "&body=" + body;
@@ -692,54 +691,38 @@
     return items;
   }
 
-  function computeTotals() {
-    const emergency = $("#opt-storm") && $("#opt-storm").checked;
-    const types = state.jobTypes || selectedJobTypes();
-    const has = (t) => types.includes(t);
-    const trimOnly = has("trim") && !has("removal");
-    let low = 0;
-    let high = 0;
-    const lines = [];
-    const add = (label, r) => {
-      if (r && r.callForBallpark) {
-        lines.push({ label, callForBallpark: true });
-        return;
-      }
-      const price = Math.round((r && (r.price != null ? r.price : r.low)) || 0);
-      low += price;
-      lines.push({ label, price, low: price, high: price });
-    };
-    let stumpIdx = 0;
-    quoteItems().forEach((m, index) => {
-      if (m.kind === "tree") {
-        if (trimOnly) {
-          add(`Trim tree ${index + 1}`, pricing.trim);
-        } else {
-          const p = Eng.priceTree(m, pricing, { emergency });
-          add(`Remove tree ${index + 1} · ~${m.heightFt} ft · ${p.band}`, p);
-        }
-      } else {
-        const p = Eng.priceStump(m, pricing);
-        const extra = pricing.stumps.extraStump;
-        const r = stumpIdx > 0 && extra && m.diameterIn <= 24 ? extra : p;
-        stumpIdx += 1;
-        add(`Grind stump · ${m.diameterIn}"`, r);
-      }
-    });
-    if (has("emergency") && !lines.length && pricing.stormCleanup) {
-      add("Storm cleanup (downed limbs)", pricing.stormCleanup);
+  // Wake the preview server so the ballpark comes back fast after the form.
+  if (defaults.ballparkApi) {
+    fetch(defaults.ballparkApi.replace(/\/$/, "") + "/health", { mode: "cors" }).catch(() => {});
+  }
+
+  // Ballpark comes from the server after the contact form. No prices live on this page.
+  async function requestBallpark(contact) {
+    if (!defaults.ballparkApi) return null;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 45000);
+    try {
+      const res = await fetch(defaults.ballparkApi.replace(/\/$/, "") + "/api/ballpark", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: contact.name,
+          phone: contact.phone,
+          consent: true,
+          jobTypes: state.jobTypes || selectedJobTypes(),
+          stormUrgent: !!($("#opt-storm") && $("#opt-storm").checked),
+          items: quoteItems().map((m) => ({ kind: m.kind, heightFt: m.heightFt, diameterIn: m.diameterIn }))
+        }),
+        signal: ctrl.signal
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json || !json.ok) return null;
+      return json;
+    } catch (_) {
+      return null;
+    } finally {
+      clearTimeout(timer);
     }
-    if (has("dirt")) {
-      const dirt = (pricing && (pricing.dirtWork || pricing.landClearing)) || { low: 500, high: 2400 };
-      add("Skid steer dirt work (half day to a full day)", dirt);
-    }
-    const blakeTotal = Math.round(low);
-    return {
-      low: blakeTotal,
-      high: Eng.rangeHighFromBlakePrice(blakeTotal, pricing),
-      lines,
-      callForBallpark: lines.some((line) => line.callForBallpark)
-    };
   }
 
   function renderMedia() {
@@ -1031,7 +1014,6 @@
     }
     state.comments = readComments();
     state.notes = ($("#notes") && $("#notes").value.trim()) || combinedPropertyNotes();
-    const totals = computeTotals();
     const quoted = quoteItems();
     const payload = {
       business: "3 B's Tree Removal",
@@ -1060,9 +1042,10 @@
       photoCount: state.photos.length,
       photoNames: state.photos.map((p) => p.name),
       stormUrgent: !!(document.getElementById("opt-storm") && document.getElementById("opt-storm").checked),
-      rangeLow: totals.callForBallpark && !totals.lines.some((line) => line.low != null) ? null : totals.low,
-      rangeHigh: totals.callForBallpark && !totals.lines.some((line) => line.high != null) ? null : totals.high,
-      breakdown: totals.lines,
+      rangeLow: null,
+      rangeHigh: null,
+      ballparkStatus: "pending",
+      breakdown: [],
       storms: state.storms,
       source: params.src,
       variant: params.v,
@@ -1087,6 +1070,7 @@
       localStorage.setItem(key, JSON.stringify(prev.slice(-50)));
     } catch (_) {}
 
+    let ballpark = null;
     const showRange = () => {
       state.rangeShown = true;
       $("#range").hidden = false;
@@ -1099,26 +1083,28 @@
       if (treeN) countBits.push(plural(treeN, "tree", "trees"));
       if (stumpN) countBits.push(plural(stumpN, "stump", "stumps"));
       const rangeLead = typeBits.length ? typeBits.join(" · ") : (countBits.join(" · ") || "We'll review what you sent");
-      if (!totals.lines.length) {
-        $("#range-label").textContent = rangeLead;
-        $("#range-price").textContent = "We’ll give you a ballpark on the callback";
+      $("#range-label").textContent = countBits.length && typeBits.length ? rangeLead + " · " + countBits.join(" · ") : rangeLead;
+      const priceEl = $("#range-price");
+      if (!ballpark) {
+        priceEl.textContent = "We’ll go over your ballpark range when we call you back.";
+      } else if (ballpark.reason === "removal") {
+        priceEl.textContent = "Tree removals are quoted on your callback";
+      } else if (ballpark.range) {
+        priceEl.textContent = ballpark.callForBallpark
+          ? `${money(ballpark.range.low)} – ${money(ballpark.range.high)}, plus a larger tree we’ll quote on the call`
+          : `${money(ballpark.range.low)} – ${money(ballpark.range.high)}`;
       } else {
-        $("#range-label").textContent = countBits.length ? rangeLead + " · " + countBits.join(" · ") : rangeLead;
-        const priced = totals.lines.filter((line) => !line.callForBallpark);
-        if (!priced.length) {
-          $("#range-price").textContent = "Call for a ballpark";
-        } else if (totals.callForBallpark) {
-          $("#range-price").textContent = `${money(totals.low)} – ${money(totals.high)}, plus a larger tree we’ll quote on the call`;
-        } else {
-          $("#range-price").textContent = `${money(totals.low)} – ${money(totals.high)}`;
-        }
-        totals.lines.forEach((line) => {
-          const li = document.createElement("li");
-          li.textContent = line.callForBallpark
-            ? `${line.label}: Call for a ballpark`
-            : `${line.label}: ${money(line.price != null ? line.price : line.low)}`;
-          ul.appendChild(li);
-        });
+        priceEl.textContent = "We’ll give you a ballpark on the callback";
+      }
+      ((ballpark && ballpark.lines) || []).forEach((line) => {
+        const li = document.createElement("li");
+        li.textContent = line.callback || line.callForBallpark ? `${line.label}: quoted on the callback` : line.label;
+        ul.appendChild(li);
+      });
+      if (ballpark && ballpark.reason === "removal") {
+        const li = document.createElement("li");
+        li.textContent = "Our ballpark prices are for trimming. For a removal, we’ll call you at the time you picked with a quote.";
+        ul.appendChild(li);
       }
       if (state.notes) {
         const li = document.createElement("li");
@@ -1130,15 +1116,25 @@
       thanks.textContent = "Thanks, we got your info. We’ll review your photos and the satellite view, and we’ll confirm your real price when we call you back.";
       $("#range").scrollIntoView({ behavior: "smooth", block: "nearest" });
     };
+    const readyText = () => (ballpark && ballpark.range ? "Your ballpark range is ready." : "Thanks, we got your info.");
 
     const btn = $("#btn-range");
     if (btn) btn.disabled = true;
     status.textContent = "Sending your info…";
     status.className = "form-status";
-    submitLead(payload)
+    requestBallpark({ name, phone })
+      .then((bp) => {
+        ballpark = bp;
+        payload.rangeLow = bp && bp.range ? bp.range.low : null;
+        payload.rangeHigh = bp && bp.range ? bp.range.high : null;
+        payload.ballparkStatus = !bp ? "server unreachable (quote on callback)" : bp.reason === "removal" ? "removal (quote on callback)" : bp.range ? "shown" : "none (quote on callback)";
+        // Lead server prints breakdown lines as prices, so send labels separately (no per-line prices).
+        payload.ballparkLines = ((bp && bp.lines) || []).map((l) => l.label + (l.callback || l.callForBallpark ? " (quote on callback)" : ""));
+        return submitLead(payload);
+      })
       .then(() => {
         showRange();
-        status.textContent = "Your ballpark range is ready.";
+        status.textContent = readyText();
         status.className = "form-status ok";
       })
       .catch(() => {
@@ -1146,7 +1142,7 @@
         showRange();
         const thanks = $("#thanks");
         thanks.textContent = "If your email app opened, please hit send so we get your info. Then we’ll confirm your real price when we call you back.";
-        status.textContent = "Your ballpark range is ready. Please send the email if it appeared.";
+        status.textContent = readyText() + " Please send the email if it appeared.";
         status.className = "form-status ok";
       })
       .finally(() => {
