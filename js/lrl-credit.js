@@ -41,7 +41,8 @@
     errorEl.hidden = true;
     const data = new FormData(form);
     try {
-      const response = await fetch("/api/lrl-inquiry", {
+      const inquiryBase = String((window.SITE_DEFAULTS && window.SITE_DEFAULTS.lrlInquiryApi) || "").replace(/\/$/, "");
+      const response = await fetch(inquiryBase + "/api/lrl-inquiry", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

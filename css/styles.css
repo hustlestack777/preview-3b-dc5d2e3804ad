@@ -1863,3 +1863,21 @@ body.gg-chat-open elevenlabs-convai {
     display: none !important;
   }
 }
+
+
+/* Lead-magnet view at /3bs-tree-removal/: no preview banner, so the bar sits at the top. */
+body.magnet .topbar,
+.topbar.topbar-flush { top: 0; }
+.site-link {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: .14em;
+  font-size: .82rem;
+  font-weight: 600;
+  margin-right: auto;
+  margin-left: .4rem;
+  white-space: nowrap;
+}
+@media (max-width: 720px) {
+  .site-link { display: none; }
+}
