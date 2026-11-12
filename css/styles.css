@@ -1533,3 +1533,4 @@ html.lb-open { overflow: hidden; }
 .scope-panel .choice { display: inline-flex; gap: .35rem; align-items: center; min-height: 36px; }
 .scope-drawing { cursor: crosshair !important; outline: 3px solid #c9892b; outline-offset: -3px; }
 .scope-panel, .scope-panel label, .scope-panel strong, .scope-panel legend, .scope-panel .scope-q > span, .scope-panel .choice { color: #16241b; }
+.scope-panel [hidden], #scope-panel[hidden] { display: none !important; }
