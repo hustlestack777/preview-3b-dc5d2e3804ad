@@ -11,12 +11,14 @@
   const convai = document.querySelector("elevenlabs-convai");
   const fullSrc = "img/gg/gg-outdoor-auburn.webp";
   if (!widget || !launcher) return;
+  let seenPanelOpen = false;
 
   function reduced() {
     return REDUCED.matches;
   }
 
   function setOpen(open) {
+    seenPanelOpen = false;
     widget.classList.toggle("is-open", open);
     document.body.classList.toggle("gg-chat-open", open);
     launcher.setAttribute("aria-expanded", open ? "true" : "false");
@@ -130,6 +132,9 @@
   function watchAgent() {
     if (!convai || !convai.shadowRoot) return false;
     const sr = convai.shadowRoot;
+    // Only drop our open state after the chat panel has actually been seen
+    // open. The widget first shows its terms sheet, which these selectors do
+    // not match; closing on that frame shrank the widget to nothing on phones.
     const mo = new MutationObserver(function () {
       const panel =
         sr.querySelector('[role="dialog"], [class*="panel"], [class*="Sheet"], [class*="chat"]');
@@ -138,7 +143,11 @@
         panel.getAttribute("aria-hidden") !== "true" &&
         getComputedStyle(panel).display !== "none" &&
         getComputedStyle(panel).visibility !== "hidden";
-      if (!open && widget.classList.contains("is-open")) setOpen(false);
+      if (open) seenPanelOpen = true;
+      if (!open && seenPanelOpen && widget.classList.contains("is-open")) {
+        seenPanelOpen = false;
+        setOpen(false);
+      }
       const typing = sr.querySelector(
         '[class*="typing"], [class*="Typing"], [aria-label*="typing" i], [class*="listening"]',
       );
