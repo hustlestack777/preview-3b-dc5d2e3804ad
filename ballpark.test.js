@@ -1,31 +1,36 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { computeBallpark, rangeMarkup } from "./ballpark.js";
+import { computeBallpark, rangeMarkup, sizeMarkups } from "./ballpark.js";
 
 // Made-up numbers only. Blake's real prices live in Render env vars, never in this repo.
 const fake = {
   roundTo: 10,
-  pruning: { bands: [{ maxFt: 30, price: 100, cleanupPrice: 140, label: "Small" }, { maxFt: 999, callForBallpark: true, label: "Very large" }] },
+  pruning: { bands: [{ key: "small", maxFt: 30, price: 100, cleanupPrice: 140, label: "Small" }, { maxFt: 999, callForBallpark: true, label: "Very large" }] },
   stumps: { bands: [{ maxIn: 999, price: 40 }] }
 };
+const m = { sizes: { small: 0.2, medium: 0.3, large: 0.3 }, other: 0.1 };
 
-test("trim: low is no-cleanup price, high is cleanup price plus markup", () => {
-  const r = computeBallpark({ jobTypes: ["trim"], items: [{ kind: "tree", heightFt: 20 }] }, fake, 0.15);
-  assert.deepEqual(r.range, { low: 100, high: 160 });
+test("trim: each option starts at Blake's price, top is price plus the size markup", () => {
+  const r = computeBallpark({ jobTypes: ["trim"], items: [{ kind: "tree", heightFt: 20 }] }, fake, m);
+  assert.deepEqual(r.options.map((o) => [o.low, o.high]), [[100, 120], [140, 170]]);
+});
+
+test("stump add-on goes on top of both ends", () => {
+  const r = computeBallpark({ jobTypes: ["trim", "stump"], items: [{ kind: "tree", heightFt: 20 }, { kind: "stump", diameterIn: 10 }] }, fake, m);
+  assert.deepEqual(r.options.map((o) => [o.low, o.high]), [[140, 160], [180, 210]]);
 });
 
 test("removal gets no range and a callback", () => {
-  const r = computeBallpark({ jobTypes: ["removal"], items: [{ kind: "tree", heightFt: 20 }] }, fake, 0.15);
+  const r = computeBallpark({ jobTypes: ["removal"], items: [{ kind: "tree", heightFt: 20 }] }, fake, m);
   assert.equal(r.range, null);
   assert.equal(r.reason, "removal");
 });
 
 test("no pricing configured gives no range", () => {
-  const r = computeBallpark({ jobTypes: ["trim"], items: [{ kind: "tree", heightFt: 20 }] }, null, 0.15);
-  assert.equal(r.range, null);
+  assert.equal(computeBallpark({ jobTypes: ["trim"], items: [{ kind: "tree", heightFt: 20 }] }, null, m).range, null);
 });
 
-test("markup setting", () => {
-  assert.equal(rangeMarkup({ RANGE_MARKUP: "0.25" }), 0.25);
+test("markup settings", () => {
+  assert.deepEqual(sizeMarkups({ RANGE_MARKUP_SMALL: "0.3" }), { small: 0.3, medium: 0.35, large: 0.35 });
   assert.equal(rangeMarkup({}), 0.15);
 });

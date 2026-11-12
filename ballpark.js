@@ -3,11 +3,15 @@
    environment variable on Render, and the range width comes from RANGE_MARKUP
    (0.15 = 15%). The range is only returned after the contact form is sent.
 
-   Rules:
+   Rules (Shaun approved 11/11 10:13 PM CT):
    - Blake's tree prices are PRUNING / TRIMMING only.
    - Tree removal has no price yet, so removal jobs get no range and a callback quote.
-   - Low end = Blake's no-cleanup price. High end = his cleanup price plus RANGE_MARKUP,
-     rounded to the nearest roundTo (default $50), never below the low end. */
+   - Each option (no cleanup, with cleanup) gets its own range. It starts at Blake's
+     price for that option. The top is his price plus the size's markup, rounded to the
+     nearest roundTo (default $50). Markups are env settings: RANGE_MARKUP_SMALL (0.25),
+     RANGE_MARKUP_MEDIUM (0.35), RANGE_MARKUP_LARGE (0.35).
+   - Stump and tight-access add-ons go on top at Blake's price ("we'll confirm on the call").
+   - Jobs with no tree pruning (stump only, storm cleanup, dirt work) use RANGE_MARKUP. */
 
 const DEFAULT_MARKUP = 0.15;
 const DEFAULT_ROUND = 50;
@@ -23,9 +27,23 @@ export function loadPricing(env = process.env) {
   }
 }
 
+function markupFrom(raw, fallback) {
+  if (raw == null || raw === "") return fallback;
+  const n = Number(raw);
+  return Number.isFinite(n) && n >= 0 && n <= 2 ? n : fallback;
+}
+
 export function rangeMarkup(env = process.env) {
-  const n = Number(env.RANGE_MARKUP);
-  return Number.isFinite(n) && n >= 0 && n <= 2 ? n : DEFAULT_MARKUP;
+  return markupFrom(env.RANGE_MARKUP, DEFAULT_MARKUP);
+}
+
+/** Per-size markups for pruning. */
+export function sizeMarkups(env = process.env) {
+  return {
+    small: markupFrom(env.RANGE_MARKUP_SMALL, 0.25),
+    medium: markupFrom(env.RANGE_MARKUP_MEDIUM, 0.35),
+    large: markupFrom(env.RANGE_MARKUP_LARGE, 0.35),
+  };
 }
 
 function num(v) {
@@ -46,7 +64,8 @@ function clampInt(v, lo, hi, fallback) {
 }
 
 /** items: [{kind:"tree", heightFt} | {kind:"stump", diameterIn}], jobTypes: ["trim","removal",...] */
-export function computeBallpark(input, pricing, markup) {
+/** markups: { sizes: {small, medium, large}, other } */
+export function computeBallpark(input, pricing, markups) {
   const types = new Set((Array.isArray(input && input.jobTypes) ? input.jobTypes : []).map(String));
   const items = Array.isArray(input && input.items) ? input.items.slice(0, 40) : [];
   const emergency = Boolean(input && input.stormUrgent);
@@ -68,10 +87,13 @@ export function computeBallpark(input, pricing, markup) {
   }
 
   const roundTo = pricing.roundTo;
-  let low = 0;
-  let high = 0;
-  let callForBallpark = false;
+  const sizes = (markups && markups.sizes) || sizeMarkups({});
+  const otherMarkup = markups && Number.isFinite(markups.other) ? markups.other : DEFAULT_MARKUP;
   const emergencyMult = emergency && num(pricing.stormEmergencyMult) > 0 ? num(pricing.stormEmergencyMult) : 1;
+  let callForBallpark = false;
+  // Pruning: two options, each its own range.
+  const opt = { noCleanup: { low: 0, high: 0 }, withCleanup: { low: 0, high: 0 } };
+  let prunedTrees = 0;
 
   if (types.has("trim")) {
     const bands = (pricing.pruning && pricing.pruning.bands) || [];
@@ -83,51 +105,69 @@ export function computeBallpark(input, pricing, markup) {
         lines.push({ label: `Trim tree ${i + 1} · ~${h} ft${band && band.label ? " · " + band.label : ""}`, callForBallpark: true });
         return;
       }
-      let base = num(band.price);
-      let withCleanup = band.cleanupPrice != null ? num(band.cleanupPrice) : base;
+      const markup = Number.isFinite(sizes[band.key]) ? sizes[band.key] : otherMarkup;
       let mult = emergencyMult;
       if (t.nearHouse && num(pricing.nearStructure) > 0) mult *= num(pricing.nearStructure);
       if (t.nearLines && num(pricing.nearLines) > 0) mult *= num(pricing.nearLines);
-      base = Math.round(base * mult);
-      withCleanup = Math.round(withCleanup * mult);
-      low += base;
-      high += roundHigh(withCleanup, markup, roundTo);
-      lines.push({ label: `Trim tree ${i + 1} · ~${h} ft · ${band.label || ""}`.trim() });
+      const base = num(band.price);
+      const clean = band.cleanupPrice != null ? num(band.cleanupPrice) : base;
+      // Range comes from Blake's own price; tight access / storm go on top of both ends.
+      const extra = (p) => Math.round(p * mult) - p;
+      opt.noCleanup.low += base + extra(base);
+      opt.noCleanup.high += roundHigh(base, markup, roundTo) + extra(base);
+      opt.withCleanup.low += clean + extra(clean);
+      opt.withCleanup.high += roundHigh(clean, markup, roundTo) + extra(clean);
+      prunedTrees += 1;
+      lines.push({ label: `Trim tree ${i + 1} · ~${h} ft · ${band.label || ""}`.trim() + (mult !== 1 ? " · access/storm add-on, we'll confirm on the call" : "") });
     });
   }
 
+  // Add-ons and non-pruning items.
+  let addOn = 0;
+  let otherLow = 0;
+  let otherHigh = 0;
   const stumpBands = (pricing.stumps && pricing.stumps.bands) || [];
-  stumps.forEach((s, i) => {
-    const d = clampInt(s.diameterIn, 2, 120, 18);
+  stumps.forEach((st, i) => {
+    const d = clampInt(st.diameterIn, 2, 120, 18);
     const band = stumpBands.find((b) => d <= num(b.maxIn)) || stumpBands[stumpBands.length - 1];
     const extra = pricing.stumps && pricing.stumps.extraStump;
     let price = i > 0 && extra != null && d <= 24 ? num(extra) : num(band && band.price);
-    if (s.haulMulch && pricing.stumps && pricing.stumps.haulMulch != null) price += num(pricing.stumps.haulMulch);
+    if (st.haulMulch && pricing.stumps && pricing.stumps.haulMulch != null) price += num(pricing.stumps.haulMulch);
     if (!price) {
       callForBallpark = true;
       lines.push({ label: `Stump grinding · ${d}"`, callForBallpark: true });
       return;
     }
-    low += price;
-    high += roundHigh(price, markup, roundTo);
-    lines.push({ label: `Stump grinding · ${d}"` });
+    addOn += price;
+    otherLow += price;
+    otherHigh += roundHigh(price, otherMarkup, roundTo);
+    lines.push({ label: `Stump grinding · ${d}"` + (prunedTrees ? " · add-on, we'll confirm on the call" : "") });
   });
+  const addOther = (p, label) => {
+    addOn += p;
+    otherLow += p;
+    otherHigh += roundHigh(p, otherMarkup, roundTo);
+    lines.push({ label: label + (prunedTrees ? " · add-on, we'll confirm on the call" : "") });
+  };
+  if (types.has("emergency") && !lines.length && pricing.stormCleanup != null) addOther(num(pricing.stormCleanup), "Storm cleanup (downed limbs)");
+  if (types.has("dirt") && pricing.dirtWork != null) addOther(num(pricing.dirtWork), "Skid steer dirt work (half day to a full day)");
 
-  if (types.has("emergency") && !lines.length && pricing.stormCleanup != null) {
-    const p = num(pricing.stormCleanup);
-    low += p;
-    high += roundHigh(p, markup, roundTo);
-    lines.push({ label: "Storm cleanup (downed limbs)" });
+  if (prunedTrees) {
+    const options = [
+      { id: "no-cleanup", label: "Trimming, no cleanup", low: opt.noCleanup.low + addOn, high: opt.noCleanup.high + addOn },
+      { id: "with-cleanup", label: "Trimming with cleanup", low: opt.withCleanup.low + addOn, high: opt.withCleanup.high + addOn },
+    ];
+    return {
+      range: { low: options[0].low, high: options[1].high },
+      options,
+      addOns: addOn > 0,
+      callback: false,
+      callForBallpark,
+      lines,
+    };
   }
-  if (types.has("dirt") && pricing.dirtWork != null) {
-    const p = num(pricing.dirtWork);
-    low += p;
-    high += roundHigh(p, markup, roundTo);
-    lines.push({ label: "Skid steer dirt work (half day to a full day)" });
-  }
-
-  low = Math.round(low);
-  high = Math.max(Math.round(high), low);
+  const low = Math.round(otherLow);
+  const high = Math.max(Math.round(otherHigh), low);
   if (!low) return { range: null, callback: true, reason: callForBallpark ? "large" : "none", lines };
-  return { range: { low, high }, callback: false, callForBallpark, lines };
+  return { range: { low, high }, options: null, callback: false, callForBallpark, lines };
 }

@@ -1089,6 +1089,18 @@
         priceEl.textContent = "We’ll go over your ballpark range when we call you back.";
       } else if (ballpark.reason === "removal") {
         priceEl.textContent = "Tree removals are quoted on your callback";
+      } else if (ballpark.options && ballpark.options.length) {
+        priceEl.textContent = "";
+        ballpark.options.forEach((o) => {
+          const row = document.createElement("div");
+          row.textContent = `${o.label}: ${money(o.low)} – ${money(o.high)}`;
+          priceEl.appendChild(row);
+        });
+        if (ballpark.callForBallpark) {
+          const row = document.createElement("div");
+          row.textContent = "Plus a larger tree we’ll quote on the call";
+          priceEl.appendChild(row);
+        }
       } else if (ballpark.range) {
         priceEl.textContent = ballpark.callForBallpark
           ? `${money(ballpark.range.low)} – ${money(ballpark.range.high)}, plus a larger tree we’ll quote on the call`
@@ -1101,6 +1113,11 @@
         li.textContent = line.callback || line.callForBallpark ? `${line.label}: quoted on the callback` : line.label;
         ul.appendChild(li);
       });
+      if (ballpark && ballpark.addOns) {
+        const li = document.createElement("li");
+        li.textContent = "Add-ons like stump grinding are included on top. We’ll confirm on the call.";
+        ul.appendChild(li);
+      }
       if (ballpark && ballpark.reason === "removal") {
         const li = document.createElement("li");
         li.textContent = "Our ballpark prices are for trimming. For a removal, we’ll call you at the time you picked with a quote.";
@@ -1130,6 +1147,7 @@
         payload.ballparkStatus = !bp ? "server unreachable (quote on callback)" : bp.reason === "removal" ? "removal (quote on callback)" : bp.range ? "shown" : "none (quote on callback)";
         // Lead server prints breakdown lines as prices, so send labels separately (no per-line prices).
         payload.ballparkLines = ((bp && bp.lines) || []).map((l) => l.label + (l.callback || l.callForBallpark ? " (quote on callback)" : ""));
+        ((bp && bp.options) || []).forEach((o) => payload.ballparkLines.push(`${o.label}: $${o.low} – $${o.high}`));
         return submitLead(payload);
       })
       .then(() => {

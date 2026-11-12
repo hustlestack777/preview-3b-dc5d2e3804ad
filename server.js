@@ -3,7 +3,7 @@ import { Resend } from "resend";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { buildLrlInquiryEmail, lrlInquiryRecipients, validateLrlInquiry } from "./lrl-inquiry.js";
-import { computeBallpark, loadPricing, rangeMarkup } from "./ballpark.js";
+import { computeBallpark, loadPricing, rangeMarkup, sizeMarkups } from "./ballpark.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -78,7 +78,7 @@ app.post("/api/ballpark", (req, res) => {
   if (name.length < 2 || phoneDigits.length < 10 || body.consent !== true) {
     return res.status(400).json({ ok: false, error: "Send your name, phone and consent first." });
   }
-  const result = computeBallpark(body, loadPricing(), rangeMarkup());
+  const result = computeBallpark(body, loadPricing(), { sizes: sizeMarkups(), other: rangeMarkup() });
   res.set("Cache-Control", "no-store");
   return res.json({ ok: true, ...result });
 });
