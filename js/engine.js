@@ -210,33 +210,37 @@ out center tags;`;
       }
     } catch (_) {}
     try {
-      // SPC storm reports — latest day JSON (free)
-      const today = new Date();
-      const y = today.getUTCFullYear();
-      const m = String(today.getUTCMonth() + 1).padStart(2, "0");
-      const d = String(today.getUTCDate()).padStart(2, "0");
-      const spcUrl = `https://www.spc.noaa.gov/climo/reports/${y}${m}${d}_rpts_filtered.json`;
-      const res = await fetch(spcUrl);
-      if (res.ok) {
-        const data = await res.json();
-        const all = []
-          .concat(data.wind || [])
-          .concat(data.hail || [])
-          .concat(data.tornado || []);
-        out.spc = all
-          .filter((r) => {
-            const rlat = parseFloat(r.lat || r.Lat);
-            const rlon = parseFloat(r.lon || r.Lon);
-            if (!isFinite(rlat) || !isFinite(rlon)) return false;
-            return haversineM({ lat, lon }, { lat: rlat, lon: rlon }) < 80000;
-          })
-          .slice(0, 8)
-          .map((r) => ({
-            type: r.type || "report",
-            location: r.location || r.Location || "",
-            comment: r.comment || r.Comment || ""
-          }));
-      }
+      // SPC storm reports (free, CORS-enabled CSV). The dated *_rpts_filtered.json
+      // file does not exist, so read today's and yesterday's filtered CSVs.
+      const files = ["today_filtered.csv", "yesterday_filtered.csv"];
+      const texts = await Promise.all(files.map((f) =>
+        fetch(`https://www.spc.noaa.gov/climo/reports/${f}`)
+          .then((r) => (r.ok ? r.text() : ""))
+          .catch(() => "")
+      ));
+      const all = [];
+      texts.forEach((txt) => {
+        let type = "report";
+        txt.split(/\r?\n/).forEach((line) => {
+          if (!line.trim()) return;
+          const c = line.split(",");
+          if (c[0] === "Time") {
+            type = c[1] === "F_Scale" ? "tornado" : c[1] === "Speed" ? "wind" : c[1] === "Size" ? "hail" : "report";
+            return;
+          }
+          if (c.length < 7) return;
+          all.push({ type, location: c[2] || "", lat: c[5], lon: c[6], comment: c.slice(7).join(",") });
+        });
+      });
+      out.spc = all
+        .filter((r) => {
+          const rlat = parseFloat(r.lat);
+          const rlon = parseFloat(r.lon);
+          if (!isFinite(rlat) || !isFinite(rlon)) return false;
+          return haversineM({ lat, lon }, { lat: rlat, lon: rlon }) < 80000;
+        })
+        .slice(0, 8)
+        .map((r) => ({ type: r.type, location: r.location, comment: r.comment }));
     } catch (_) {}
     out.flag = out.nws.length > 0 || out.spc.length > 0;
     // Hook for later HD imagery pulls when flag is true
