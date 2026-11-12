@@ -33,7 +33,7 @@
       // BEFORE: green canopy mark
       bctx.beginPath();
       bctx.fillStyle = "rgba(40, 160, 70, 0.55)";
-      bctx.strokeStyle = "#e8ffe8";
+      bctx.strokeStyle = "#ffffff";
       bctx.lineWidth = 2;
       bctx.arc(cx, cy, r, 0, Math.PI * 2);
       bctx.fill();

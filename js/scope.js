@@ -59,9 +59,9 @@
     if (layer) { map.removeLayer(layer); layer = null; }
     if (markers) { map.removeLayer(markers); markers = null; }
     markers = L.layerGroup().addTo(map);
-    pts.forEach((p) => L.circleMarker(p, { radius: 5, color: "#fff", weight: 2, fillColor: "#c9892b", fillOpacity: 1 }).addTo(markers));
+    pts.forEach((p) => L.circleMarker(p, { radius: 5, color: "#fff", weight: 2, fillColor: "#F86A02", fillOpacity: 1 }).addTo(markers));
     if (pts.length >= 2) {
-      layer = (pts.length >= 3 ? L.polygon(pts, { color: "#c9892b", weight: 3, fillOpacity: 0.25 }) : L.polyline(pts, { color: "#c9892b", weight: 3 })).addTo(map);
+      layer = (pts.length >= 3 ? L.polygon(pts, { color: "#F86A02", weight: 3, fillOpacity: 0.25 }) : L.polyline(pts, { color: "#F86A02", weight: 3 })).addTo(map);
     }
     if (pts.length >= 3) {
       const sqft = ringAreaM2(pts) * 10.7639;
@@ -246,7 +246,7 @@
       ring.forEach(([lo, la], i) => (i ? g.lineTo(px(lo), py(la)) : g.moveTo(px(lo), py(la))));
       g.closePath();
       g.fillStyle = "rgba(201,137,43,0.25)"; g.fill();
-      g.lineWidth = 4; g.strokeStyle = "#c9892b"; g.stroke();
+      g.lineWidth = 4; g.strokeStyle = "#F86A02"; g.stroke();
       g.fillStyle = "rgba(15,54,34,0.85)"; g.fillRect(0, c.height - 40, c.width, 40);
       g.fillStyle = "#fff"; g.font = "bold 20px sans-serif";
       g.fillText(label(area), 12, c.height - 13);
