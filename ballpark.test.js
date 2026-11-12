@@ -61,3 +61,10 @@ test("markup settings", () => {
   assert.deepEqual(sizeMarkups({ RANGE_MARKUP_SMALL: "0.3" }), { small: 0.3, medium: 0.35, large: 0.35 });
   assert.equal(rangeMarkup({}), 0.15);
 });
+
+test("callback lines only say removal when removal was picked", () => {
+  const r = computeBallpark({ jobTypes: ["stump"], items: [{ kind: "tree", heightFt: 20 }, { kind: "stump", diameterIn: 10 }] }, fake, m);
+  assert.ok(r.lines.every((l) => !/removal/i.test(l.label)));
+  const t = computeBallpark({ jobTypes: ["trim", "clearing"], items: [{ kind: "tree", heightFt: 20 }] }, fake, m);
+  assert.equal(t.lines[0].label, "Trim tree 1");
+});
