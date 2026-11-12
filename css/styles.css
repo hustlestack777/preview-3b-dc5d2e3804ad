@@ -1637,14 +1637,6 @@ html.lb-open { overflow: hidden; }
 .gg-ground {
   display: none;
 }
-.gg-sway, .gg-breathe, .gg-react, .gg-parallax {
-  display: block;
-  width: 100%;
-  height: 100%;
-  transform-origin: 50% 100%;
-  pointer-events: none;
-}
-.gg-parallax { will-change: transform; }
 .gg-cutout {
   position: absolute;
   left: 50%;
@@ -1722,33 +1714,6 @@ html.lb-open { overflow: hidden; }
   font-family: inherit;
 }
 
-/* Subtle life: nested wrappers so transforms do not clobber each other. */
-@keyframes gg-breathe {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.018); }
-}
-@keyframes gg-sway {
-  0%, 100% { transform: rotate(-0.65deg); }
-  50% { transform: rotate(0.65deg); }
-}
-@keyframes gg-wave {
-  0% { transform: rotate(0) scale(1); }
-  30% { transform: rotate(-6deg) scale(1.03); }
-  60% { transform: rotate(3deg) scale(1.01); }
-  100% { transform: rotate(0) scale(1); }
-}
-@keyframes gg-nod {
-  0%, 100% { transform: rotate(0) translateY(0); }
-  40% { transform: rotate(3deg) translateY(4px); }
-  70% { transform: rotate(-0.5deg) translateY(0); }
-}
-.gg-breathe { animation: gg-breathe 4.8s ease-in-out infinite; }
-.gg-sway { animation: gg-sway 6.8s ease-in-out infinite; }
-.gg-widget.is-waving .gg-react { animation: gg-wave .75s ease-out; }
-.gg-widget.is-typing .gg-react { animation: gg-nod .9s ease-in-out infinite; transform-origin: 50% 18%; }
-@media (prefers-reduced-motion: reduce) {
-  .gg-breathe, .gg-sway, .gg-react, .gg-parallax { animation: none !important; transform: none !important; }
-}
 
 /* Hide the default ElevenLabs round "Message" bubble until the chat is open,
    so it cannot cover the hero trust chip or the map. */
@@ -1845,11 +1810,6 @@ body.gg-chat-open elevenlabs-convai {
     filter: none;
     -webkit-mask-image: linear-gradient(to bottom, #000 78%, rgba(0,0,0,.4) 90%, transparent 100%);
     mask-image: linear-gradient(to bottom, #000 78%, rgba(0,0,0,.4) 90%, transparent 100%);
-  }
-  .gg-sway, .gg-breathe, .gg-react, .gg-parallax {
-    transform-origin: 50% 100%;
-    animation: none !important;
-    transform: none !important;
   }
   .gg-talk {
     width: min(220px, calc(100vw - 5.5rem));
