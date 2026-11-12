@@ -3,6 +3,7 @@ import { Resend } from "resend";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import { buildLrlInquiryEmail, lrlInquiryRecipients, validateLrlInquiry } from "./lrl-inquiry.js";
+import { computeBallpark, loadPricing, rangeMarkup } from "./ballpark.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -32,8 +33,54 @@ function rateLimited(ip) {
   return false;
 }
 
+const BALLPARK_ORIGINS = new Set(["https://hustlestack777.github.io", "https://tree-lrl-credit-preview.onrender.com"]);
+const ballparkHits = new Map();
+
+// Server-only files are never served as static pages.
+app.use((req, res, next) => {
+  if (/^\/(server|ballpark|lrl-inquiry(\.test)?)\.js$|^\/package(-lock)?\.json$|^\/\.env|^\/node_modules\//i.test(req.path)) {
+    return res.status(404).type("text/plain").send("Not found");
+  }
+  return next();
+});
+
+app.use("/api/ballpark", (req, res, next) => {
+  const origin = req.get("origin");
+  if (origin && BALLPARK_ORIGINS.has(origin)) {
+    res.set("Access-Control-Allow-Origin", origin);
+    res.set("Vary", "Origin");
+    res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.set("Access-Control-Allow-Headers", "Content-Type");
+  }
+  if (req.method === "OPTIONS") return res.status(204).end();
+  return next();
+});
+
 app.get("/health", (_req, res) => {
   res.type("text/plain").send("ok");
+});
+
+// Ballpark range, only after the contact form. Prices come from Render env vars, never the page.
+app.post("/api/ballpark", (req, res) => {
+  const ip = clientIp(req);
+  const now = Date.now();
+  const recent = (ballparkHits.get(ip) ?? []).filter((t) => now - t < RATE_WINDOW_MS);
+  if (recent.length >= 20) {
+    ballparkHits.set(ip, recent);
+    return res.status(429).json({ ok: false, error: "Please wait a few minutes and try again." });
+  }
+  recent.push(now);
+  ballparkHits.set(ip, recent);
+
+  const body = req.body && typeof req.body === "object" ? req.body : {};
+  const name = String(body.name || "").trim();
+  const phoneDigits = String(body.phone || "").replace(/\D/g, "");
+  if (name.length < 2 || phoneDigits.length < 10 || body.consent !== true) {
+    return res.status(400).json({ ok: false, error: "Send your name, phone and consent first." });
+  }
+  const result = computeBallpark(body, loadPricing(), rangeMarkup());
+  res.set("Cache-Control", "no-store");
+  return res.json({ ok: true, ...result });
 });
 
 app.post("/api/lrl-inquiry", async (req, res) => {
