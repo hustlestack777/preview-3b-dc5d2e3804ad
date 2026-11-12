@@ -1,74 +1,127 @@
-/* Camille full-torso chat launcher for the 3 B's preview.
-   Conversation stays on the ElevenLabs preview agent. This file only
-   handles the cutout, greeting, and opening/closing the widget. */
+/* Camille chat for 3 B's. The conversation stays on the ElevenLabs agent; this file
+   handles the 64px launcher, the greeting, our own 44px close X, and restyles the
+   ElevenLabs sheet: 380x560 on desktop, full-width bottom sheet under 480px, and
+   no orb circle. */
 (function () {
   const TALK_DELAY_MS = 1500;
   const widget = document.getElementById("gg-widget");
   const talk = document.getElementById("gg-talk");
   const launcher = document.getElementById("gg-launcher");
   const dismiss = document.getElementById("gg-talk-dismiss");
+  const closeBtn = document.getElementById("gg-close");
   const convai = document.querySelector("elevenlabs-convai");
-  const fullSrc = "img/gg/gg-outdoor-auburn.webp";
   if (!widget || !launcher) return;
-  let seenPanelOpen = false;
+
+  const SHEET_CSS = `
+    .sheet {
+      position: fixed !important; top: auto !important; left: auto !important;
+      right: 16px !important; bottom: 16px !important;
+      width: 380px !important; max-width: calc(100vw - 32px) !important;
+      height: min(560px, calc(100dvh - 32px)) !important; max-height: none !important;
+      border-radius: 18px !important; box-shadow: 0 18px 50px rgba(0,0,0,.45) !important;
+      pointer-events: auto !important;
+      margin: 0 !important; translate: none !important; scale: none !important; transform: none !important;
+    }
+    .sheet::before {
+      content: "Camille \\00B7  3 B\\2019s Tree Removal"; position: absolute; top: 20px; left: 18px; z-index: 30;
+      font: 700 15px/1.2 "DM Sans", system-ui, sans-serif; color: #1A1A1A;
+    }
+    @media (max-width: 479px) {
+      .sheet {
+        right: 0 !important; left: 0 !important; bottom: 0 !important;
+        width: 100% !important; max-width: none !important;
+        height: min(560px, 85dvh) !important; border-radius: 18px 18px 0 0 !important;
+      }
+    }
+    canvas, .rounded-full.bg-base-border, .rounded-full.overflow-hidden { display: none !important; }
+    button[aria-label="Expand widget"], button[aria-label="Collapse"], .rounded-compact-sheet { display: none !important; }
+    .overlay { pointer-events: none !important; transform: none !important; filter: none !important; contain: none !important; will-change: auto !important; }
+    .overlay > p { display: none !important; }
+  `;
+
+  function styleShadow() {
+    const sr = convai && convai.shadowRoot;
+    if (!sr || sr.getElementById("gg-sheet-style")) return !!sr;
+    const st = document.createElement("style");
+    st.id = "gg-sheet-style";
+    st.textContent = SHEET_CSS;
+    sr.appendChild(st);
+    let raf = 0;
+    new MutationObserver(function () {
+      if (raf) return;
+      raf = requestAnimationFrame(function () { raf = 0; placeClose(); });
+    }).observe(sr, { childList: true, subtree: true });
+    return true;
+  }
+
+  function sheetOpen() {
+    const sr = convai && convai.shadowRoot;
+    const sheet = sr && sr.querySelector(".sheet");
+    if (!sheet) return false;
+    const r = sheet.getBoundingClientRect();
+    return r.width > 0 && r.height > 0;
+  }
+
+  // Pin our 44px X to the sheet's top-right corner, wherever the sheet ends up.
+  function placeClose() {
+    if (!closeBtn || closeBtn.hidden) return;
+    const sr = convai && convai.shadowRoot;
+    const sheet = sr && sr.querySelector(".sheet");
+    const r = sheet && sheet.getBoundingClientRect();
+    if (!r || !r.width) { closeBtn.style.top = ""; closeBtn.style.left = ""; closeBtn.style.bottom = ""; closeBtn.style.right = ""; return; }
+    closeBtn.style.bottom = "auto";
+    closeBtn.style.right = "auto";
+    closeBtn.style.top = Math.round(r.top + 10) + "px";
+    closeBtn.style.left = Math.round(Math.min(r.right, window.innerWidth) - 54) + "px";
+  }
+  function placeCloseSoon() {
+    [0, 120, 300, 600, 1200].forEach(function (t) { setTimeout(placeClose, t); });
+  }
+  window.addEventListener("resize", placeClose);
+  if (window.visualViewport) window.visualViewport.addEventListener("resize", placeClose);
 
   function setOpen(open) {
-    seenPanelOpen = false;
     widget.classList.toggle("is-open", open);
     document.body.classList.toggle("gg-chat-open", open);
     launcher.setAttribute("aria-expanded", open ? "true" : "false");
-    if (talk) talk.hidden = open ? true : talk.hidden;
-    if (open) {
-      hideTalk();
-      loadFullCutout();
-    }
+    if (closeBtn) closeBtn.hidden = !open;
+    if (open) { hideTalk(); placeCloseSoon(); }
   }
 
-  function loadFullCutout() {
-    const img = widget.querySelector(".gg-cutout");
-    if (!img || img.getAttribute("data-full-loaded") === "1") return;
-    if (window.matchMedia("(min-width: 640px)").matches) return; // desktop already uses the full source
-    const probe = new Image();
-    probe.decoding = "async";
-    probe.onload = function () {
-      img.src = fullSrc;
-      img.setAttribute("data-full-loaded", "1");
-    };
-    probe.src = fullSrc;
-  }
-
-  function hideTalk() {
-    if (!talk) return;
-    talk.hidden = true;
-  }
-
+  function hideTalk() { if (talk) talk.hidden = true; }
   function showTalk() {
     if (!talk || widget.classList.contains("is-open")) return;
     talk.hidden = false;
   }
 
   function findConvaiButton() {
-    if (!convai) return null;
-    const sr = convai.shadowRoot;
-    if (!sr) return convai;
-    return (
-      sr.querySelector("button[aria-label], button, [role='button']") || convai
-    );
+    const sr = convai && convai.shadowRoot;
+    if (!sr) return null;
+    return sr.querySelector("button[aria-label], button, [role='button']");
   }
 
   function openAgent() {
+    styleShadow();
     setOpen(true);
+    if (sheetOpen()) return; // already expanded; don't toggle it shut
     const btn = findConvaiButton();
     if (btn && typeof btn.click === "function") btn.click();
+    setTimeout(styleShadow, 300);
+    placeCloseSoon();
   }
 
   function closeAgent() {
     setOpen(false);
+    launcher.focus({ preventScroll: true });
   }
 
   launcher.addEventListener("click", function () {
     if (widget.classList.contains("is-open")) closeAgent();
     else openAgent();
+  });
+  if (closeBtn) closeBtn.addEventListener("click", closeAgent);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && widget.classList.contains("is-open")) closeAgent();
   });
 
   if (dismiss) {
@@ -78,59 +131,46 @@
       hideTalk();
     });
   }
-
   widget.querySelectorAll("[data-gg-open]").forEach(function (chip) {
     chip.addEventListener("click", function (event) {
       event.preventDefault();
       openAgent();
     });
   });
+  widget.querySelectorAll("[data-gg-quote]").forEach(function (chip) {
+    chip.addEventListener("click", function (event) {
+      event.preventDefault();
+      hideTalk();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      const addr = document.getElementById("address");
+      if (addr) setTimeout(function () { addr.focus(); }, 400);
+    });
+  });
 
-  // On phones the compact launcher stays clear of the address field,
-  // Get started button, and trust chips. The greeting bubble is desktop-only.
+  // Greeting bubble is desktop-only (phones just get the small launcher).
   if (window.matchMedia("(min-width: 640px)").matches) {
     window.setTimeout(showTalk, TALK_DELAY_MS);
   }
 
-
-  // When the official widget closes, drop our open state. When it shows a
-  // typing/listening indicator, nod.
-  function watchAgent() {
-    if (!convai || !convai.shadowRoot) return false;
-    const sr = convai.shadowRoot;
-    // Only drop our open state after the chat panel has actually been seen
-    // open. The widget first shows its terms sheet, which these selectors do
-    // not match; closing on that frame shrank the widget to nothing on phones.
-    const mo = new MutationObserver(function () {
-      const panel =
-        sr.querySelector('[role="dialog"], [class*="panel"], [class*="Sheet"], [class*="chat"]');
-      const open =
-        !!panel &&
-        panel.getAttribute("aria-hidden") !== "true" &&
-        getComputedStyle(panel).display !== "none" &&
-        getComputedStyle(panel).visibility !== "hidden";
-      if (open) seenPanelOpen = true;
-      if (!open && seenPanelOpen && widget.classList.contains("is-open")) {
-        seenPanelOpen = false;
-        setOpen(false);
-      }
-      const typing = sr.querySelector(
-        '[class*="typing"], [class*="Typing"], [aria-label*="typing" i], [class*="listening"]',
-      );
-      widget.classList.toggle("is-typing", !!(open && typing));
-    });
-    mo.observe(sr, { childList: true, subtree: true, attributes: true });
-    return true;
+  // Phones: tuck Camille away while a field, list or select is in use, so she
+  // never sits on top of what they're typing or picking.
+  const phone = window.matchMedia("(max-width: 900px)");
+  function isField(el) {
+    return el && el.matches && el.matches("input:not([type=checkbox]):not([type=radio]):not([type=file]), select, textarea");
   }
+  document.addEventListener("focusin", function (e) {
+    if (phone.matches && isField(e.target)) document.body.classList.add("gg-field-focus");
+  });
+  document.addEventListener("focusout", function (e) {
+    if (isField(e.target)) setTimeout(function () {
+      if (!isField(document.activeElement)) document.body.classList.remove("gg-field-focus");
+    }, 120);
+  });
 
   if (convai) {
-    if (!watchAgent()) {
-      const ready = function () {
-        if (watchAgent()) convai.removeEventListener("elevenlabs-convai-ready", ready);
-      };
-      convai.addEventListener("elevenlabs-convai-ready", ready);
+    if (!styleShadow()) {
       customElements.whenDefined("elevenlabs-convai").then(function () {
-        window.setTimeout(watchAgent, 300);
+        window.setTimeout(styleShadow, 300);
       });
     }
   }

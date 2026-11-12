@@ -2,6 +2,7 @@ import express from "express";
 import { Resend } from "resend";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { readFileSync } from "node:fs";
 import { buildLrlInquiryEmail, lrlInquiryRecipients, validateLrlInquiry } from "./lrl-inquiry.js";
 import { computeBallpark, loadPricing, rangeMarkup, sizeMarkups } from "./ballpark.js";
 
@@ -33,8 +34,48 @@ function rateLimited(ip) {
   return false;
 }
 
-const BALLPARK_ORIGINS = new Set(["https://hustlestack777.github.io", "https://tree-lrl-credit-preview.onrender.com", "https://3bs.getpros.xyz"]);
+const BALLPARK_ORIGINS = new Set([
+  "https://hustlestack777.github.io",
+  "https://tree-lrl-credit-preview.onrender.com",
+  "https://3bs.getpros.xyz",
+  "https://getpros.xyz",
+  "https://www.getpros.xyz",
+]);
+
+// Canonical host: https://3bs.getpros.xyz (Shaun, Nov 12). index.html carries it in the
+// canonical/og tags; env CANONICAL_HOST can swap it. The onrender host (and any other
+// host) gets a 301 to the canonical host only while https://<canonical>/health answers
+// "ok" over a valid cert, so the onrender URL never breaks if the domain goes away.
+// CANONICAL_REDIRECT=0 turns the redirect off.
+const SITE_HOST = "3bs.getpros.xyz";
+const CANONICAL_HOST = String(process.env.CANONICAL_HOST || SITE_HOST).trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+const REDIRECT_ON = process.env.CANONICAL_REDIRECT !== "0";
+const indexHtml = readFileSync(join(__dirname, "index.html"), "utf8").split("https://" + SITE_HOST).join("https://" + CANONICAL_HOST);
+let canonicalLive = false;
+let probeFails = 0;
+
+async function probeCanonical() {
+  try {
+    const res = await fetch("https://" + CANONICAL_HOST + "/health", { redirect: "manual", signal: AbortSignal.timeout(8000) });
+    const ok = res.ok && (await res.text()).trim() === "ok";
+    if (ok) { canonicalLive = true; probeFails = 0; return; }
+  } catch {
+    /* DNS or cert not ready */
+  }
+  probeFails += 1;
+  if (probeFails >= 3) canonicalLive = false;
+}
+probeCanonical();
+setInterval(probeCanonical, 5 * 60 * 1000).unref();
 const ballparkHits = new Map();
+
+app.use((req, res, next) => {
+  if (!REDIRECT_ON || !canonicalLive) return next();
+  const host = String(req.headers.host || "").toLowerCase().split(":")[0];
+  if (!host || host === CANONICAL_HOST || req.path === "/health" || req.path.startsWith("/api/")) return next();
+  if (req.method !== "GET" && req.method !== "HEAD") return next();
+  return res.redirect(301, "https://" + CANONICAL_HOST + req.originalUrl);
+});
 
 // Server-only files are never served as static pages.
 app.use((req, res, next) => {
@@ -126,6 +167,11 @@ app.post("/api/lrl-inquiry", async (req, res) => {
   }
 
   return res.json({ ok: true });
+});
+
+app.get(["/", "/index.html", "/index"], (_req, res) => {
+  res.set("Cache-Control", "no-cache");
+  res.type("html").send(indexHtml);
 });
 
 app.use(express.static(__dirname, { extensions: ["html"] }));

@@ -1,12 +1,12 @@
-/* Callback-only jobs (everything except pruning / trimming): scope questions plus an
-   outline on the satellite map that works out square feet and acres. Same idea as the
-   GetMowed address scan: the lot outline from the parcel scan is the starting point,
-   and the customer can trace the work area with a finger or mouse (Draw mode locks the
-   map so it doesn't pan), or tap corners as a fallback. No prices here. */
+/* Land jobs: one simple area step. The whole lot from the parish lines is the default
+   (square feet and acres); "Tap to outline" lets the customer trace just part of it with
+   a finger. The map never pans. No prices here. */
 (function () {
   const $ = (s) => document.querySelector(s);
   const SQFT_PER_ACRE = 43560;
   const CLEARING = new Set(["clearing"]);
+  // The land questions (area, what's on it, access) only show for land jobs.
+  const LAND = new Set(["clearing", "grading", "pad", "drainage", "haul", "other"]);
   const pts = [];
   let layer = null;
   let markers = null;
@@ -20,6 +20,7 @@
   }
   function isScopeJob(list) { return (list || types()).some((t) => t !== "trim"); }
   function hasClearing(list) { return (list || types()).some((t) => CLEARING.has(t)); }
+  function hasLand(list) { return (list || types()).some((t) => LAND.has(t)); }
 
   // Geodesic polygon area (square meters) for [[lat,lon],...]; spherical excess formula.
   function ringAreaM2(latlngs) {
@@ -40,17 +41,36 @@
     return `${fmt(a.sqft)} sq ft · ${a.acres.toFixed(a.acres < 1 ? 2 : 1)} acres`;
   }
 
+  function lotArea() {
+    const p = st().parcel;
+    if (!p || !p.areaSqFt) return null;
+    return { sqft: p.areaSqFt, acres: p.areaSqFt / SQFT_PER_ACRE, source: "lot", ring: p.ring || null };
+  }
+
   function show() {
     const panel = $("#scope-panel");
     if (!panel) return;
     const list = types();
-    panel.hidden = !isScopeJob(list);
+    panel.hidden = !hasLand(list);
     const clearing = $("#scope-clearing");
     if (clearing) clearing.hidden = !hasClearing(list);
     const other = $("#scope-other-wrap");
     if (other) other.hidden = !list.includes("other");
+    // Default: the whole lot from the parish lines, unless they outlined part of it.
+    if (mode !== "draw" && (!area || area.source === "lot")) area = lotArea();
     const out = $("#scope-area");
-    if (out) out.textContent = area ? label(area) + (area.source === "lot" ? " (whole lot from the property lines)" : " (your outline)") : "No area outlined yet.";
+    if (out) {
+      if (mode === "draw" && !(area && area.source === "outline")) out.textContent = "Drag your finger around the area on the map.";
+      else if (area) out.textContent = label(area) + (area.source === "lot" ? " (your whole lot)" : " (the part you outlined)");
+      else out.textContent = "We’ll measure it with you on the callback.";
+    }
+    const toggle = $("#btn-scope-outline");
+    if (toggle) {
+      toggle.hidden = mode === "draw";
+      toggle.setAttribute("aria-pressed", mode === "draw" ? "true" : "false");
+    }
+    const hint = $("#scope-draw-hint");
+    if (hint) hint.hidden = mode !== "draw" && !(area && area.source === "outline");
   }
 
   function redraw() {
@@ -60,7 +80,7 @@
     if (markers) { map.removeLayer(markers); markers = null; }
     markers = L.layerGroup().addTo(map);
     pts.forEach((p) => L.circleMarker(p, { radius: 5, color: "#fff", weight: 2, fillColor: "#F86A02", fillOpacity: 1 }).addTo(markers));
-    if (pts.length >= 2) {
+    if (pts.length >= 2 && mode !== "lot") {
       layer = (pts.length >= 3 ? L.polygon(pts, { color: "#F86A02", weight: 3, fillOpacity: 0.25 }) : L.polyline(pts, { color: "#F86A02", weight: 3 })).addTo(map);
     }
     if (pts.length >= 3) {
@@ -72,8 +92,8 @@
     show();
   }
 
-  // Modes: "move" (pan/zoom the map), "draw" (drag a finger or mouse to trace), "corners" (tap corners).
-  let mode = "move";
+  // One simple step: whole lot by default, or "draw" to trace part of it with a finger.
+  let mode = "lot";
   const history = [];
   let stroke = null;
 
@@ -81,26 +101,23 @@
 
   function setMode(next) {
     const map = st().map;
-    if (!map) {
-      $("#scope-area").textContent = "Enter your address first so the satellite view loads.";
-      return;
-    }
+    if (!map) return;
     hook(map);
     mode = next;
-    const lockMap = mode !== "move";
-    ["dragging", "touchZoom", "doubleClickZoom", "scrollWheelZoom", "boxZoom", "keyboard"].forEach((h) => {
-      if (map[h]) lockMap ? map[h].disable() : map[h].enable();
+    const drawing = mode === "draw";
+    // The map never pans. While drawing, pinch-zoom is paused too so the finger traces.
+    ["touchZoom", "doubleClickZoom"].forEach((h) => {
+      if (map[h]) drawing ? map[h].disable() : map[h].enable();
     });
     const el = map.getContainer();
-    el.classList.toggle("scope-drawing", lockMap);
-    el.style.touchAction = lockMap ? "none" : "";
-    document.querySelectorAll("[data-scope-mode]").forEach((btn) => btn.classList.toggle("is-on", btn.getAttribute("data-scope-mode") === mode));
-    const hint = $("#scope-draw-hint");
-    if (hint) {
-      hint.hidden = mode === "move";
-      hint.textContent = mode === "draw" ? "Drag your finger (or mouse) around the work area. We close the shape for you." : "Tap each corner of the area on the map.";
+    el.classList.toggle("scope-drawing", drawing);
+    el.style.touchAction = drawing ? "none" : "";
+    if (drawing) {
+      pts.length = 0;
+      area = null;
+      try { el.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (_) {}
     }
-    if (lockMap) { $("#scope-not-sure").checked = false; }
+    show();
   }
 
   function hook(map) {
@@ -139,6 +156,7 @@
       }
       if (pts.length < 3) { const prev = history.pop() || []; pts.length = 0; prev.forEach((p) => pts.push(p)); }
       redraw();
+      if (pts.length >= 3) setMode("outlined");
     };
     el.addEventListener("pointerup", end, true);
     el.addEventListener("pointercancel", end, true);
@@ -154,30 +172,15 @@
     redraw();
   }
 
-  function undo() {
-    const prev = history.pop();
-    pts.length = 0;
-    (prev || []).forEach((p) => pts.push(p));
-    if (!prev) area = null;
-    redraw();
-  }
   function clearOutline() {
-    if (pts.length) snapshot();
     pts.length = 0;
-    area = null;
     redraw();
   }
-  function finishOutline() { setMode("move"); }
   function useLot() {
-    const p = st().parcel;
-    if (!p || !p.areaSqFt) {
-      $("#scope-area").textContent = "We couldn't find the lot lines here. Draw the area instead, or check “not sure.”";
-      return;
-    }
     clearOutline();
-    if (st().map) setMode("move");
-    area = { sqft: p.areaSqFt, acres: p.areaSqFt / SQFT_PER_ACRE, source: "lot", ring: p.ring || null };
-    show();
+    area = null;
+    if (st().map) setMode("lot");
+    else { mode = "lot"; show(); }
   }
 
   function radio(name) {
@@ -258,15 +261,11 @@
 
   document.addEventListener("change", (e) => {
     if (e.target && e.target.name === "job-type") show();
-    if (e.target && e.target.id === "scope-not-sure" && e.target.checked) { if (st().map) setMode("move"); clearOutline(); }
   });
   document.addEventListener("click", (e) => {
     const btn = e.target && e.target.closest && e.target.closest("button");
     if (!btn) return;
-    const m = btn.getAttribute("data-scope-mode");
-    if (m) setMode(m);
-    if (btn.id === "btn-scope-undo") undo();
-    if (btn.id === "btn-scope-clear") clearOutline();
+    if (btn.id === "btn-scope-outline") setMode("draw");
     if (btn.id === "btn-scope-lot") useLot();
   });
   show();
