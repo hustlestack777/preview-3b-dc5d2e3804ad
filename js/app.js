@@ -258,9 +258,11 @@
     displayName: "",
     context: { buildings: [], power: [] },
     marks: [],
-    treeCount: 2,
+    // No preselected work or count (Precious QA, Nov 12): the customer picks.
+    treeCount: 0,
     stumpCount: 0,
-    jobTypes: ["removal"],
+    jobTypes: [],
+    treeSize: "",
     countsTouched: false,
     spottedTrees: null,
     spottedStumps: null,
@@ -281,7 +283,7 @@
 
   let markSeq = 0;
   let lastNotePrefill = "";
-  const DEFAULT_TREES = 2;
+  const DEFAULT_TREES = 0;
   const DEFAULT_STUMPS = 0;
   const MAX_TREES = 40;
   const MAX_STUMPS = 20;
@@ -422,6 +424,20 @@
     haul: "Debris haul-off",
     other: "Other"
   };
+  const SIZE_HINTS = {
+    small: "Small (about as tall as a one-story house)",
+    medium: "Medium (about as tall as a two-story house)",
+    large: "Large (taller than a two-story house)"
+  };
+  document.querySelectorAll('input[name="tree-size"]').forEach((el) => {
+    el.addEventListener("change", () => { if (el.checked) state.treeSize = el.value; });
+  });
+  // Only trimming-only jobs ever get a price range. Removal, stumps, storm, clearing and
+  // dirt work are "call for a ballpark" (Shaun, Nov 12).
+  function isTrimOnly() {
+    const t = state.jobTypes || [];
+    return t.length === 1 && t[0] === "trim" && !state.stumpCount;
+  }
   function selectedJobTypes() {
     return Array.from(document.querySelectorAll('input[name="job-type"]:checked')).map((el) => el.value);
   }
@@ -435,6 +451,8 @@
       const lab = el.closest(".job-type");
       if (lab) lab.classList.toggle("is-on", el.checked);
     });
+    const sizeBox = $("#tree-size");
+    if (sizeBox) sizeBox.hidden = !selected.has("trim");
   }
   document.querySelectorAll('input[name="job-type"]').forEach((el) => {
     el.addEventListener("change", () => {
@@ -651,6 +669,7 @@
           species: src.species || "unknown",
           canopyFt: src.canopyFt,
           heightFt: src.heightFt || avgH,
+          size: state.treeSize || undefined,
           notes: "",
           source: src.source || "detected"
         });
@@ -661,6 +680,7 @@
           species: "unknown",
           canopyFt: 24,
           heightFt: avgH,
+          size: state.treeSize || undefined,
           notes: "",
           source: "count"
         });
@@ -701,7 +721,7 @@
           consent: true,
           jobTypes: state.jobTypes || selectedJobTypes(),
           stormUrgent: !!($("#opt-storm") && $("#opt-storm").checked),
-          items: quoteItems().map((m) => ({ kind: m.kind, heightFt: m.heightFt, diameterIn: m.diameterIn }))
+          items: quoteItems().map((m) => ({ kind: m.kind, heightFt: m.heightFt, size: m.size, diameterIn: m.diameterIn }))
         }),
         signal: ctrl.signal
       });
@@ -873,6 +893,14 @@
     }
   });
 
+  if ($("#town") && $("#town-suggestions")) {
+    window.AddressAutocomplete.attach({
+      input: $("#town"),
+      listEl: $("#town-suggestions"),
+      onSelect(s) { $("#town").value = s.label; }
+    });
+  }
+
   async function startFromAddress() {
     const status = $("#addr-status");
     const address = $("#address").value.trim();
@@ -914,7 +942,9 @@
         state.countsTouched = false;
         state.treeCount = DEFAULT_TREES;
         state.stumpCount = DEFAULT_STUMPS;
-        state.jobTypes = ["removal"];
+        state.jobTypes = [];
+        state.treeSize = "";
+        document.querySelectorAll('input[name="tree-size"]').forEach((el) => { el.checked = false; });
         syncJobTypeUi();
         state.spottedTrees = null;
         state.spottedStumps = null;
@@ -962,6 +992,20 @@
 
   $("#btn-to-photos").addEventListener("click", () => {
     const status = $("#property-status");
+    const types = state.jobTypes || [];
+    const need = !types.length
+      ? "Pick the kind of work you need."
+      : (types.includes("trim") || types.includes("removal")) && state.treeCount < 1
+        ? "Use + to tell us how many trees."
+        : types.includes("trim") && !state.treeSize
+          ? "Pick the tree size: small, medium or large."
+          : "";
+    if (need && status) {
+      status.textContent = need;
+      status.className = "form-status err";
+      status.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     state.comments = readComments();
     const combined = combinedPropertyNotes();
     const notesEl = $("#notes");
@@ -981,6 +1025,8 @@
     const notesEl = $("#notes");
     state.comments = readComments();
     state.notes = (notesEl && notesEl.value.trim()) || combinedPropertyNotes();
+    const townEl = $("#town");
+    if (townEl && !townEl.value.trim()) townEl.value = state.displayName || state.address || "";
     goStep(4);
   });
   $("#btn-back-photos").addEventListener("click", () => goStep(3));
@@ -1047,7 +1093,8 @@
       scope,
       scopeSummary,
       // Lead server keeps notes as the description, so the scope answers ride along there.
-      notes: [scopeSummary, state.notes].filter(Boolean).join("\n\n"),
+      treeSize: state.treeSize || "",
+      notes: [state.treeSize && (state.jobTypes || []).includes("trim") ? "Tree size (trimming): " + SIZE_HINTS[state.treeSize] : "", scopeSummary, state.notes].filter(Boolean).join("\n\n"),
       access: scope ? ["Gate: " + (scope.gateWidth || "?"), "Skid steer can get in: " + (scope.skidSteer || "?"), state.comments].filter(Boolean).join(" · ") : undefined,
       storms: state.storms,
       source: params.src,
@@ -1091,7 +1138,7 @@
       if (!ballpark) {
         priceEl.textContent = "We’ll go over your ballpark range when we call you back.";
       } else if (ballpark.reason === "removal") {
-        priceEl.textContent = "Tree removals are quoted on your callback";
+        priceEl.textContent = "We’ll give you a ballpark when we call you back.";
       } else if (ballpark.options && ballpark.options.length) {
         priceEl.textContent = "";
         ballpark.options.forEach((o) => {
@@ -1123,7 +1170,7 @@
       }
       if (ballpark && ballpark.reason === "removal") {
         const li = document.createElement("li");
-        li.textContent = "Our ballpark prices are for trimming. For a removal, we’ll call you at the time you picked with a quote.";
+        li.textContent = "Removals, stumps and dirt work: call for a ballpark. We’ll go over it when we call you at the time you picked.";
         ul.appendChild(li);
       }
       if (state.notes) {
@@ -1131,12 +1178,19 @@
         li.textContent = "You wrote: " + state.notes;
         ul.appendChild(li);
       }
+      const hasRange = !!(ballpark && (ballpark.range || (ballpark.options && ballpark.options.length)));
+      ["#range-note", "#range-disclaimer"].forEach((sel) => { const el = $(sel); if (el) el.hidden = !hasRange; });
+      const stepEl = $("#step-contact");
+      if (stepEl) stepEl.classList.add("is-sent");
+      status.textContent = "";
       const thanks = $("#thanks");
       thanks.hidden = false;
       thanks.textContent = scope
         ? "Thanks! Our team will review your satellite view and photos, and we’ll call you back at the time you picked to go over it. Bigger jobs may need a quick site visit."
         : "Thanks, we got your info. We’ll review your photos and the satellite view, and we’ll confirm your real price when we call you back.";
-      $("#range").scrollIntoView({ behavior: "smooth", block: "nearest" });
+      $("#range").scrollIntoView({ behavior: "smooth", block: "start" });
+      const tt = $("#thanks-title");
+      if (tt) tt.focus({ preventScroll: true });
     };
     const readyText = () => (ballpark && ballpark.range ? "Your ballpark range is ready." : "Thanks, we got your info.");
 
@@ -1146,27 +1200,25 @@
     status.className = "form-status";
     requestBallpark({ name, phone })
       .then((bp) => {
+        if (bp && !isTrimOnly()) bp = Object.assign({}, bp, { range: null, options: null, lines: (bp.lines || []).map((l) => ({ label: l.label, callback: true })) });
         ballpark = bp;
         payload.rangeLow = bp && bp.range ? bp.range.low : null;
         payload.rangeHigh = bp && bp.range ? bp.range.high : null;
         payload.ballparkStatus = !bp ? "server unreachable (quote on callback)" : bp.reason === "removal" ? "removal (quote on callback)" : bp.range ? "shown" : "none (quote on callback)";
         // Lead server prints breakdown lines as prices, so send labels separately (no per-line prices).
         payload.ballparkLines = ((bp && bp.lines) || []).map((l) => l.label + (l.callback || l.callForBallpark ? " (quote on callback)" : ""));
-        ((bp && bp.options) || []).forEach((o) => payload.ballparkLines.push(`${o.label}: $${o.low} – $${o.high}`));
+        if (isTrimOnly()) ((bp && bp.options) || []).forEach((o) => payload.ballparkLines.push(`${o.label}: $${o.low} – $${o.high}`));
         return submitLead(payload);
       })
       .then(() => {
         showRange();
-        status.textContent = readyText();
-        status.className = "form-status ok";
       })
       .catch(() => {
         mailtoFallback(payload);
         showRange();
         const thanks = $("#thanks");
         thanks.textContent = "If your email app opened, please hit send so we get your info. Then we’ll confirm your real price when we call you back.";
-        status.textContent = readyText() + " Please send the email if it appeared.";
-        status.className = "form-status ok";
+
       })
       .finally(() => {
         if (btn) btn.disabled = false;
