@@ -281,6 +281,8 @@ button, input { font: inherit; }
 .fields label { display: grid; gap: .35rem; font-weight: 600; font-size: .9rem; }
 .fields input[type="text"],
 .fields input[type="tel"],
+.fields input[type="email"],
+.fields .addr-wrap input,
 .notes-label textarea {
   border: 1px solid var(--line);
   background: rgba(0,0,0,.25);
@@ -630,14 +632,38 @@ button, input { font: inherit; }
   position: relative;
   border-top: 1px solid var(--line);
 }
+.map-draw-prompt,
 .map-hint-overlay {
   position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 8px;
+  bottom: auto;
+  z-index: 500;
+  pointer-events: none;
+  text-align: center;
+}
+.map-draw-prompt[hidden],
+.map-hint-overlay[hidden] { display: none !important; }
+.map-draw-prompt {
+  left: 56px;
+  background: rgba(10,10,10,.9);
+  color: #fff;
+  font-weight: 700;
+  font-size: .92rem;
+  line-height: 1.35;
+  padding: .65rem .85rem;
+  border-radius: 12px;
+  border: 1px solid #F86A02;
+  box-shadow: 0 10px 30px rgba(0,0,0,.35);
+}
+.map-hint-overlay {
   left: 50%;
+  right: auto;
   top: auto;
   bottom: 12px;
   transform: translate(-50%, 0);
   z-index: 5;
-  pointer-events: none;
 }
 .map-hint-overlay span {
   display: inline-block;
@@ -1708,8 +1734,9 @@ html.lb-open { overflow: hidden; }
   }
   /* Room for the 108px torso: trust chips stay left of her column. */
   .hero .trust-chips { padding-right: 8.25rem; box-sizing: border-box; max-width: none; margin-left: 0; margin-right: 0; }
-  /* "Tap to outline" and "Use my whole lot instead" stay left of her column. */
-  .scope-area-q { padding-right: var(--gg-col, 0px); }
+  /* Whole land-clearing panel, including the "Trimming gets a ballpark range" box,
+     stays left of Camille's 108px column (8px inset + 8px gap). */
+  .scope-panel { margin-right: 124px; }
 }
 /* Phones: the chat is a full-width bottom sheet, so she steps behind it while open. */
 @media (max-width: 479px) {
@@ -1912,6 +1939,54 @@ details.sv-panel:not([open]) .sv-frame { display: none; }
 .town-wrap { margin-bottom: .2rem; }
 .town-wrap input { width: 100%; }
 .thanks-title { margin: 0 0 .4rem; font-size: 1.25rem; outline: none; }
+#step-contact .choice-group {
+  border: 0;
+  margin: .15rem 0 0;
+  padding: 0;
+  min-width: 0;
+}
+#step-contact .choice-group legend {
+  font-weight: 600;
+  font-size: .9rem;
+  padding: 0;
+  margin: 0 0 .45rem;
+  color: inherit;
+}
+#step-contact .choice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .45rem;
+}
+#step-contact .choice {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  margin: 0;
+  border: 1px solid rgba(255,255,255,.16);
+  background: #1A1A1A;
+  border-radius: 999px;
+  padding: .65rem .95rem;
+  min-height: 44px;
+  font-size: .92rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  cursor: pointer;
+  user-select: none;
+}
+#step-contact .choice input {
+  margin: 0;
+  accent-color: #F86A02;
+}
+#step-contact .choice:has(input:checked),
+#step-contact .choice.is-on {
+  background: #F86A02;
+  color: #0A0A0A;
+  border-color: #F86A02;
+}
+#step-contact .choice:focus-within {
+  outline: 3px solid #F86A02;
+  outline-offset: 2px;
+}
 #step-contact.is-sent .fields, #step-contact.is-sent .step-nav, #step-contact.is-sent .sat-lead { display: none; }
 .addr-row { position: relative; z-index: 5; }
 .addr-field { position: relative; flex: 1 1 auto; min-width: 0; display: flex; }

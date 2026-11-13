@@ -174,17 +174,23 @@
   // instead") left of Camille's 108px column so she never covers them.
   const phone = window.matchMedia("(max-width: 639px)");
   function clearColumn() {
-    // Keep the whole land-clearing panel (Tap to outline, gate width, etc.) left of
-    // Camille's column on phones, so she never sits over a control.
+    // Keep the whole land-clearing panel (including the "Trimming gets a
+    // ballpark range" box) left of Camille's column. Margin, not padding, so
+    // the box edge itself does not run under her. CSS already sets 124px on
+    // phones; this trims or adds so the box edge sits 8px left of her.
     const q = document.getElementById("scope-panel");
     if (!q) return;
     q.style.paddingRight = "";
-    if (!phone.matches) { q.style.paddingRight = ""; return; }
+    if (!phone.matches) { q.style.marginRight = ""; return; }
+    q.style.marginRight = "";
+    const box = q.getBoundingClientRect();
+    if (q.hidden || !box.width) return;
     const lr = launcher.getBoundingClientRect();
     const colLeft = (lr.width ? lr.left : window.innerWidth - 116) - 8;
-    const right = q.getBoundingClientRect().right;
-    if (!right) return;
-    q.style.paddingRight = Math.max(0, Math.ceil(right - colLeft)) + "px";
+    const overflow = Math.ceil(box.right - colLeft);
+    const cur = parseFloat(window.getComputedStyle(q).marginRight) || 0;
+    // Grow or shrink the CSS fallback so the box edge sits 8px left of Camille.
+    q.style.marginRight = Math.max(0, Math.ceil(cur + overflow)) + "px";
   }
   // The greeting bubble pokes out left of her column; tuck it away while the quote tool is
   // on screen so it never sits over a quote button.
@@ -195,7 +201,14 @@
     }).observe(quoteCard);
   }
   window.addEventListener("resize", clearColumn);
-  document.addEventListener("change", function () { setTimeout(clearColumn, 30); });
+  document.addEventListener("change", function () {
+    setTimeout(clearColumn, 30);
+    setTimeout(clearColumn, 250);
+  });
+  const scopePanel = document.getElementById("scope-panel");
+  if (scopePanel && typeof MutationObserver === "function") {
+    new MutationObserver(function () { setTimeout(clearColumn, 30); }).observe(scopePanel, { attributes: true, attributeFilter: ["hidden"] });
+  }
   clearColumn();
 
   if (convai) {

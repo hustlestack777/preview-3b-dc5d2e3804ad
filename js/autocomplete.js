@@ -6,7 +6,8 @@
 (function (global) {
   const PROXIMITY = { lon: -92.5, lat: 31.0 }; // LA / TX center — same as HS
   const MIN_CHARS = 3;
-  const DEBOUNCE_MS = 220;
+  const DEBOUNCE_MS = 280;
+  const PROVIDER_MS = 2000;
   const LIMIT = 6;
   // Louisiana only (3 B's serves Central & Southwest Louisiana).
   const EXTENT = { xmin: -94.05, ymin: 28.9, xmax: -88.8, ymax: 33.03 };
@@ -19,15 +20,28 @@
     return lat >= EXTENT.ymin && lat <= EXTENT.ymax && lon >= EXTENT.xmin && lon <= EXTENT.xmax;
   }
 
-  async function fetchJson(url, opts, ms) {
+  function aborted(signal) {
+    return !!(signal && signal.aborted);
+  }
+
+  async function fetchJson(url, opts, ms, signal) {
     const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), ms || 8000);
+    const t = setTimeout(() => ctrl.abort(), ms || PROVIDER_MS);
+    const onAbort = () => ctrl.abort();
+    if (signal) {
+      if (signal.aborted) {
+        clearTimeout(t);
+        throw new DOMException("Aborted", "AbortError");
+      }
+      signal.addEventListener("abort", onAbort, { once: true });
+    }
     try {
-      const res = await fetch(url, Object.assign({ signal: ctrl.signal }, opts || {}));
+      const res = await fetch(url, Object.assign({}, opts || {}, { signal: ctrl.signal }));
       if (!res.ok) throw new Error("http " + res.status);
       return await res.json();
     } finally {
       clearTimeout(t);
+      if (signal) signal.removeEventListener("abort", onAbort);
     }
   }
 
@@ -51,12 +65,13 @@
     };
   }
 
-  async function esriSuggest(query) {
+  async function esriSuggest(query, signal) {
     const attempts = [
       { category: "Address" },
       {} // short prefixes like "123 Ma" / "401 R" often fail if category is set
     ];
     for (let i = 0; i < attempts.length; i++) {
+      if (aborted(signal)) throw new DOMException("Aborted", "AbortError");
       const extra = attempts[i];
       const params = {
         f: "json",
@@ -70,7 +85,15 @@
       const url =
         "https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/suggest?" +
         new URLSearchParams(params);
-      const data = await fetchJson(url);
+      let data;
+      try {
+        data = await fetchJson(url, null, PROVIDER_MS, signal);
+      } catch (err) {
+        if (aborted(signal)) throw err;
+        // Timeout or network error: skip the second ArcGIS attempt and let a
+        // fallback provider run. Empty results still try without category.
+        return [];
+      }
       const list = preferLocal(
         (data.suggestions || [])
           .filter((s) => s && s.text)
@@ -120,7 +143,7 @@
     };
   }
 
-  async function photonSuggest(query) {
+  async function photonSuggest(query, signal) {
     const url =
       "https://photon.komoot.io/api/?" +
       new URLSearchParams({
@@ -131,7 +154,7 @@
         lon: String(PROXIMITY.lon),
         bbox: [EXTENT.xmin, EXTENT.ymin, EXTENT.xmax, EXTENT.ymax].join(",")
       });
-    const data = await fetchJson(url);
+    const data = await fetchJson(url, null, PROVIDER_MS, signal);
     return (data.features || [])
       .map(formatPhoton)
       .filter((f) => {
@@ -142,7 +165,7 @@
       .slice(0, LIMIT);
   }
 
-  async function nominatimSuggest(query) {
+  async function nominatimSuggest(query, signal) {
     const url =
       "https://nominatim.openstreetmap.org/search?" +
       new URLSearchParams({
@@ -154,7 +177,7 @@
         viewbox: [EXTENT.xmin, EXTENT.ymax, EXTENT.xmax, EXTENT.ymin].join(","),
         bounded: "1"
       });
-    const data = await fetchJson(url, { headers: { Accept: "application/json" } });
+    const data = await fetchJson(url, { headers: { Accept: "application/json" } }, PROVIDER_MS, signal);
     return (data || []).filter((r) => inServiceBox(parseFloat(r.lat), parseFloat(r.lon))).map((r, i) => ({
       id: "nom-" + (r.place_id || i),
       label: r.display_name,
@@ -164,19 +187,66 @@
     }));
   }
 
-  async function fetchSuggestions(query) {
+  function delay(ms, signal) {
+    return new Promise((resolve, reject) => {
+      if (aborted(signal)) {
+        reject(new DOMException("Aborted", "AbortError"));
+        return;
+      }
+      const t = setTimeout(resolve, ms);
+      if (signal) {
+        signal.addEventListener(
+          "abort",
+          () => {
+            clearTimeout(t);
+            reject(new DOMException("Aborted", "AbortError"));
+          },
+          { once: true }
+        );
+      }
+    });
+  }
+
+  async function firstNonEmpty(promises, signal) {
+    if (!promises.length) return [];
+    return new Promise((resolve) => {
+      let pending = promises.length;
+      const done = (list) => {
+        if (aborted(signal)) { resolve([]); return; }
+        if (list && list.length) { resolve(list); return; }
+        pending -= 1;
+        if (pending <= 0) resolve([]);
+      };
+      promises.forEach((p) => p.then(done, () => done([])));
+    });
+  }
+
+  async function fetchSuggestions(query, signal) {
     if (!query || query.trim().length < MIN_CHARS) return [];
     const q = query.trim();
+    const esriP = esriSuggest(q, signal).catch((err) => {
+      if (aborted(signal)) throw err;
+      return [];
+    });
+
+    // Give ArcGIS a short head start. If it is still pending, overlap Photon
+    // and take the first non-empty list so the UI does not wait out a hang.
+    const early = await Promise.race([
+      esriP.then((list) => ({ list })),
+      delay(600, signal).then(() => null).catch(() => null)
+    ]).catch(() => null);
+    if (aborted(signal)) return [];
+    if (early && early.list && early.list.length) return early.list;
+
+    const photonP = photonSuggest(q, signal).then(preferLocal).catch((err) => {
+      if (aborted(signal)) throw err;
+      return [];
+    });
+    const first = await firstNonEmpty([esriP, photonP], signal);
+    if (aborted(signal)) return [];
+    if (first.length) return first;
     try {
-      const esri = await esriSuggest(q);
-      if (esri.length) return esri;
-    } catch (_) {}
-    try {
-      const ph = await photonSuggest(q);
-      if (ph.length) return preferLocal(ph);
-    } catch (_) {}
-    try {
-      return preferLocal(await nominatimSuggest(q));
+      return preferLocal(await nominatimSuggest(q, signal));
     } catch (_) {
       return [];
     }
@@ -195,6 +265,7 @@
     let lastQuery = "";
     let reqSeq = 0;
     let searching = false;
+    let inflight = null;
 
     function setStatus(msg, ok) {
       if (onStatus) onStatus(msg, ok);
@@ -287,6 +358,10 @@
     function scheduleFetch(val) {
       confirmed = false;
       if (debounceTimer) clearTimeout(debounceTimer);
+      if (inflight) {
+        inflight.abort();
+        inflight = null;
+      }
       if (!val || val.trim().length < MIN_CHARS) {
         suggestions = [];
         open = false;
@@ -299,14 +374,17 @@
       setStatus("Searching addresses…", false);
       debounceTimer = setTimeout(async () => {
         const seq = ++reqSeq;
+        const ctrl = new AbortController();
+        inflight = ctrl;
         lastQuery = val;
         let list = [];
         try {
-          list = await fetchSuggestions(val);
+          list = await fetchSuggestions(val, ctrl.signal);
         } catch (_) {
           list = [];
         }
         if (seq !== reqSeq || input.value.trim() !== lastQuery.trim()) return;
+        if (inflight === ctrl) inflight = null;
         searching = false;
         suggestions = list;
         active = 0;

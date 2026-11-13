@@ -59,18 +59,36 @@
     // Default: the whole lot from the parish lines, unless they outlined part of it.
     if (mode !== "draw" && (!area || area.source === "lot")) area = lotArea();
     const out = $("#scope-area");
+    const outlining = mode === "corners" || mode === "draw";
     if (out) {
-      if (mode === "draw" && !(area && area.source === "outline")) out.textContent = "Drag your finger around the area on the map.";
-      else if (area) out.textContent = label(area) + (area.source === "lot" ? " (your whole lot)" : " (the part you outlined)");
-      else out.textContent = "We’ll measure it with you on the callback.";
+      if (outlining && !(area && area.source === "outline")) {
+        out.textContent = pts.length >= 3
+          ? "Tap more points if you need, then tap Done."
+          : "Tap points on the map to outline the area, then tap Done.";
+      } else if (area) {
+        out.textContent = label(area) + (area.source === "lot" ? " (your whole lot)" : " (the part you outlined)");
+      } else {
+        out.textContent = "We’ll measure it with you on the callback.";
+      }
     }
     const toggle = $("#btn-scope-outline");
     if (toggle) {
-      toggle.hidden = mode === "draw";
-      toggle.setAttribute("aria-pressed", mode === "draw" ? "true" : "false");
+      toggle.hidden = false;
+      toggle.classList.toggle("is-on", outlining);
+      toggle.setAttribute("aria-pressed", outlining ? "true" : "false");
+      if (outlining && pts.length >= 3) toggle.textContent = "Done";
+      else if (outlining) toggle.textContent = "Tap points to outline / Done";
+      else toggle.textContent = "Just part of it? Tap to outline";
     }
     const hint = $("#scope-draw-hint");
-    if (hint) hint.hidden = mode !== "draw" && !(area && area.source === "outline");
+    if (hint) hint.hidden = !outlining && !(area && area.source === "outline");
+    const prompt = $("#map-draw-prompt");
+    if (prompt) {
+      prompt.hidden = !outlining;
+      prompt.textContent = (outlining && pts.length >= 3)
+        ? "Tap more points if you need, then tap Done."
+        : "Tap points on the map to outline the area, then tap Done.";
+    }
   }
 
   function redraw() {
@@ -100,22 +118,33 @@
   function snapshot() { history.push(pts.map((p) => p.slice())); if (history.length > 30) history.shift(); }
 
   function setMode(next) {
-    const map = st().map;
-    if (!map) return;
-    hook(map);
+    const wasOutlining = mode === "corners" || mode === "draw";
     mode = next;
-    const drawing = mode === "draw";
-    // The map never pans. While drawing, pinch-zoom is paused too so the finger traces.
-    ["touchZoom", "doubleClickZoom"].forEach((h) => {
-      if (map[h]) drawing ? map[h].disable() : map[h].enable();
-    });
-    const el = map.getContainer();
-    el.classList.toggle("scope-drawing", drawing);
-    el.style.touchAction = drawing ? "none" : "";
-    if (drawing) {
+    const outlining = mode === "corners" || mode === "draw";
+    const starting = outlining && !wasOutlining;
+    if (starting) {
       pts.length = 0;
       area = null;
-      try { el.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (_) {}
+    }
+    const map = st().map;
+    if (map) {
+      hook(map);
+      // The map never pans. While outlining, pinch-zoom is paused so taps stay on the map.
+      ["touchZoom", "doubleClickZoom"].forEach((h) => {
+        if (map[h]) outlining ? map[h].disable() : map[h].enable();
+      });
+      const el = map.getContainer();
+      el.classList.toggle("scope-drawing", outlining);
+      el.style.touchAction = outlining ? "none" : "";
+      if (starting) {
+        try { el.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (_) {}
+        // Wait for the scroll so a tap lands on the right map pixel, then show the prompt.
+        setTimeout(() => { try { map.invalidateSize(); } catch (_) {} }, 350);
+        setTimeout(() => { try { map.invalidateSize(); } catch (_) {} }, 700);
+      }
+    } else if (starting) {
+      const shell = document.getElementById("leaflet-map") || document.querySelector(".map-shell");
+      if (shell) { try { shell.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (_) {} }
     }
     show();
   }
@@ -124,11 +153,28 @@
     if (map.__scopeHooked) return;
     map.__scopeHooked = true;
     const el = map.getContainer();
-    map.on("click", (e) => {
-      if (mode !== "corners") return;
+    let lastCornerAt = 0;
+    function addCorner(latlng) {
+      if (mode !== "corners" || !latlng) return;
+      const now = Date.now();
+      if (now - lastCornerAt < 250) return;
+      lastCornerAt = now;
       snapshot();
-      pts.push([e.latlng.lat, e.latlng.lng]);
+      pts.push([latlng.lat, latlng.lng]);
       redraw();
+    }
+    map.on("click", (e) => addCorner(e.latlng));
+    // After the map scrolls into view, some phones skip Leaflet's click. A
+    // short tap still gets a point.
+    el.addEventListener("pointerup", (e) => {
+      if (mode !== "corners" || e.button) return;
+      if (typeof e.pointerType === "string" && e.pointerType === "mouse") return;
+      if (e.target && e.target.closest && e.target.closest(".leaflet-control")) return;
+      const ll = map.containerPointToLatLng(L.point(
+        e.clientX - el.getBoundingClientRect().left,
+        e.clientY - el.getBoundingClientRect().top
+      ));
+      addCorner(ll);
     });
     el.addEventListener("pointerdown", (e) => {
       if (mode !== "draw") return;
@@ -265,7 +311,22 @@
   document.addEventListener("click", (e) => {
     const btn = e.target && e.target.closest && e.target.closest("button");
     if (!btn) return;
-    if (btn.id === "btn-scope-outline") setMode("draw");
+    if (btn.id === "btn-scope-outline") {
+      if (mode === "corners" || mode === "draw") {
+        if (pts.length >= 3) setMode("outlined");
+        else {
+          const out = $("#scope-area");
+          if (out) out.textContent = "Tap at least three points on the map, then tap Done.";
+          const prompt = $("#map-draw-prompt");
+          if (prompt) {
+            prompt.hidden = false;
+            prompt.textContent = "Tap at least three points on the map, then tap Done.";
+          }
+        }
+      } else {
+        setMode("corners");
+      }
+    }
     if (btn.id === "btn-scope-lot") useLot();
   });
   show();
