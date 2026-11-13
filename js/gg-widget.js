@@ -205,6 +205,24 @@
   // Phones: once the quote tool is open, Camille becomes a 56px round
   // bubble in the corner. The card stays full width (no side gutter).
   const phone = window.matchMedia("(max-width: 639px)");
+  function syncSizeClear() {
+    if (!phone.matches || !document.body.classList.contains("gg-funnel")) {
+      document.body.classList.remove("gg-size-clear");
+      return;
+    }
+    const row = document.querySelector(".tree-size-row");
+    const launch = document.getElementById("gg-launcher");
+    const fieldset = document.getElementById("tree-size");
+    if (!row || !launch || (fieldset && fieldset.hidden)) {
+      document.body.classList.remove("gg-size-clear");
+      return;
+    }
+    const rr = row.getBoundingClientRect();
+    const lr = launch.getBoundingClientRect();
+    // Vertical overlap only, so toggling the inset does not loop.
+    const vert = rr.bottom > 0 && rr.top < window.innerHeight && rr.top < lr.bottom && lr.top < rr.bottom;
+    document.body.classList.toggle("gg-size-clear", vert);
+  }
   function syncFunnel() {
     const quote = document.getElementById("quote");
     const on = !!(quote && !quote.hidden);
@@ -214,6 +232,7 @@
     // Clear the PR #18 right inset if a stale inline style is still around.
     if (card) card.style.paddingRight = "";
     if (panel) { panel.style.paddingRight = ""; panel.style.marginRight = ""; }
+    syncSizeClear();
   }
   // The greeting bubble pokes out left of her column; tuck it away while the quote tool is
   // on screen so it never sits over a quote button.
@@ -228,6 +247,11 @@
     new MutationObserver(syncFunnel).observe(quoteSection, { attributes: true, attributeFilter: ["hidden"] });
   }
   window.addEventListener("resize", syncFunnel);
+  window.addEventListener("scroll", syncSizeClear, { passive: true });
+  const sizeSet = document.getElementById("tree-size");
+  if (sizeSet && typeof MutationObserver === "function") {
+    new MutationObserver(syncSizeClear).observe(sizeSet, { attributes: true, attributeFilter: ["hidden"] });
+  }
   syncFunnel();
 
   if (convai) {
