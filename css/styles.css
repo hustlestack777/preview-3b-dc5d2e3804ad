@@ -2065,12 +2065,16 @@ details.sv-panel:not([open]) .sv-frame { display: none; }
     box-shadow: 0 4px 16px rgba(0,0,0,.35);
   }
   body.gg-thanks .gg-cutout {
-    height: 78px;
-    width: auto;
-    top: -4px;
-    bottom: auto;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    transform: none;
     object-fit: cover;
-    object-position: center 12%;
+    object-position: center 10%;
     -webkit-mask-image: none;
     mask-image: none;
   }
@@ -2154,8 +2158,9 @@ body.gg-quote-in-view .gg-talk { display: none !important; }
    At 320 the 108px torso covered the Louisiana trust chip and
    How it works step 3. Shrink her to the same 56px icon bubble
    used on the thank-you screen so that copy can show in full,
-   and give How it works a matching right clearance. 390+ and
-   desktop stay unchanged. */
+   as a head-and-shoulders icon that fills the circle. How it works
+   cards stay full width; hero fine print keeps a small clearance.
+   390+ and desktop stay unchanged. */
 @media (max-width: 340px) {
   .gg-widget {
     right: 8px;
@@ -2170,16 +2175,27 @@ body.gg-quote-in-view .gg-talk { display: none !important; }
     background: #1A1A1A;
     box-shadow: 0 4px 16px rgba(0,0,0,.35);
   }
+  .gg-stage picture,
+  .gg-stage picture picture {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
   .gg-cutout {
-    height: 78px;
-    width: auto;
-    top: -4px;
-    bottom: auto;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    transform: none;
     object-fit: cover;
-    object-position: center 12%;
+    object-position: center 10%;
     -webkit-mask-image: none;
     mask-image: none;
   }
+  /* Hero fine print still needs a little room; How it works cards go full width. */
   .hero .trust-chips,
   .hero .addr-hint,
   .hero .fine,
@@ -2191,8 +2207,14 @@ body.gg-quote-in-view .gg-talk { display: none !important; }
     white-space: normal;
   }
   #how .wrap {
+    padding-right: 0;
+  }
+  /* Cards themselves go full width; only the text is inset so it clears the 56px bubble. */
+  .how-grid > div {
     padding-right: 4.5rem;
-    box-sizing: border-box;
+  }
+  #how {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
   }
 }
 @media (min-width: 341px) and (max-width: 389px) {
