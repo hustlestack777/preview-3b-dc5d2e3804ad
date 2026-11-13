@@ -2097,3 +2097,43 @@ details.sv-panel:not([open]) .sv-frame { display: none; }
   }
 }
 body.gg-quote-in-view .gg-talk { display: none !important; }
+
+/* ===== QA Nov 12: 360 hero clip + compact step labels =====
+   The headline "Enter your address." is ~339px at the 2.15rem floor.
+   .hero is a grid, and .hero-inner's width: calc(100% - 2rem) plus
+   min-width: auto made the grid column ~371px. Overflow was hidden,
+   so the address box, Start button and the end of the sub line were
+   clipped at 360 (fine at 390+, where 371 still fits). */
+.hero,
+.hero-inner {
+  min-width: 0;
+  max-width: 100%;
+}
+@media (max-width: 400px) {
+  .hero h1 {
+    font-size: clamp(1.8rem, 9vw, 2.15rem);
+  }
+  .steps {
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: .45rem;
+  }
+  .steps li:not(.is-on) {
+    font-size: 0;
+    line-height: 0;
+    letter-spacing: 0;
+    padding: 0;
+    width: .5rem;
+    height: .5rem;
+    min-width: .5rem;
+    overflow: hidden;
+    color: transparent;
+  }
+  .steps li.is-done:not(.is-on) {
+    background: #FFC089;
+  }
+  .steps li.is-on {
+    white-space: nowrap;
+    flex: 0 1 auto;
+  }
+}
