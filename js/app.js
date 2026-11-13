@@ -1031,6 +1031,40 @@
   });
   $("#btn-back-photos").addEventListener("click", () => goStep(3));
 
+  function phoneDigits(value) {
+    return String(value || "").replace(/\D/g, "").slice(0, 10);
+  }
+  function formatUsPhone(digits) {
+    if (!digits) return "";
+    if (digits.length < 4) return "(" + digits;
+    if (digits.length < 7) return "(" + digits.slice(0, 3) + ") " + digits.slice(3);
+    return "(" + digits.slice(0, 3) + ") " + digits.slice(3, 6) + "-" + digits.slice(6);
+  }
+  const phoneEl = $("#phone");
+  if (phoneEl) {
+    phoneEl.addEventListener("input", () => {
+      const before = phoneEl.value;
+      const caret = phoneEl.selectionStart || 0;
+      const digitsBefore = phoneDigits(before.slice(0, caret)).length;
+      const digits = phoneDigits(before);
+      const formatted = formatUsPhone(digits);
+      phoneEl.value = formatted;
+      let pos = formatted.length;
+      if (digitsBefore === 0) {
+        pos = formatted.indexOf("(") >= 0 ? 1 : 0;
+      } else {
+        let seen = 0;
+        for (let i = 0; i < formatted.length; i++) {
+          if (/\d/.test(formatted[i])) {
+            seen += 1;
+            if (seen >= digitsBefore) { pos = i + 1; break; }
+          }
+        }
+      }
+      try { phoneEl.setSelectionRange(pos, pos); } catch (err) {}
+    });
+  }
+
   function radioVal(name) {
     const el = document.querySelector('input[name="' + name + '"]:checked');
     return el ? el.value : "";

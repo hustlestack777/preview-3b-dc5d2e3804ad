@@ -8,6 +8,7 @@
   const TALK_FADE_MS = 450;
   const widget = document.getElementById("gg-widget");
   const talk = document.getElementById("gg-talk");
+  const ask = document.getElementById("gg-ask");
   const launcher = document.getElementById("gg-launcher");
   const dismiss = document.getElementById("gg-talk-dismiss");
   const closeBtn = document.getElementById("gg-close");
@@ -171,6 +172,13 @@
       hideTalk();
     });
   }
+  if (ask) {
+    ask.addEventListener("click", function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      openAgent();
+    });
+  }
   widget.querySelectorAll("[data-gg-open]").forEach(function (chip) {
     chip.addEventListener("click", function (event) {
       event.preventDefault();
@@ -202,37 +210,35 @@
     }
   }
 
-  // Phones: once the quote tool is open, Camille becomes a 56px round
-  // bubble in the corner. The card stays full width (no side gutter).
-  const phone = window.matchMedia("(max-width: 639px)");
-  function syncSizeClear() {
-    if (!phone.matches || !document.body.classList.contains("gg-funnel")) {
-      document.body.classList.remove("gg-size-clear");
-      return;
-    }
-    const row = document.querySelector(".tree-size-row");
-    const launch = document.getElementById("gg-launcher");
-    const fieldset = document.getElementById("tree-size");
-    if (!row || !launch || (fieldset && fieldset.hidden)) {
-      document.body.classList.remove("gg-size-clear");
-      return;
-    }
-    const rr = row.getBoundingClientRect();
-    const lr = launch.getBoundingClientRect();
-    // Vertical overlap only, so toggling the inset does not loop.
-    const vert = rr.bottom > 0 && rr.top < window.innerHeight && rr.top < lr.bottom && lr.top < rr.bottom;
-    document.body.classList.toggle("gg-size-clear", vert);
+  // Phones (<=767px): hide Camille on property, photos, and contact so no
+  // control sits under her. On the thank-you screen a small "Questions? Ask me"
+  // bubble comes back. No fade-on-intersect (it would flicker).
+  function quotePhase() {
+    const quote = document.getElementById("quote");
+    if (!quote || quote.hidden) return "hero";
+    const contact = document.getElementById("step-contact");
+    if (contact && contact.classList.contains("is-sent")) return "thanks";
+    const photos = document.getElementById("step-photos");
+    if (photos && !photos.hidden) return "photos";
+    if (contact && !contact.hidden) return "contact";
+    return "property";
   }
   function syncFunnel() {
     const quote = document.getElementById("quote");
     const on = !!(quote && !quote.hidden);
+    const phase = quotePhase();
+    const steps = on && (phase === "property" || phase === "photos" || phase === "contact");
+    const thanks = on && phase === "thanks";
     document.body.classList.toggle("gg-funnel", on);
+    document.body.classList.toggle("gg-quote-steps", steps);
+    document.body.classList.toggle("gg-thanks", thanks);
+    document.body.setAttribute("data-quote-phase", on ? phase : "hero");
     const card = document.getElementById("quote-card");
     const panel = document.getElementById("scope-panel");
-    // Clear the PR #18 right inset if a stale inline style is still around.
     if (card) card.style.paddingRight = "";
     if (panel) { panel.style.paddingRight = ""; panel.style.marginRight = ""; }
-    syncSizeClear();
+    if (ask) ask.hidden = !thanks;
+    if (steps && widget.classList.contains("is-open")) closeAgent();
   }
   // The greeting bubble pokes out left of her column; tuck it away while the quote tool is
   // on screen so it never sits over a quote button.
@@ -247,11 +253,12 @@
     new MutationObserver(syncFunnel).observe(quoteSection, { attributes: true, attributeFilter: ["hidden"] });
   }
   window.addEventListener("resize", syncFunnel);
-  window.addEventListener("scroll", syncSizeClear, { passive: true });
-  const sizeSet = document.getElementById("tree-size");
-  if (sizeSet && typeof MutationObserver === "function") {
-    new MutationObserver(syncSizeClear).observe(sizeSet, { attributes: true, attributeFilter: ["hidden"] });
-  }
+  ["step-property", "step-photos", "step-contact"].forEach(function (id) {
+    const el = document.getElementById(id);
+    if (el && typeof MutationObserver === "function") {
+      new MutationObserver(syncFunnel).observe(el, { attributes: true, attributeFilter: ["hidden", "class"] });
+    }
+  });
   syncFunnel();
 
   if (convai) {

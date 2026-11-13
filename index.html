@@ -30,7 +30,7 @@
   <meta name="twitter:title" content="3 B's Tree Removal | Enter Your Address for a Tree Quote" />
   <meta name="twitter:description" content="Enter your address to start a tree quote. Trees, stumps, land clearing, dirt work and storm cleanup in Central &amp; Southwest Louisiana. Our team calls you back with your real price." />
   <meta name="twitter:image" content="https://3bs.getpros.xyz/og-image.jpg" />
-  <link rel="stylesheet" href="css/styles.css?v=20261112qa21" />
+  <link rel="stylesheet" href="css/styles.css?v=20261112qa22" />
   <link rel="stylesheet" href="css/motion.css?v=20261112motion1" />
 </head>
 <body>
@@ -296,10 +296,13 @@
           <div class="q-step" data-step="3" id="step-photos" hidden>
             <h2 class="step-title">Photos &amp; notes</h2>
             <p class="sat-lead">Photos help us judge height, condition and access. Add as many as you’d like. Trimming jobs see a ballpark range; removals get a quote on the callback. We’ll confirm your real price when we call you back.</p>
-            <label class="photo-label">Photos or a short video of the trees or stumps
-              <span>Add as many photos as you’d like. We’ll shrink them and attach as many as the 10 MB email limit allows. Tap the × to remove one.</span>
-              <input id="photos" type="file" accept="image/*,video/*" multiple />
-            </label>
+            <div class="photo-field">
+              <p class="photo-label" id="photo-label-text">Photos or a short video of the trees or stumps
+                <span>Add as many photos as you’d like. We’ll shrink them and attach as many as the 10 MB email limit allows. Tap the × to remove one.</span>
+              </p>
+              <input id="photos" class="sr" type="file" accept="image/*,video/*" multiple />
+              <label for="photos" class="btn btn-photos" id="btn-add-photos">Add photos</label>
+            </div>
             <div class="photo-prev" id="photo-prev"></div>
             <p class="photo-limit" id="photo-limit" hidden></p>
             <label class="notes-label">Notes <span>Optional</span>
@@ -659,7 +662,7 @@
   <script src="js/pricing.js?v=20261111p"></script>
   <script src="js/engine.js?v=20261112s"></script>
   <script src="js/autocomplete.js?v=20261112qa16"></script>
-  <script src="js/app.js?v=20261112full2"></script>
+  <script src="js/app.js?v=20261112qa22"></script>
   <script src="js/scope.js?v=20261112qa16"></script>
   <script src="js/media.js?v=20261111a"></script>
   <script src="js/lrl-credit.js?v=20261111-lrl2"></script>
@@ -674,6 +677,7 @@
         <button type="button" class="gg-chip" data-gg-open>Ask Camille</button>
       </div>
     </div>
+    <button type="button" class="gg-ask" id="gg-ask" hidden>Questions? Ask me</button>
     <button type="button" class="gg-stage" id="gg-launcher" aria-label="Chat with Camille" aria-expanded="false">
       <picture>
         <picture><source media="(min-width: 640px)" srcset="img/gg/gg-outdoor-auburn.webp" /><img class="gg-cutout" src="img/gg/gg-outdoor-auburn-sm.webp" width="253" height="520" alt="" decoding="async" /></picture>
@@ -683,6 +687,6 @@
   <button type="button" class="gg-close" id="gg-close" aria-label="Close chat with Camille" hidden>&times;</button>
   <elevenlabs-convai agent-id="agent_2301m76zjc0dfm2afvx1y2z980k7"></elevenlabs-convai>
   <script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
-  <script src="js/gg-widget.js?v=20261112qa21" defer></script>
+  <script src="js/gg-widget.js?v=20261112qa22" defer></script>
 </body>
 </html>

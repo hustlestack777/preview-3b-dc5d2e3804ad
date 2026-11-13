@@ -255,11 +255,22 @@ button, input { font: inherit; }
 .chip strong { display: block; font-size: .98rem; }
 .chip span { display: block; color: var(--muted); font-size: .82rem; margin-top: .15rem; }
 .chip.is-on { border-color: var(--green); background: rgba(248,106,2,.12); }
+.photo-field { margin-top: 1rem; }
 .photo-label {
-  display: block; margin-top: 1rem; font-weight: 600; font-size: .92rem;
+  display: block; margin: 0; font-weight: 600; font-size: .92rem;
 }
-.photo-label span { color: var(--muted); font-weight: 500; }
-.photo-label input { display: block; margin-top: .45rem; width: 100%; }
+.photo-label span { display: block; color: var(--muted); font-weight: 500; margin-top: .2rem; }
+.btn-photos {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: .65rem;
+  background: #F86A02;
+  color: #0A0A0A;
+  box-sizing: border-box;
+}
+.btn-photos:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 .photo-prev { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: .6rem; }
 .photo-prev img { width: 64px; height: 64px; object-fit: cover; border-radius: 10px; }
 
@@ -1938,6 +1949,22 @@ details.sv-panel:not([open]) .sv-frame { display: none; }
 .tree-size-opt input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
 .tree-size-opt:has(input:checked) { border-color: #F86A02; box-shadow: inset 0 0 0 2px #F86A02; background: rgba(248,106,2,.12); }
 .tree-size-opt:focus-within { outline: 3px solid #F86A02; outline-offset: 2px; }
+@media (max-width: 400px) {
+  .tree-size-row { grid-template-columns: 1fr; gap: .5rem; }
+  .tree-size-opt {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    grid-template-rows: auto auto;
+    align-items: center;
+    justify-items: start;
+    text-align: left;
+    gap: .1rem .75rem;
+    padding: .65rem .85rem;
+  }
+  .tree-size-opt svg { grid-row: 1 / span 2; width: 72px; max-width: 72px; }
+  .tree-size-opt strong { grid-column: 2; font-size: 1rem; }
+  .tree-size-opt span { grid-column: 2; }
+}
 .town-wrap { margin-bottom: .2rem; }
 .town-wrap input { width: 100%; }
 .thanks-title { margin: 0 0 .4rem; font-size: 1.25rem; outline: none; }
@@ -1994,18 +2021,41 @@ details.sv-panel:not([open]) .sv-frame { display: none; }
 .addr-field { position: relative; flex: 1 1 auto; min-width: 0; display: flex; }
 .addr-field > input { flex: 1; min-width: 0; }
 .addr-field > .addr-suggestions { top: calc(100% + 4px); left: 0; right: 0; z-index: 90; }
-/* Desktop/tablet: keep the quote tool left of Camille's column (300px + 16px gap + 16px),
-   so neither she nor her open chat ever sits over a button (Precious QA, ~880px Continue). */
-@media (min-width: 640px) { .quote { padding-right: 332px; } }
-@media (max-width: 639px) {
-  /* During the quote steps, Camille is a 56px round bubble in the
-     bottom-right. The card stays full width and only gets bottom padding
-     (56 + 16 gap + 8 inset) so the last controls can scroll above her. */
-  body.gg-funnel .gg-widget {
+/* Desktop: keep the quote tool left of Camille's column (300px + 16px gap + 16px).
+   On phones and tablets through 767px she is hidden during the quote steps, so
+   the card uses the full width. */
+@media (min-width: 768px) { .quote { padding-right: 332px; } }
+.gg-ask {
+  display: none;
+  margin: 0 0 8px 0;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 16px;
+  background: #fff;
+  color: #1A1A1A;
+  font: 650 13px/1.3 "DM Sans", system-ui, sans-serif;
+  box-shadow: 0 8px 24px rgba(0,0,0,.3);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.gg-ask:focus-visible { outline: 2px solid #F86A02; outline-offset: 2px; }
+@media (max-width: 767px) {
+  /* Property, photos, and contact: hide Camille completely so no control is under her. */
+  body.gg-quote-steps .gg-widget,
+  body.gg-quote-steps .gg-talk {
+    display: none !important;
+    pointer-events: none !important;
+  }
+  body.gg-quote-steps .quote { padding-right: 0; }
+  /* Thank-you: a small "Questions? Ask me" bubble comes back. */
+  body.gg-thanks .gg-widget {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
     right: 8px;
     bottom: calc(8px + env(safe-area-inset-bottom, 0px));
   }
-  body.gg-funnel .gg-stage {
+  body.gg-thanks .gg-stage {
     width: 56px;
     height: 56px;
     flex: 0 0 56px;
@@ -2014,7 +2064,7 @@ details.sv-panel:not([open]) .sv-frame { display: none; }
     background: #1A1A1A;
     box-shadow: 0 4px 16px rgba(0,0,0,.35);
   }
-  body.gg-funnel .gg-cutout {
+  body.gg-thanks .gg-cutout {
     height: 78px;
     width: auto;
     top: -4px;
@@ -2024,35 +2074,26 @@ details.sv-panel:not([open]) .sv-frame { display: none; }
     -webkit-mask-image: none;
     mask-image: none;
   }
-  body.gg-funnel .quote-card {
+  body.gg-thanks .gg-ask { display: block; }
+  body.gg-thanks .gg-talk { display: none !important; }
+  body.gg-thanks .quote-card {
     padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
-    padding-right: 1.25rem; /* keep the card's normal padding, no extra gutter */
   }
-  /* Steppers, the summary bar, Storm, and Continue use the card's normal
-     20px side padding. The size-card row is full width too, so the hints
-     wrap less; a class is added only when that row shares the screen with
-     the 56px bubble, so the Large card never sits under her. */
-  body.gg-funnel.gg-size-clear .tree-size-row {
-    margin-right: 36px;
-  }
-  /* Headings and service cards below the quote tool stay clear of the bubble. */
-  body.gg-funnel #how .wrap,
-  body.gg-funnel #services .wrap,
-  body.gg-funnel #signs .wrap,
-  body.gg-funnel #reels .wrap,
-  body.gg-funnel #work .wrap {
-    padding-right: 72px;
+  body.gg-thanks #how .wrap,
+  body.gg-thanks #services .wrap,
+  body.gg-thanks #signs .wrap,
+  body.gg-thanks #reels .wrap,
+  body.gg-thanks #work .wrap {
+    padding-right: 168px;
     box-sizing: border-box;
   }
-  body.gg-funnel #how,
-  body.gg-funnel #services,
-  body.gg-funnel #signs,
-  body.gg-funnel #reels,
-  body.gg-funnel #work {
+  body.gg-thanks #how,
+  body.gg-thanks #services,
+  body.gg-thanks #signs,
+  body.gg-thanks #reels,
+  body.gg-thanks #work,
+  body.gg-thanks .foot {
     padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
-  }
-  body.gg-funnel .foot {
-    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
 body.gg-quote-in-view .gg-talk { display: none !important; }
