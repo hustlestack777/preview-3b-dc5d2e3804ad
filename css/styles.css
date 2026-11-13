@@ -2149,3 +2149,58 @@ body.gg-quote-in-view .gg-talk { display: none !important; }
     box-sizing: border-box;
   }
 }
+
+/* QA Nov 12: 56px hero Camille at 340px and below
+   At 320 the 108px torso covered the Louisiana trust chip and
+   How it works step 3. Shrink her to the same 56px icon bubble
+   used on the thank-you screen so that copy can show in full,
+   and give How it works a matching right clearance. 390+ and
+   desktop stay unchanged. */
+@media (max-width: 340px) {
+  .gg-widget {
+    right: 8px;
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  }
+  .gg-stage {
+    width: 56px;
+    height: 56px;
+    flex: 0 0 56px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #1A1A1A;
+    box-shadow: 0 4px 16px rgba(0,0,0,.35);
+  }
+  .gg-cutout {
+    height: 78px;
+    width: auto;
+    top: -4px;
+    bottom: auto;
+    object-fit: cover;
+    object-position: center 12%;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  .hero .trust-chips,
+  .hero .addr-hint,
+  .hero .fine,
+  .hero .form-status {
+    padding-right: 4.5rem;
+    box-sizing: border-box;
+  }
+  .hero .trust-chips span {
+    white-space: normal;
+  }
+  #how .wrap {
+    padding-right: 4.5rem;
+    box-sizing: border-box;
+  }
+}
+@media (min-width: 341px) and (max-width: 389px) {
+  #how .wrap {
+    padding-right: 8.25rem;
+    box-sizing: border-box;
+  }
+  .hero .trust-chips span {
+    white-space: normal;
+  }
+}
