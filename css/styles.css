@@ -2137,3 +2137,15 @@ body.gg-quote-in-view .gg-talk { display: none !important; }
     flex: 0 1 auto;
   }
 }
+
+/* QA Nov 12: at 320 and 360 the hero fine print can sit in Camille's
+   108px column. Give those lines the same right clearance the trust
+   chips already have. 390px and up, and desktop, stay unchanged. */
+@media (max-width: 389px) {
+  .hero .addr-hint,
+  .hero .fine,
+  .hero .form-status {
+    padding-right: 8.25rem;
+    box-sizing: border-box;
+  }
+}
