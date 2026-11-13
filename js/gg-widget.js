@@ -4,6 +4,8 @@
    no orb circle. */
 (function () {
   const TALK_DELAY_MS = 1500;
+  const TALK_HOLD_MS = 5000;
+  const TALK_FADE_MS = 450;
   const widget = document.getElementById("gg-widget");
   const talk = document.getElementById("gg-talk");
   const launcher = document.getElementById("gg-launcher");
@@ -106,10 +108,30 @@
     if (open) { hideTalk(); placeCloseSoon(); }
   }
 
-  function hideTalk() { if (talk) talk.hidden = true; }
+  let talkTimer = 0;
+  function pastHero() {
+    const hero = document.querySelector(".hero");
+    if (!hero) return false;
+    return hero.getBoundingClientRect().bottom <= 0;
+  }
+  function hideTalk() {
+    if (talkTimer) { window.clearTimeout(talkTimer); talkTimer = 0; }
+    if (!talk) return;
+    talk.hidden = true;
+    talk.classList.remove("is-fading");
+  }
+  function fadeTalk() {
+    if (!talk || talk.hidden || talk.classList.contains("is-fading")) return;
+    if (talkTimer) { window.clearTimeout(talkTimer); talkTimer = 0; }
+    talk.classList.add("is-fading");
+    talkTimer = window.setTimeout(hideTalk, TALK_FADE_MS);
+  }
   function showTalk() {
-    if (!talk || widget.classList.contains("is-open")) return;
+    if (!talk || widget.classList.contains("is-open") || pastHero()) return;
+    talk.classList.remove("is-fading");
     talk.hidden = false;
+    if (talkTimer) window.clearTimeout(talkTimer);
+    talkTimer = window.setTimeout(fadeTalk, TALK_HOLD_MS);
   }
 
   function findConvaiButton() {
@@ -166,8 +188,18 @@
   });
 
   // Greeting bubble is desktop-only (phones just get the small launcher).
+  // Fade it after about 5 seconds, or as soon as the visitor scrolls past the hero.
   if (window.matchMedia("(min-width: 640px)").matches) {
     window.setTimeout(showTalk, TALK_DELAY_MS);
+    function onScrollPast() { if (pastHero()) fadeTalk(); }
+    window.addEventListener("scroll", onScrollPast, { passive: true });
+    const hero = document.querySelector(".hero");
+    if (hero && "IntersectionObserver" in window) {
+      new IntersectionObserver(function (entries) {
+        const e = entries[0];
+        if (e && e.boundingClientRect.bottom <= 0) fadeTalk();
+      }).observe(hero);
+    }
   }
 
   // Phones: once the quote tool is open, Camille becomes a 56px round
