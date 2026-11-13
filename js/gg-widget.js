@@ -170,27 +170,24 @@
     window.setTimeout(showTalk, TALK_DELAY_MS);
   }
 
-  // Phones: keep the area step's buttons ("Tap to outline", "Use my whole lot
-  // instead") left of Camille's 108px column so she never covers them.
+  // Phones: keep every tappable control in the quote card (tree-count +,
+  // Continue, land-clearing box, etc.) left of Camille's 108px column.
   const phone = window.matchMedia("(max-width: 639px)");
   function clearColumn() {
-    // Keep the whole land-clearing panel (including the "Trimming gets a
-    // ballpark range" box) left of Camille's column. Margin, not padding, so
-    // the box edge itself does not run under her. CSS already sets 124px on
-    // phones; this trims or adds so the box edge sits 8px left of her.
-    const q = document.getElementById("scope-panel");
-    if (!q) return;
-    q.style.paddingRight = "";
-    if (!phone.matches) { q.style.marginRight = ""; return; }
-    q.style.marginRight = "";
-    const box = q.getBoundingClientRect();
-    if (q.hidden || !box.width) return;
+    const card = document.getElementById("quote-card");
+    const panel = document.getElementById("scope-panel");
+    if (panel) { panel.style.paddingRight = ""; panel.style.marginRight = ""; }
+    if (!card) return;
+    if (!phone.matches) { card.style.paddingRight = ""; return; }
+    card.style.paddingRight = "";
+    const box = card.getBoundingClientRect();
+    if (!box.width) return;
     const lr = launcher.getBoundingClientRect();
     const colLeft = (lr.width ? lr.left : window.innerWidth - 116) - 8;
-    const overflow = Math.ceil(box.right - colLeft);
-    const cur = parseFloat(window.getComputedStyle(q).marginRight) || 0;
-    // Grow or shrink the CSS fallback so the box edge sits 8px left of Camille.
-    q.style.marginRight = Math.max(0, Math.ceil(cur + overflow)) + "px";
+    const cur = parseFloat(window.getComputedStyle(card).paddingRight) || 0;
+    const contentRight = box.right - cur;
+    const overflow = Math.ceil(contentRight - colLeft);
+    card.style.paddingRight = Math.max(cur, cur + overflow) + "px";
   }
   // The greeting bubble pokes out left of her column; tuck it away while the quote tool is
   // on screen so it never sits over a quote button.
@@ -201,6 +198,7 @@
     }).observe(quoteCard);
   }
   window.addEventListener("resize", clearColumn);
+  if (window.visualViewport) window.visualViewport.addEventListener("resize", clearColumn);
   document.addEventListener("change", function () {
     setTimeout(clearColumn, 30);
     setTimeout(clearColumn, 250);

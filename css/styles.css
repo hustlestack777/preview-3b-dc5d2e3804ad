@@ -289,6 +289,9 @@ button, input { font: inherit; }
   color: var(--ink);
   border-radius: 12px;
   padding: .85rem .95rem;
+  font: inherit;
+  font-size: .9rem;
+  font-weight: 600;
 }
 .fields .check {
   display: flex; gap: .65rem; align-items: flex-start;
@@ -1734,9 +1737,8 @@ html.lb-open { overflow: hidden; }
   }
   /* Room for the 108px torso: trust chips stay left of her column. */
   .hero .trust-chips { padding-right: 8.25rem; box-sizing: border-box; max-width: none; margin-left: 0; margin-right: 0; }
-  /* Whole land-clearing panel, including the "Trimming gets a ballpark range" box,
-     stays left of Camille's 108px column (8px inset + 8px gap). */
-  .scope-panel { margin-right: 124px; }
+  /* Right inset for the land-clearing box is set on .quote-card (see below)
+     so steppers and this panel share the same clearance. */
 }
 /* Phones: the chat is a full-width bottom sheet, so she steps behind it while open. */
 @media (max-width: 479px) {
@@ -1995,4 +1997,11 @@ details.sv-panel:not([open]) .sv-frame { display: none; }
 /* Desktop/tablet: keep the quote tool left of Camille's column (300px + 16px gap + 16px),
    so neither she nor her open chat ever sits over a button (Precious QA, ~880px Continue). */
 @media (min-width: 640px) { .quote { padding-right: 332px; } }
+@media (max-width: 639px) {
+  /* Launcher is 148px tall, 8px off the bottom; +16px gap so steppers,
+     Continue, and other tappable controls can scroll clear of her. */
+  .quote-card {
+    padding-bottom: calc(172px + env(safe-area-inset-bottom, 0px));
+  }
+}
 body.gg-quote-in-view .gg-talk { display: none !important; }
