@@ -2028,17 +2028,12 @@ details.sv-panel:not([open]) .sv-frame { display: none; }
     padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
     padding-right: 1.25rem; /* keep the card's normal padding, no extra gutter */
   }
-  /* A little room so the tree-count + and Continue aren't under the 56px bubble
-     when they sit at the bottom of the screen. The card itself stays full width. */
-  body.gg-funnel .count-steppers,
-  body.gg-funnel .totals,
-  body.gg-funnel .step-nav,
-  body.gg-funnel .storm-toggle {
+  /* Steppers, the summary bar, Storm, and Continue use the card's normal
+     20px side padding. The size-card row is full width too, so the hints
+     wrap less; a class is added only when that row shares the screen with
+     the 56px bubble, so the Large card never sits under her. */
+  body.gg-funnel.gg-size-clear .tree-size-row {
     margin-right: 36px;
-  }
-  body.gg-funnel #btn-to-photos,
-  body.gg-funnel #btn-range {
-    width: calc(100% - 36px);
   }
   /* Headings and service cards below the quote tool stay clear of the bubble. */
   body.gg-funnel #how .wrap,
