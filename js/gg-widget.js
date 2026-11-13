@@ -53,8 +53,67 @@
     .overlay > p { display: none !important; }
   `;
 
+
+  // ElevenLabs injects a shadow <style> that starts with :host/:root variables
+  // and only then @imports Inter. Chrome ignores that @import (not at the top)
+  // and flags it as an Issue on this page. Hoist any late @import to the top
+  // of the same stylesheet so the rule is valid and the Issue goes away.
+  function hoistSheetImports(root) {
+    if (!root) return;
+    root.querySelectorAll("style").forEach(function (el) {
+      if (el.getAttribute("data-gg-import-fixed")) return;
+      var text = el.textContent || "";
+      var imports = text.match(/@import\s+[^;]+;/gi);
+      if (!imports) {
+        if (text.length > 80) el.setAttribute("data-gg-import-fixed", "1");
+        return;
+      }
+      // A late @import is ignored by Chrome. Even hoisted to the top, an @import
+      // of an invalid Google Fonts URL (Inter wght@400,500) returns HTML and is
+      // ORB-blocked. Drop the @import and load the same family via a <link>.
+      imports.forEach(function (rule) {
+        var m = rule.match(/url\((['"]?)([^)'"]+)\1\)|['"]([^'"]+)['"]/i);
+        var href = m && (m[2] || m[3]);
+        if (!href) return;
+        href = href.replace(/wght@([0-9]+),([0-9]+)/, "wght@$1;$2");
+        if (!document.querySelector('link[data-gg-font][href="' + href.replace(/"/g, "") + '"]')) {
+          var link = document.createElement("link");
+          link.rel = "stylesheet";
+          link.href = href;
+          link.setAttribute("data-gg-font", "1");
+          document.head.appendChild(link);
+        }
+      });
+      el.textContent = text.replace(/@import\s+[^;]+;/gi, "");
+      el.setAttribute("data-gg-import-fixed", "1");
+    });
+  }
+  function watchConvaiStyles() {
+    if (!convai) return;
+    function hook() {
+      hoistSheetImports(convai.shadowRoot);
+      if (convai.shadowRoot && !convai.shadowRoot._ggImportObs) {
+        var obs = new MutationObserver(function () { hoistSheetImports(convai.shadowRoot); });
+        obs.observe(convai.shadowRoot, { childList: true, subtree: true, characterData: true });
+        convai.shadowRoot._ggImportObs = obs;
+      }
+    }
+    hook();
+    if (typeof MutationObserver === "function") {
+      new MutationObserver(hook).observe(convai, { childList: true, subtree: true });
+    }
+    var n = 0;
+    var t = window.setInterval(function () {
+      hook();
+      if ((convai.shadowRoot && convai.shadowRoot.querySelector("style")) || ++n > 40) {
+        window.clearInterval(t);
+      }
+    }, 250);
+  }
+
   function styleShadow() {
     const sr = convai && convai.shadowRoot;
+    hoistSheetImports(sr);
     if (!sr || sr.getElementById("gg-sheet-style")) return !!sr;
     const st = document.createElement("style");
     st.id = "gg-sheet-style";
@@ -262,9 +321,10 @@
   syncFunnel();
 
   if (convai) {
+    watchConvaiStyles();
     if (!styleShadow()) {
       customElements.whenDefined("elevenlabs-convai").then(function () {
-        window.setTimeout(styleShadow, 300);
+        window.setTimeout(function () { styleShadow(); watchConvaiStyles(); }, 300);
       });
     }
   }
