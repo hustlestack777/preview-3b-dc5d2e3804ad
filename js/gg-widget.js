@@ -170,24 +170,18 @@
     window.setTimeout(showTalk, TALK_DELAY_MS);
   }
 
-  // Phones: keep every tappable control in the quote card (tree-count +,
-  // Continue, land-clearing box, etc.) left of Camille's 108px column.
+  // Phones: once the quote tool is open, Camille becomes a 56px round
+  // bubble in the corner. The card stays full width (no side gutter).
   const phone = window.matchMedia("(max-width: 639px)");
-  function clearColumn() {
+  function syncFunnel() {
+    const quote = document.getElementById("quote");
+    const on = !!(quote && !quote.hidden);
+    document.body.classList.toggle("gg-funnel", on);
     const card = document.getElementById("quote-card");
     const panel = document.getElementById("scope-panel");
+    // Clear the PR #18 right inset if a stale inline style is still around.
+    if (card) card.style.paddingRight = "";
     if (panel) { panel.style.paddingRight = ""; panel.style.marginRight = ""; }
-    if (!card) return;
-    if (!phone.matches) { card.style.paddingRight = ""; return; }
-    card.style.paddingRight = "";
-    const box = card.getBoundingClientRect();
-    if (!box.width) return;
-    const lr = launcher.getBoundingClientRect();
-    const colLeft = (lr.width ? lr.left : window.innerWidth - 116) - 8;
-    const cur = parseFloat(window.getComputedStyle(card).paddingRight) || 0;
-    const contentRight = box.right - cur;
-    const overflow = Math.ceil(contentRight - colLeft);
-    card.style.paddingRight = Math.max(cur, cur + overflow) + "px";
   }
   // The greeting bubble pokes out left of her column; tuck it away while the quote tool is
   // on screen so it never sits over a quote button.
@@ -197,17 +191,12 @@
       document.body.classList.toggle("gg-quote-in-view", entries.some(function (e) { return e.isIntersecting; }));
     }).observe(quoteCard);
   }
-  window.addEventListener("resize", clearColumn);
-  if (window.visualViewport) window.visualViewport.addEventListener("resize", clearColumn);
-  document.addEventListener("change", function () {
-    setTimeout(clearColumn, 30);
-    setTimeout(clearColumn, 250);
-  });
-  const scopePanel = document.getElementById("scope-panel");
-  if (scopePanel && typeof MutationObserver === "function") {
-    new MutationObserver(function () { setTimeout(clearColumn, 30); }).observe(scopePanel, { attributes: true, attributeFilter: ["hidden"] });
+  const quoteSection = document.getElementById("quote");
+  if (quoteSection && typeof MutationObserver === "function") {
+    new MutationObserver(syncFunnel).observe(quoteSection, { attributes: true, attributeFilter: ["hidden"] });
   }
-  clearColumn();
+  window.addEventListener("resize", syncFunnel);
+  syncFunnel();
 
   if (convai) {
     if (!styleShadow()) {

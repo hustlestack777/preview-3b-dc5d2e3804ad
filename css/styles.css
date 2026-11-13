@@ -1737,8 +1737,6 @@ html.lb-open { overflow: hidden; }
   }
   /* Room for the 108px torso: trust chips stay left of her column. */
   .hero .trust-chips { padding-right: 8.25rem; box-sizing: border-box; max-width: none; margin-left: 0; margin-right: 0; }
-  /* Right inset for the land-clearing box is set on .quote-card (see below)
-     so steppers and this panel share the same clearance. */
 }
 /* Phones: the chat is a full-width bottom sheet, so she steps behind it while open. */
 @media (max-width: 479px) {
@@ -1998,10 +1996,66 @@ details.sv-panel:not([open]) .sv-frame { display: none; }
    so neither she nor her open chat ever sits over a button (Precious QA, ~880px Continue). */
 @media (min-width: 640px) { .quote { padding-right: 332px; } }
 @media (max-width: 639px) {
-  /* Launcher is 148px tall, 8px off the bottom; +16px gap so steppers,
-     Continue, and other tappable controls can scroll clear of her. */
-  .quote-card {
-    padding-bottom: calc(172px + env(safe-area-inset-bottom, 0px));
+  /* During the quote steps, Camille is a 56px round bubble in the
+     bottom-right. The card stays full width and only gets bottom padding
+     (56 + 16 gap + 8 inset) so the last controls can scroll above her. */
+  body.gg-funnel .gg-widget {
+    right: 8px;
+    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  }
+  body.gg-funnel .gg-stage {
+    width: 56px;
+    height: 56px;
+    flex: 0 0 56px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #1A1A1A;
+    box-shadow: 0 4px 16px rgba(0,0,0,.35);
+  }
+  body.gg-funnel .gg-cutout {
+    height: 78px;
+    width: auto;
+    top: -4px;
+    bottom: auto;
+    object-fit: cover;
+    object-position: center 12%;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+  body.gg-funnel .quote-card {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+    padding-right: 1.25rem; /* keep the card's normal padding, no extra gutter */
+  }
+  /* A little room so the tree-count + and Continue aren't under the 56px bubble
+     when they sit at the bottom of the screen. The card itself stays full width. */
+  body.gg-funnel .count-steppers,
+  body.gg-funnel .totals,
+  body.gg-funnel .step-nav,
+  body.gg-funnel .storm-toggle {
+    margin-right: 36px;
+  }
+  body.gg-funnel #btn-to-photos,
+  body.gg-funnel #btn-range {
+    width: calc(100% - 36px);
+  }
+  /* Headings and service cards below the quote tool stay clear of the bubble. */
+  body.gg-funnel #how .wrap,
+  body.gg-funnel #services .wrap,
+  body.gg-funnel #signs .wrap,
+  body.gg-funnel #reels .wrap,
+  body.gg-funnel #work .wrap {
+    padding-right: 72px;
+    box-sizing: border-box;
+  }
+  body.gg-funnel #how,
+  body.gg-funnel #services,
+  body.gg-funnel #signs,
+  body.gg-funnel #reels,
+  body.gg-funnel #work {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  }
+  body.gg-funnel .foot {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
 body.gg-quote-in-view .gg-talk { display: none !important; }
