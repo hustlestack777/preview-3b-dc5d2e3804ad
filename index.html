@@ -30,7 +30,7 @@
   <meta name="twitter:title" content="3 B's Tree Removal | Enter Your Address for a Tree Quote" />
   <meta name="twitter:description" content="Enter your address to start a tree quote. Trees, stumps, land clearing, dirt work and storm cleanup in Central &amp; Southwest Louisiana. Our team calls you back with your real price." />
   <meta name="twitter:image" content="https://3bs.getpros.xyz/og-image.jpg" />
-  <link rel="stylesheet" href="css/styles.css?v=20261114fb1" />
+  <link rel="stylesheet" href="css/styles.css?v=20261114llm" />
   <link rel="stylesheet" href="css/motion.css?v=20261112motion1" />
 </head>
 <body>
@@ -593,7 +593,7 @@
   <script src="js/scope.js?v=20261112qa16"></script>
   <script src="js/media.js?v=20261111a"></script>
   <script src="js/lrl-credit.js?v=20261111-lrl2"></script>
-  <!-- Camille, the 3 B's AI chat assistant (text-only ElevenLabs preview agent) -->
+  <!-- Camille, the 3 B's chat. The model call stays on the server. -->
   <div id="gg-widget" class="gg-widget">
     <div class="gg-talk" id="gg-talk" hidden>
       <button type="button" class="gg-talk-x" id="gg-talk-dismiss" aria-label="Dismiss greeting">&times;</button>
@@ -634,9 +634,19 @@
       })();
     </script>
   </div>
-  <button type="button" class="gg-close" id="gg-close" aria-label="Close chat with Camille" hidden>&times;</button>
-  <elevenlabs-convai agent-id="agent_2301m76zjc0dfm2afvx1y2z980k7"></elevenlabs-convai>
-  <script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
-  <script src="js/gg-widget.js?v=20261112qa26" defer></script>
+  <section class="gg-panel" id="gg-panel" hidden aria-label="Chat with Camille">
+    <header class="gg-panel-head">
+      <span>Camille · 3 B’s Tree Removal</span>
+      <button type="button" class="gg-close" id="gg-close" aria-label="Close chat with Camille">&times;</button>
+    </header>
+    <div class="gg-log" id="gg-log" role="log" aria-live="polite"></div>
+    <div class="gg-panel-chips" id="gg-panel-chips"></div>
+    <form class="gg-form" id="gg-form">
+      <label class="sr" for="gg-input">Message Camille</label>
+      <input id="gg-input" type="text" maxlength="1500" autocomplete="off" placeholder="Ask Camille" />
+      <button type="submit">Send</button>
+    </form>
+  </section>
+  <script src="js/gg-widget.js?v=20261114llm" defer></script>
 </body>
 </html>

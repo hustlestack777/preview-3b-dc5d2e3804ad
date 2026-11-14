@@ -5,6 +5,9 @@ import { dirname, join } from "node:path";
 import { readFileSync } from "node:fs";
 import { buildLrlInquiryEmail, lrlInquiryRecipients, validateLrlInquiry } from "./lrl-inquiry.js";
 import { computeBallpark, loadPricing, rangeMarkup, sizeMarkups } from "./ballpark.js";
+import { camilleBrand } from "./chat/camille-brand.js";
+import { createIpAbuseLimit } from "./chat/abuse.js";
+import { takeTurn } from "./chat/turn.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -79,7 +82,7 @@ app.use((req, res, next) => {
 
 // Server-only files are never served as static pages.
 app.use((req, res, next) => {
-  if (/^\/(server|ballpark|lrl-inquiry(\.test)?)\.js$|^\/package(-lock)?\.json$|^\/\.env|^\/node_modules\//i.test(req.path)) {
+  if (/^\/(server|ballpark|lrl-inquiry(\.test)?|chat-core\.test)\.js$|\.test\.js$|^\/(chat-core|chat)\//i.test(req.path) || /^\/package(-lock)?\.json$|^\/\.env|^\/node_modules\//i.test(req.path) || /^\/gg-chat-persona\.md$/i.test(req.path)) {
     return res.status(404).type("text/plain").send("Not found");
   }
   return next();
@@ -122,6 +125,39 @@ app.post("/api/ballpark", (req, res) => {
   const result = computeBallpark(body, loadPricing(), { sizes: sizeMarkups(), other: rangeMarkup() });
   res.set("Cache-Control", "no-store");
   return res.json({ ok: true, ...result });
+});
+
+const chatAllowed = createIpAbuseLimit();
+let loggedMissingKey = false;
+let loggedKillSwitch = false;
+app.post("/api/chat", async (req, res) => {
+  if (!chatAllowed(clientIp(req))) {
+    return res.status(429).json({ ok: false, error: "Please wait a few minutes and try again." });
+  }
+
+  const body = req.body && typeof req.body === "object" ? req.body : {};
+  try {
+    const turn = await takeTurn({ messages: body.messages, brand: camilleBrand() });
+    if (!turn.llm.ok && turn.llm.reason === "missing_key" && !loggedMissingKey) {
+      loggedMissingKey = true;
+      console.error(`Camille chat: ${turn.llm.env} is not set`);
+    }
+    if (!turn.llm.ok && turn.llm.reason === "kill_switch" && !loggedKillSwitch) {
+      loggedKillSwitch = true;
+      console.error(`Camille chat: ${turn.llm.env} is on`);
+    }
+    res.set("Cache-Control", "no-store");
+    return res.json({
+      ok: true,
+      text: turn.text,
+      chips: turn.chips,
+      source: turn.source,
+      llm: turn.llm,
+    });
+  } catch {
+    console.error("Camille chat failed");
+    return res.status(500).json({ ok: false, error: "Please call (318) 712-TREE." });
+  }
 });
 
 app.post("/api/lrl-inquiry", async (req, res) => {
