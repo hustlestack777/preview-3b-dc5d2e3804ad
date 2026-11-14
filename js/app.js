@@ -864,43 +864,50 @@
     if (!img || lat == null || lon == null) return;
     const gen = ++scanGen;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const started = performance.now();
     const SCAN_MS = 2000;
     const url = Eng.esriExportUrl(lat, lon, 960, 150);
     state.satelliteUrl = url;
     img.draggable = false;
     img.alt = "Locked satellite view of " + (state.displayName || "the property");
     img.hidden = true;
-    if (wrap) {
-      wrap.classList.remove("is-settled");
-      wrap.classList.toggle("is-scanning", !reduce);
+    if (wrap) wrap.classList.remove("is-settled", "is-scanning");
+    if (scan) {
+      scan.classList.remove("is-on");
+      scan.hidden = true;
     }
-    if (scan) scan.hidden = !!reduce;
-    if (cap) cap.textContent = reduce ? "Satellite view" : "Pulling satellite view...";
-    let loaded = false;
+    if (cap) cap.textContent = "Pulling satellite view...";
     let failed = false;
-    function settle() {
+    function finish() {
       if (gen !== scanGen || failed) return;
-      const finish = () => {
-        if (gen !== scanGen || failed) return;
-        if (wrap) {
-          wrap.classList.remove("is-scanning");
-          wrap.classList.add("is-settled");
-        }
-        if (scan) scan.hidden = true;
-        if (loaded) {
-          img.hidden = false;
-          if (cap) cap.textContent = "Satellite view";
-        }
-      };
-      if (reduce) finish();
-      else setTimeout(finish, Math.max(0, SCAN_MS - (performance.now() - started)));
+      if (wrap) {
+        wrap.classList.remove("is-scanning");
+        wrap.classList.add("is-settled");
+      }
+      if (scan) {
+        scan.classList.remove("is-on");
+        scan.hidden = true;
+      }
+      img.hidden = false;
+      if (cap) cap.textContent = "Satellite view";
+    }
+    function armScan() {
+      if (!scan || reduce) return;
+      scan.hidden = false;
+      scan.classList.remove("is-on");
+      void scan.offsetWidth;
+      scan.classList.add("is-on");
     }
     img.onload = () => {
       if (gen !== scanGen) return;
-      loaded = true;
       img.hidden = false;
-      settle();
+      if (reduce) {
+        finish();
+        return;
+      }
+      if (wrap) wrap.classList.add("is-scanning");
+      if (cap) cap.textContent = "Pulling satellite view...";
+      armScan();
+      setTimeout(finish, SCAN_MS);
     };
     img.onerror = () => {
       if (gen !== scanGen) return;
