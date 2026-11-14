@@ -6,7 +6,7 @@
   "engines": { "node": ">=20" },
   "scripts": {
     "start": "node server.js",
-    "test": "node --test lrl-inquiry.test.js ballpark.test.js"
+    "test": "node --test lrl-inquiry.test.js ballpark.test.js camille-looks.test.js"
   },
   "dependencies": {
     "express": "^4.21.2",
