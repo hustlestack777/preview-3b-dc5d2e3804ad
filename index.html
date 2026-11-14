@@ -30,7 +30,7 @@
   <meta name="twitter:title" content="3 B's Tree Removal | Enter Your Address for a Tree Quote" />
   <meta name="twitter:description" content="Enter your address to start a tree quote. Trees, stumps, land clearing, dirt work and storm cleanup in Central &amp; Southwest Louisiana. Our team calls you back with your real price." />
   <meta name="twitter:image" content="https://3bs.getpros.xyz/og-image.jpg" />
-  <link rel="stylesheet" href="css/styles.css?v=20261114prop4" />
+  <link rel="stylesheet" href="css/styles.css?v=20261114analyze1" />
   <link rel="stylesheet" href="css/motion.css?v=20261112motion1" />
 </head>
 <body>
@@ -158,24 +158,27 @@
 
             <figure class="sat-still-wrap" id="sat-still-wrap">
               <div class="sat-frame">
-                <img id="sat-still" class="sat-still" alt="Locked satellite view of your property" width="960" height="624" draggable="false" hidden />
-                <div class="sat-scan" id="sat-scan" hidden aria-hidden="true">
-                  <span class="sat-canopy" style="--x:18%;--y:36%;--d:.14s"></span>
-                  <span class="sat-canopy" style="--x:34%;--y:64%;--d:.26s"></span>
-                  <span class="sat-canopy" style="--x:49%;--y:28%;--d:.38s"></span>
-                  <span class="sat-canopy" style="--x:66%;--y:58%;--d:.5s"></span>
-                  <span class="sat-canopy" style="--x:81%;--y:40%;--d:.6s"></span>
-                  <div class="sat-line-mover">
-                    <span class="sat-line-glow"></span>
-                    <span class="sat-line"></span>
-                    <svg class="sat-leaf" viewBox="0 0 24 24" width="14" height="14" aria-hidden="true">
-                      <path fill="#3DFF7A" d="M20.5 3.5C12 4 5 10 4.2 19.2c5.2-1.2 9.6-4.4 12.4-9.2.6 3.2.2 6.2-1.2 8.8-2.6-1.6-4.8-2.4-8-2.2 2.6 2.4 4.6 5 5.4 8.2 3.6-4.6 6.4-10.2 7.7-16.3z"/>
-                    </svg>
+                <div class="sat-stage" id="sat-stage">
+                  <img id="sat-still" class="sat-still" alt="Locked satellite view of your property" width="960" height="624" draggable="false" hidden />
+                  <div class="sat-grid" id="sat-grid" hidden aria-hidden="true"></div>
+                  <svg id="sat-outline" class="sat-outline" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
+                  <div class="sat-pin" id="sat-pin" hidden aria-hidden="true">
+                    <span class="sat-pin-glow"></span>
+                    <span class="sat-pin-head"></span>
                   </div>
                 </div>
-                <svg id="sat-outline" class="sat-outline" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
               </div>
-              <figcaption class="sat-still-cap" id="sat-caption">Satellite view</figcaption>
+              <figcaption class="sat-still-cap" id="sat-caption">
+                <div id="sat-analyze" hidden>
+                  <p class="sat-analyze-title">Analyzing your property...</p>
+                  <ol class="sat-steps" id="sat-steps">
+                    <li id="sat-step-locate">Locating address</li>
+                    <li id="sat-step-lot">Finding lot</li>
+                    <li id="sat-step-trees">Spotting trees</li>
+                  </ol>
+                </div>
+                <p id="sat-caption-final" hidden></p>
+              </figcaption>
             </figure>
 
             <div id="property-check" class="property-check" hidden>
@@ -581,7 +584,7 @@
   <script src="js/pricing.js?v=20261111p"></script>
   <script src="js/engine.js?v=20261112s"></script>
   <script src="js/autocomplete.js?v=20261112qa16"></script>
-  <script src="js/app.js?v=20261114prop4"></script>
+  <script src="js/app.js?v=20261114analyze1"></script>
   <script src="js/scope.js?v=20261112qa16"></script>
   <script src="js/media.js?v=20261111a"></script>
   <script src="js/lrl-credit.js?v=20261111-lrl2"></script>

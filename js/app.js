@@ -856,7 +856,18 @@
   });
 
   let scanGen = 0;
-  const SCAN_MS = 1250;
+  let analyzeTimers = [];
+
+  function clearAnalyzeTimers() {
+    analyzeTimers.forEach((id) => clearTimeout(id));
+    analyzeTimers = [];
+  }
+
+  function later(ms, fn) {
+    const id = setTimeout(fn, ms);
+    analyzeTimers.push(id);
+    return id;
+  }
 
   function wideEnough(bounds) {
     const midLat = (bounds.north + bounds.south) / 2;
@@ -893,26 +904,77 @@
     return x.toFixed(2) + "," + y.toFixed(2);
   }
 
-  function drawOutline() {
+  function markAnalyzeStep(name) {
+    ["locate", "lot", "trees"].forEach((step) => {
+      const el = $("#sat-step-" + step);
+      if (!el) return;
+      const order = { locate: 0, lot: 1, trees: 2 };
+      el.classList.toggle("is-done", order[step] < order[name]);
+      el.classList.toggle("is-on", step === name);
+    });
+  }
+
+  function showAnalyze(on) {
+    const box = $("#sat-analyze");
+    const finalCap = $("#sat-caption-final");
+    const grid = $("#sat-grid");
+    if (box) box.hidden = !on;
+    if (finalCap && on) finalCap.hidden = true;
+    if (grid) grid.hidden = !on;
+  }
+
+  function traceParcel(ring, bounds, reduce) {
     const svg = $("#sat-outline");
-    const bounds = state.viewBounds;
-    if (!svg || !bounds) return;
-    if (state.parcelRing && state.parcelRing.length >= 4) {
-      const d = state.parcelRing.map((pt, i) => (i ? "L" : "M") + projectToView(pt[0], pt[1], bounds)).join(" ") + " Z";
-      svg.innerHTML = "<path d=\"" + d + "\" />";
-      state.outlineKind = "parcel";
-    } else {
-      svg.innerHTML = "<ellipse cx=\"50\" cy=\"50\" rx=\"18\" ry=\"24\" />";
-      state.outlineKind = "ring";
+    const pin = $("#sat-pin");
+    if (pin) pin.hidden = true;
+    if (!svg) return;
+    const d = ring.map((pt, i) => (i ? "L" : "M") + projectToView(pt[0], pt[1], bounds)).join(" ") + " Z";
+    svg.innerHTML = "<path d=\"" + d + "\" />";
+    const path = svg.querySelector("path");
+    state.outlineKind = "parcel";
+    state.parcelRing = ring;
+    if (!path) return;
+    if (reduce) {
+      path.classList.add("is-filled");
+      return;
     }
-    svg.classList.add("is-on");
+    const len = Math.max(1, path.getTotalLength());
+    path.style.strokeDasharray = String(len);
+    path.style.strokeDashoffset = String(len);
+    path.getBoundingClientRect();
+    requestAnimationFrame(() => {
+      path.style.transition = "stroke-dashoffset .7s ease";
+      path.style.strokeDashoffset = "0";
+      later(680, () => path.classList.add("is-filled"));
+    });
+  }
+
+  function showPin(reduce) {
+    const svg = $("#sat-outline");
+    const pin = $("#sat-pin");
+    const stage = $("#sat-stage");
+    if (svg) svg.innerHTML = "";
+    state.outlineKind = "pin";
+    state.parcelRing = null;
+    if (pin) pin.hidden = false;
+    if (stage && !reduce) stage.classList.add("is-zoom-pin");
+  }
+
+  function showFinalCaption() {
+    const box = $("#sat-analyze");
+    const finalCap = $("#sat-caption-final");
+    const grid = $("#sat-grid");
+    if (box) box.hidden = true;
+    if (grid) grid.hidden = true;
+    if (!finalCap) return;
+    finalCap.hidden = false;
+    finalCap.textContent = state.outlineKind === "parcel" ? "Lot line from parish records" : "Centered on your address";
   }
 
   function showPropertyQuestion() {
     const check = $("#property-check");
-    const cap = $("#sat-caption");
     if (check) check.hidden = false;
-    if (cap) cap.textContent = state.outlineKind === "parcel" ? "Lot line from parish records" : "Centered on your address";
+    showFinalCaption();
   }
 
   function loadStill(bounds, gen, done) {
@@ -930,8 +992,12 @@
       if (gen !== scanGen) return;
       img.hidden = true;
       state.satelliteUrl = "";
-      const cap = $("#sat-caption");
-      if (cap) cap.textContent = "Satellite photo unavailable. You can still tell us about the job.";
+      showAnalyze(false);
+      const finalCap = $("#sat-caption-final");
+      if (finalCap) {
+        finalCap.hidden = false;
+        finalCap.textContent = "Satellite photo unavailable. You can still tell us about the job.";
+      }
       const check = $("#property-check");
       if (check) check.hidden = false;
     };
@@ -939,48 +1005,51 @@
     img.src = url;
   }
 
-  function revealProperty(gen) {
-    if (gen !== scanGen) return;
-    const wrap = $("#sat-still-wrap");
-    const scan = $("#sat-scan");
-    const frame = document.querySelector(".sat-frame");
-    if (wrap) wrap.classList.remove("is-scanning");
-    if (scan) {
-      scan.classList.remove("is-on");
-      scan.hidden = true;
-    }
-    const parcel = state.parcel;
-    if (parcel && parcel.bounds && parcel.ring && parcel.ring.length >= 4) {
-      state.parcelRing = parcel.ring;
-      const fitted = Eng.expandToMinSize(Eng.padBounds(parcel.bounds, 0.28), 55);
-      const bounds = wideEnough(fitted);
-      if (frame) frame.classList.remove("is-zoomed");
-      loadStill(bounds, gen, () => {
+  function presentParcel(parcel, gen, reduce) {
+    const stage = $("#sat-stage");
+    state.parcel = parcel;
+    const fitted = Eng.expandToMinSize(Eng.padBounds(parcel.bounds, 0.28), 55);
+    const bounds = wideEnough(fitted);
+    if (stage) stage.classList.remove("is-zoom-pin", "is-zoom-lot");
+    loadStill(bounds, gen, () => {
+      if (gen !== scanGen) return;
+      if (stage && !reduce) stage.classList.add("is-zoom-lot");
+      traceParcel(parcel.ring, bounds, reduce);
+      later(reduce ? 0 : 780, () => {
         if (gen !== scanGen) return;
-        drawOutline();
         showPropertyQuestion();
       });
+    });
+  }
+
+  function finishAnalyze(gen, parcel, reduce) {
+    if (gen !== scanGen || state.propertyConfirmed) return;
+    const ring = parcel && parcel.ring && parcel.ring.length >= 4 ? parcel.ring : null;
+    if (ring) {
+      presentParcel(parcel, gen, reduce);
       return;
     }
-    state.parcelRing = null;
-    if (frame) frame.classList.add("is-zoomed");
-    drawOutline();
-    showPropertyQuestion();
+    state.parcel = null;
+    showPin(reduce);
+    later(reduce ? 0 : 900, () => {
+      if (gen !== scanGen) return;
+      showPropertyQuestion();
+    });
   }
 
   function showLockedSatellite(lat, lon) {
     const img = $("#sat-still");
-    const cap = $("#sat-caption");
-    const wrap = $("#sat-still-wrap");
-    const scan = $("#sat-scan");
     const frame = document.querySelector(".sat-frame");
+    const stage = $("#sat-stage");
     const check = $("#property-check");
     const questions = $("#count-block");
     const tools = $("#not-quite-tools");
     const outline = $("#sat-outline");
+    const pin = $("#sat-pin");
     if (!img || lat == null || lon == null) return;
     const gen = ++scanGen;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    clearAnalyzeTimers();
     state.propertyConfirmed = false;
     state.parcel = null;
     state.parcelRing = null;
@@ -988,67 +1057,74 @@
     img.draggable = false;
     img.alt = "Locked satellite view of " + (state.displayName || "the property");
     img.hidden = true;
-    img.style.transform = "";
-    if (wrap) wrap.classList.remove("is-settled", "is-scanning");
-    if (frame) frame.classList.remove("is-draggable", "is-zoomed");
-    if (scan) {
-      scan.classList.remove("is-on");
-      scan.hidden = true;
+    if (frame) frame.classList.remove("is-draggable");
+    if (stage) {
+      stage.classList.remove("is-zoom-pin", "is-zoom-lot");
+      stage.style.transform = "";
     }
-    if (outline) {
-      outline.classList.remove("is-on");
-      outline.innerHTML = "";
-    }
+    if (outline) outline.innerHTML = "";
+    if (pin) pin.hidden = true;
     if (check) check.hidden = true;
     if (questions) questions.hidden = true;
     if (tools) tools.hidden = true;
-    if (cap) cap.textContent = "Pulling satellite view...";
+    showAnalyze(false);
+    ["locate", "lot", "trees"].forEach((step) => {
+      const el = $("#sat-step-" + step);
+      if (el) el.classList.remove("is-on", "is-done");
+    });
 
-    const wide = wideStrip(lat, lon);
-    Eng.fetchParcel(lat, lon, state.displayName || state.address)
-      .then((parcel) => {
-        if (gen !== scanGen || state.propertyConfirmed || !parcel || !parcel.ring) return;
-        state.parcel = parcel;
-        if (state.outlineKind) revealProperty(gen);
-      })
-      .catch(() => {});
-
-    loadStill(wide, gen, () => {
+    const parcelPromise = Eng.fetchParcel(lat, lon, state.displayName || state.address).catch(() => null);
+    loadStill(wideStrip(lat, lon), gen, () => {
       if (gen !== scanGen) return;
       if (reduce) {
-        revealProperty(gen);
+        parcelPromise.then((parcel) => finishAnalyze(gen, parcel, true));
         return;
       }
-      if (wrap) wrap.classList.add("is-scanning");
-      if (scan) {
-        scan.hidden = false;
-        scan.classList.remove("is-on");
-        void scan.offsetWidth;
-        scan.classList.add("is-on");
-      }
-      setTimeout(() => revealProperty(gen), SCAN_MS);
+      showAnalyze(true);
+      markAnalyzeStep("locate");
+      later(520, () => { if (gen === scanGen) markAnalyzeStep("lot"); });
+      later(1040, () => { if (gen === scanGen) markAnalyzeStep("trees"); });
+      const gated = new Promise((resolve) => {
+        let settled = false;
+        const done = (parcel) => {
+          if (settled || gen !== scanGen) return;
+          settled = true;
+          resolve(parcel && parcel.ring ? parcel : null);
+        };
+        parcelPromise.then(done);
+        later(1500, () => done(null));
+      });
+      later(1500, () => {
+        gated.then((parcel) => finishAnalyze(gen, parcel, false));
+      });
     });
   }
 
   function shiftView(dx, dy) {
     const frame = document.querySelector(".sat-frame");
+    const stage = $("#sat-stage");
     const bounds = state.viewBounds;
     if (!frame || !bounds) return;
     const rect = frame.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
-    const zoom = frame.classList.contains("is-zoomed") ? 1.72 : 1;
+    const zoom = stage && stage.classList.contains("is-zoom-pin") ? 1.18 : 1;
     const dLon = (dx / rect.width / zoom) * (bounds.east - bounds.west);
     const dLat = (dy / rect.height / zoom) * (bounds.north - bounds.south);
     state.lon -= dLon;
     state.lat += dLat;
     state.parcel = null;
     state.parcelRing = null;
+    state.outlineKind = "pin";
     const gen = scanGen;
-    if (frame) frame.classList.remove("is-zoomed");
+    if (stage) {
+      stage.classList.remove("is-zoom-pin", "is-zoom-lot");
+      stage.style.transform = "";
+    }
+    const svg = $("#sat-outline");
+    if (svg) svg.innerHTML = "";
     loadStill(wideStrip(state.lat, state.lon), gen, () => {
       if (gen !== scanGen) return;
-      if (frame) frame.classList.add("is-zoomed");
-      drawOutline();
+      showPin(false);
       showPropertyQuestion();
     });
   }
@@ -1067,17 +1143,17 @@
       });
       frame.addEventListener("pointermove", (e) => {
         if (!drag || e.pointerId !== drag.id) return;
-        const photo = $("#sat-still");
-        const zoom = frame.classList.contains("is-zoomed") ? " scale(1.72)" : "";
-        if (photo) photo.style.transform = "translate(" + (e.clientX - drag.x) + "px," + (e.clientY - drag.y) + "px)" + zoom;
+        const stage = $("#sat-stage");
+        const zoom = stage && stage.classList.contains("is-zoom-pin") ? 1.18 : 1;
+        if (stage) stage.style.transform = "translate(" + (e.clientX - drag.x) + "px," + (e.clientY - drag.y) + "px) scale(" + zoom + ")";
       });
       const endDrag = (e) => {
         if (!drag || e.pointerId !== drag.id) return;
         const dx = e.clientX - drag.x;
         const dy = e.clientY - drag.y;
         drag = null;
-        const photo = $("#sat-still");
-        if (photo) photo.style.transform = "";
+        const stage = $("#sat-stage");
+        if (stage) stage.style.transform = "";
         if (Math.hypot(dx, dy) < 8) return;
         shiftView(dx, dy);
       };

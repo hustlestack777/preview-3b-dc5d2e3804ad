@@ -259,100 +259,35 @@ button, input { font: inherit; }
   touch-action: none;
 }
 .sat-still[hidden] { display: none !important; }
-.sat-scan {
+.sat-stage {
+  position: relative;
+  transform: scale(1);
+  transform-origin: center center;
+  will-change: transform;
+}
+.sat-stage.is-zoom-pin { transform: scale(1.18); transition: transform 1.05s cubic-bezier(.22, .7, .28, 1); }
+.sat-stage.is-zoom-lot { animation: satZoomLot .9s cubic-bezier(.22, .7, .28, 1) forwards; }
+@keyframes satZoomLot {
+  from { transform: scale(1.1); }
+  to { transform: scale(1); }
+}
+.sat-grid {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  overflow: hidden;
+  background-image:
+    linear-gradient(rgba(125, 255, 176, .22) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(125, 255, 176, .22) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: linear-gradient(180deg, transparent, #000 18%, #000 78%, transparent);
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 18%, #000 78%, transparent);
+  opacity: .9;
+  animation: satShimmer 1.1s linear infinite;
 }
-.sat-scan[hidden] { display: none !important; }
-.sat-canopy {
-  position: absolute;
-  left: var(--x);
-  top: var(--y);
-  width: 22px;
-  height: 22px;
-  margin: -11px 0 0 -11px;
-  border: 1.5px solid rgba(61, 255, 122, .8);
-  border-radius: 50%;
-  opacity: 0;
-  transform: scale(.4);
-  pointer-events: none;
-}
-.sat-canopy::before,
-.sat-canopy::after {
-  content: "";
-  position: absolute;
-  background: rgba(61, 255, 122, .7);
-}
-.sat-canopy::before {
-  left: 50%;
-  top: 3px;
-  bottom: 3px;
-  width: 1px;
-  margin-left: -.5px;
-}
-.sat-canopy::after {
-  top: 50%;
-  left: 3px;
-  right: 3px;
-  height: 1px;
-  margin-top: -.5px;
-}
-.sat-scan.is-on .sat-canopy {
-  animation: satPing .45s ease-out var(--d) forwards;
-}
-.sat-line-mover {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  transform: translateX(-100%);
-  pointer-events: none;
-  will-change: transform;
-}
-.sat-scan.is-on .sat-line-mover {
-  animation: satSweepX 1.25s ease-in-out forwards;
-}
-.sat-line,
-.sat-line-glow,
-.sat-leaf {
-  position: absolute;
-  pointer-events: none;
-}
-.sat-line {
-  top: 0;
-  bottom: 0;
-  right: 0;
-  width: 2px;
-  background: #3DFF7A;
-  box-shadow: 0 0 8px 2px rgba(61, 255, 122, .95), 0 0 18px 4px rgba(61, 255, 122, .45);
-}
-.sat-line-glow {
-  top: 0;
-  bottom: 0;
-  right: -16px;
-  width: 34px;
-  background: linear-gradient(90deg, transparent, rgba(61, 255, 122, .28), transparent);
-}
-.sat-leaf {
-  right: -7px;
-  top: 50%;
-  width: 14px;
-  height: 14px;
-  transform: translateY(-50%);
-  filter: drop-shadow(0 0 3px rgba(61, 255, 122, .85));
-}
-@keyframes satSweepX {
-  0% { transform: translateX(-100%); }
-  50% { transform: translateX(0%); }
-  100% { transform: translateX(-100%); }
-}
-@keyframes satPing {
-  0% { opacity: 0; transform: scale(.35); }
-  55% { opacity: .85; transform: scale(1); }
-  100% { opacity: .4; transform: scale(1); }
+.sat-grid[hidden] { display: none !important; }
+@keyframes satShimmer {
+  from { background-position: 0 0, 0 0; }
+  to { background-position: 0 28px, 28px 0; }
 }
 .sat-outline {
   position: absolute;
@@ -360,20 +295,77 @@ button, input { font: inherit; }
   width: 100%;
   height: 100%;
   pointer-events: none;
-  opacity: 0;
+  overflow: visible;
 }
-.sat-outline.is-on { opacity: 1; transition: opacity .35s ease; }
-.sat-outline path,
-.sat-outline ellipse {
-  fill: rgba(61, 255, 122, .18);
-  stroke: #3DFF7A;
-  stroke-width: 1.6;
+.sat-outline path {
+  fill: rgba(61, 255, 122, .05);
+  stroke: #7DFFB0;
+  stroke-width: 1.7;
+  stroke-linejoin: round;
+  stroke-linecap: round;
   vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 5px rgba(61, 255, 122, .8));
 }
-.sat-frame.is-zoomed .sat-still {
-  transform: scale(1.72);
-  transition: transform .5s ease;
+.sat-outline path.is-filled {
+  fill: rgba(61, 255, 122, .2);
+  transition: fill .45s ease;
 }
+.sat-pin {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  pointer-events: none;
+}
+.sat-pin[hidden] { display: none !important; }
+.sat-pin-glow {
+  position: absolute;
+  inset: -14px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(61, 255, 122, .45), transparent 68%);
+  animation: satPinPulse 1.4s ease-in-out infinite;
+}
+.sat-pin-head {
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: #7DFFB0;
+  box-shadow: 0 0 0 3px rgba(10, 10, 10, .55), 0 0 10px rgba(61, 255, 122, .9);
+}
+@keyframes satPinPulse {
+  0%, 100% { transform: scale(.85); opacity: .7; }
+  50% { transform: scale(1.08); opacity: 1; }
+}
+.sat-analyze-title {
+  margin: 0;
+  color: #d7ffe6;
+  font-weight: 750;
+  letter-spacing: .01em;
+  animation: satTitlePulse 1.3s ease-in-out infinite;
+}
+@keyframes satTitlePulse {
+  0%, 100% { opacity: .72; }
+  50% { opacity: 1; }
+}
+.sat-steps {
+  list-style: none;
+  margin: .35rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .25rem .7rem;
+}
+.sat-steps li {
+  color: #8d8d8d;
+  font-weight: 650;
+}
+.sat-steps li.is-on { color: #d7ffe6; }
+.sat-steps li.is-done { color: #7DFFB0; }
+#sat-analyze[hidden],
+#sat-caption-final[hidden] { display: none !important; }
+#sat-caption-final { margin: 0; }
 .sat-frame.is-draggable { cursor: grab; touch-action: none; }
 .sat-frame.is-draggable:active { cursor: grabbing; }
 .property-check { margin: .15rem 0 .9rem; }
@@ -408,16 +400,16 @@ button, input { font: inherit; }
 }
 @media (max-width: 767px) {
   .sat-still-wrap { margin-bottom: .85rem; }
-  .sat-canopy {
-    width: 14px;
-    height: 14px;
-    margin: -7px 0 0 -7px;
-  }
-  .sat-leaf { width: 11px; height: 11px; right: -5px; }
-  .sat-line-glow { width: 22px; right: -10px; }
+  .sat-grid { background-size: 18px 18px; }
+  .sat-pin { width: 14px; height: 14px; margin: -7px 0 0 -7px; }
+  .sat-pin-glow { inset: -10px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .sat-scan { display: none !important; }
+  .sat-grid,
+  .sat-pin-glow,
+  .sat-analyze-title,
+  .sat-stage { animation: none !important; transition: none !important; }
+  .sat-outline path { transition: none !important; }
 }
 .q-panel { display: none; }
 .q-panel.is-on { display: block; }
