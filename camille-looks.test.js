@@ -63,6 +63,10 @@ test("the six looks are optimized transparent webp files", () => {
 });
 
 test("page copy still says Louisiana Licensed Arborist and never says free", () => {
-  assert.equal((html.match(/Louisiana Licensed Arborist/g) || []).length, 5);
+  assert.equal((html.match(/Blake’s a Louisiana Licensed Arborist/g) || []).length, 5);
+  assert.equal((html.match(/Louisiana Licensed Arborist/g) || []).length, 9);
+  assert.match(html, /<h1 class="sr">3 B's Tree Removal, tree removal for Central &amp; Southwest Louisiana<\/h1>/);
   assert.doesNotMatch(html, /\bfree\b/i);
+  assert.doesNotMatch(html, /337-378-4046|337-405-9945/);
+  assert.doesNotMatch(html, /streetAddress/);
 });

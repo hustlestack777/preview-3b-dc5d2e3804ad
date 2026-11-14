@@ -149,7 +149,8 @@ button, input { font: inherit; }
   color: #FFC089; font-size: .82rem; font-weight: 600;
   letter-spacing: .04em; text-transform: uppercase;
 }
-.hero h1 {
+.hero h1,
+.hero .hero-lead {
   margin: 0;
   font-family: var(--display);
   font-weight: 700;
@@ -1531,7 +1532,7 @@ html, body { margin: 0; padding: 0; width: 100%; }
     linear-gradient(90deg, rgba(10,10,10,.78) 0%, rgba(10,10,10,.45) 50%, rgba(10,10,10,.15) 100%);
 }
 .hero-inner { z-index: 2; }
-.hero h1, .hero .sub, .hero .eyebrow { text-shadow: 0 2px 14px rgba(0,0,0,.55); }
+.hero h1, .hero .hero-lead, .hero .sub, .hero .eyebrow { text-shadow: 0 2px 14px rgba(0,0,0,.55); }
 .addr-row { background: rgba(10,10,10,.55); }
 /* Tall content on short screens: let the hero grow instead of clipping */
 @media (max-height: 700px) {
@@ -2297,7 +2298,8 @@ body.gg-quote-in-view .gg-talk { display: none !important; }
   max-width: 100%;
 }
 @media (max-width: 400px) {
-  .hero h1 {
+  .hero h1,
+  .hero .hero-lead {
     font-size: clamp(1.8rem, 9vw, 2.15rem);
   }
   .steps {
