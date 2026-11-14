@@ -1851,10 +1851,10 @@ html.lb-open { overflow: hidden; }
 .scope-panel, .scope-panel label, .scope-panel strong, .scope-panel legend, .scope-panel .scope-q > span, .scope-panel .choice { color: #FFFFFF; }
 .scope-panel [hidden], #scope-panel[hidden] { display: none !important; }
 
-/* ===== Camille chat (Nov 12) =====
+/* ===== Camille chat (Nov 12, live replies Nov 14) =====
    Full-size frameless cutout, same box as Gigi and Remy: 300x480 on desktop
-   (right 16, bottom 0) and 108x148 on phones (right 8, bottom 8). The chat is the
-   ElevenLabs sheet restyled from gg-widget.js, with our own 44px X and no orb. */
+   (right 16, bottom 0) and 108x148 on phones (right 8, bottom 8). The chat
+   panel is our own sheet. The model call stays on the server. */
 .gg-widget {
   position: fixed;
   right: 16px;
@@ -1926,9 +1926,7 @@ html.lb-open { overflow: hidden; }
   .hero .trust-chips { padding-right: 8.25rem; box-sizing: border-box; max-width: none; margin-left: 0; margin-right: 0; }
 }
 /* Phones: the chat is a full-width bottom sheet, so she steps behind it while open. */
-@media (max-width: 479px) {
-  .gg-widget.is-open .gg-stage { visibility: hidden; }
-}
+.gg-widget.is-open .gg-stage { visibility: hidden; }
 /* The address list draws above Camille while it is open. */
 body.addr-list-open .hero-inner { z-index: 45; }
 .gg-talk {
@@ -1977,19 +1975,91 @@ body.addr-list-open .hero-inner { z-index: 45; }
   .gg-talk { width: 200px; margin-bottom: 72px; margin-right: -72px; padding: 12px 32px 12px 14px; z-index: 1; }
 }
 
-/* The ElevenLabs element stays invisible until Camille is opened. */
-elevenlabs-convai {
-  position: fixed !important;
-  right: 0;
-  bottom: 0;
+/* The chat sheet is ours. It stays hidden until Camille is opened. */
+.gg-panel {
+  position: fixed;
   z-index: 60;
-  transform: none !important; /* no containing block, so the sheet pins to the screen */
+  right: 16px;
+  bottom: 16px;
+  width: 300px;
+  height: min(560px, calc(100dvh - 32px));
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  color: #1A1A1A;
+  border-radius: 18px;
+  box-shadow: 0 18px 50px rgba(0,0,0,.45);
+  overflow: hidden;
+  font-family: "DM Sans", system-ui, sans-serif;
 }
-body:not(.gg-chat-open) elevenlabs-convai {
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
+.gg-panel[hidden] { display: none !important; }
+.gg-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 8px 10px 16px;
+  font: 700 15px/1.2 "DM Sans", system-ui, sans-serif;
+  color: #1A1A1A;
 }
+.gg-log {
+  flex: 1;
+  overflow: auto;
+  padding: 4px 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.gg-msg {
+  margin: 0;
+  align-self: flex-start;
+  max-width: 92%;
+  background: #F6F1EC;
+  color: #1A1A1A;
+  border-radius: 14px;
+  padding: 8px 10px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.gg-msg-user { align-self: flex-end; background: #2A1A10; color: #FFC089; }
+.gg-panel-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 12px 8px; }
+.gg-panel-chips:empty { display: none; }
+.gg-form {
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  border-top: 1px solid #eee;
+}
+.gg-form input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  font: 400 16px/1.2 "DM Sans", system-ui, sans-serif;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 0 10px;
+}
+.gg-form button {
+  min-width: 64px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: #F86A02;
+  color: #0A0A0A;
+  font: 700 14px/1 "DM Sans", system-ui, sans-serif;
+  cursor: pointer;
+}
+@media (max-width: 479px) {
+  .gg-panel {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: min(560px, 85dvh);
+    border-radius: 18px 18px 0 0;
+  }
+}
+body:not(.gg-chat-open) .gg-panel { display: none !important; }
 /* Leave room at the very bottom so the launcher never sits on the footer links. */
 .foot { padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)) !important; }
 @media (max-width: 639px) { .foot { padding-bottom: calc(10.5rem + env(safe-area-inset-bottom, 0px)) !important; } }
@@ -2120,23 +2190,24 @@ details.sv-panel > summary::after { content: "Show"; margin-left: auto; color: #
 details.sv-panel[open] > summary::after { content: "Hide"; }
 details.sv-panel:not([open]) .sv-frame { display: none; }
 .cta-inner #btn-jump { margin-bottom: .75rem; }
-/* Our own close X for Camille's chat: 44px, top-right of the sheet. */
-.gg-close {
-  position: fixed;
-  z-index: 70;
-  right: 24px;
-  bottom: calc(16px + min(560px, 100vh - 32px) - 54px);
-  width: 44px; height: 44px;
-  border: 0; border-radius: 12px;
-  background: #F86A02; color: #0A0A0A;
-  font-size: 30px; font-weight: 700; line-height: 1;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,.25);
+/* Close X sits in the sheet header: 44px tap target. */
+.gg-panel .gg-close {
+  position: static;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: #F86A02;
+  color: #0A0A0A;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
   cursor: pointer;
-}
-.gg-close[hidden] { display: none !important; }
-@media (max-width: 479px) {
-  .gg-close { right: 10px; bottom: calc(min(560px, 85vh) - 54px); }
 }
 
 /* Nov 12: tree size pick (trimming), job address list, clean thank-you */
@@ -2247,7 +2318,7 @@ details.sv-panel:not([open]) .sv-frame { display: none; }
   body.gg-quote-steps .gg-widget,
   body.gg-quote-steps .gg-talk,
   body.gg-quote-steps .gg-close,
-  body.gg-quote-steps elevenlabs-convai {
+  body.gg-quote-steps .gg-panel {
     display: none !important;
     visibility: hidden !important;
     pointer-events: none !important;

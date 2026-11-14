@@ -59,7 +59,9 @@ test("the six looks are optimized transparent webp files", () => {
   }
   assert.doesNotMatch(html, /gg-outdoor-auburn/);
   assert.match(html, /id="gg-launcher"/);
-  assert.match(html, /agent-id="agent_2301m76zjc0dfm2afvx1y2z980k7"/);
+  assert.match(html, /id="gg-panel"/);
+  assert.match(html, /js\/gg-widget\.js/);
+  assert.doesNotMatch(html, /elevenlabs/i);
 });
 
 test("page copy still says Louisiana Licensed Arborist and never says free", () => {
