@@ -30,7 +30,7 @@
   <meta name="twitter:title" content="3 B's Tree Removal | Enter Your Address for a Tree Quote" />
   <meta name="twitter:description" content="Enter your address to start a tree quote. Trees, stumps, land clearing, dirt work and storm cleanup in Central &amp; Southwest Louisiana. Our team calls you back with your real price." />
   <meta name="twitter:image" content="https://3bs.getpros.xyz/og-image.jpg" />
-  <link rel="stylesheet" href="css/styles.css?v=20261114scan2" />
+  <link rel="stylesheet" href="css/styles.css?v=20261114prop4" />
   <link rel="stylesheet" href="css/motion.css?v=20261112motion1" />
 </head>
 <body>
@@ -160,11 +160,11 @@
               <div class="sat-frame">
                 <img id="sat-still" class="sat-still" alt="Locked satellite view of your property" width="960" height="624" draggable="false" hidden />
                 <div class="sat-scan" id="sat-scan" hidden aria-hidden="true">
-                  <span class="sat-canopy" style="--x:18%;--y:36%;--d:.32s"></span>
-                  <span class="sat-canopy" style="--x:34%;--y:64%;--d:.48s"></span>
-                  <span class="sat-canopy" style="--x:49%;--y:28%;--d:.64s"></span>
-                  <span class="sat-canopy" style="--x:66%;--y:58%;--d:.8s"></span>
-                  <span class="sat-canopy" style="--x:81%;--y:40%;--d:.96s"></span>
+                  <span class="sat-canopy" style="--x:18%;--y:36%;--d:.14s"></span>
+                  <span class="sat-canopy" style="--x:34%;--y:64%;--d:.26s"></span>
+                  <span class="sat-canopy" style="--x:49%;--y:28%;--d:.38s"></span>
+                  <span class="sat-canopy" style="--x:66%;--y:58%;--d:.5s"></span>
+                  <span class="sat-canopy" style="--x:81%;--y:40%;--d:.6s"></span>
                   <div class="sat-line-mover">
                     <span class="sat-line-glow"></span>
                     <span class="sat-line"></span>
@@ -173,11 +173,22 @@
                     </svg>
                   </div>
                 </div>
+                <svg id="sat-outline" class="sat-outline" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
               </div>
               <figcaption class="sat-still-cap" id="sat-caption">Satellite view</figcaption>
             </figure>
 
-            <div class="count-block" id="count-block">
+            <div id="property-check" class="property-check" hidden>
+              <p class="property-q" id="property-q">Is this your property?</p>
+              <button type="button" class="btn btn-block" id="btn-yep">Yep, that's it</button>
+              <button type="button" class="btn-not-quite" id="btn-not-quite">Not quite</button>
+              <div id="not-quite-tools" class="not-quite-tools" hidden>
+                <p>Drag the photo to slide the view, or re-enter the address.</p>
+                <button type="button" class="btn-not-quite" id="btn-reenter">Re-enter address</button>
+              </div>
+            </div>
+
+            <div class="count-block" id="count-block" hidden>
               <div class="count-steppers">
                 <div class="stepper">
                   <span class="stepper-label" id="trees-step-label">How many trees?</span>
@@ -217,10 +228,9 @@
               </div>
               <div class="photo-prev" id="photo-prev"></div>
               <p class="photo-limit" id="photo-limit" hidden></p>
+              <p class="form-status" id="property-status" role="status"></p>
+              <button type="button" class="btn btn-block" id="btn-to-photos">Continue</button>
             </div>
-
-            <p class="form-status" id="property-status" role="status"></p>
-            <button type="button" class="btn btn-block" id="btn-to-photos">Continue</button>
           </div>
 
           <div class="q-step" data-step="3" id="step-contact" hidden>
@@ -571,7 +581,7 @@
   <script src="js/pricing.js?v=20261111p"></script>
   <script src="js/engine.js?v=20261112s"></script>
   <script src="js/autocomplete.js?v=20261112qa16"></script>
-  <script src="js/app.js?v=20261114scan2"></script>
+  <script src="js/app.js?v=20261114prop4"></script>
   <script src="js/scope.js?v=20261112qa16"></script>
   <script src="js/media.js?v=20261111a"></script>
   <script src="js/lrl-credit.js?v=20261111-lrl2"></script>
