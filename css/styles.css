@@ -2087,6 +2087,10 @@ select, .scope-panel select {
 .scope-outline-toggle { justify-self: start; }
 .scope-hint .linkish { color: #FFC089; text-decoration: underline; background: none; border: 0; font: inherit; padding: .4rem 0; cursor: pointer; }
 .hero .fine .hero-call { color: #FFC089; font-weight: 700; text-decoration: underline; }
+/* Phones: the in-body call link is a text line (~17px). Vertical padding makes the tap target at least 40px without moving the line. */
+@media (max-width: 767px) {
+  .hero .fine .hero-call { padding-block: 12px; }
+}
 details.sv-panel > summary { cursor: pointer; list-style: none; }
 details.sv-panel > summary::-webkit-details-marker { display: none; }
 details.sv-panel > summary::after { content: "Show"; margin-left: auto; color: #FFC089; font-weight: 700; }
