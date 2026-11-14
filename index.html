@@ -30,7 +30,7 @@
   <meta name="twitter:title" content="3 B's Tree Removal | Enter Your Address for a Tree Quote" />
   <meta name="twitter:description" content="Enter your address to start a tree quote. Trees, stumps, land clearing, dirt work and storm cleanup in Central &amp; Southwest Louisiana. Our team calls you back with your real price." />
   <meta name="twitter:image" content="https://3bs.getpros.xyz/og-image.jpg" />
-  <link rel="stylesheet" href="css/styles.css?v=20261112qa26" />
+  <link rel="stylesheet" href="css/styles.css?v=20261114scan1" />
   <link rel="stylesheet" href="css/motion.css?v=20261112motion1" />
 </head>
 <body>
@@ -146,177 +146,81 @@
         <div class="quote-card" id="quote-card">
           <ol class="steps" aria-label="Estimate steps">
             <li class="is-done" data-step-pill="1">Address</li>
-            <li class="is-on" data-step-pill="2">Property</li>
-            <li data-step-pill="3">Photos</li>
-            <li data-step-pill="4">Contact</li>
+            <li class="is-on" data-step-pill="2">Job</li>
+            <li data-step-pill="3">Contact</li>
           </ol>
           <p class="addr-chip" id="addr-chip"></p>
           <div id="storm-banner" class="storm-banner" hidden></div>
 
           <div class="q-step is-on" data-step="2" id="step-property">
-            <h2 class="step-title">Your property</h2>
-            <p class="sat-lead">Here’s your property from above. Use + and − to zoom. Then tell us what you need.</p>
+            <h2 class="step-title">About the job</h2>
+            <p class="sat-lead">Blake’s a Louisiana Licensed Arborist and he’ll come check it out.</p>
 
-            <div class="property-layout">
-              <div class="sat-panel">
-                <div class="view-head">
-                  <strong>Satellite view</strong>
-                  <span id="parcel-caption">Finding your lot…</span>
+            <figure class="sat-still-wrap" id="sat-still-wrap">
+              <div class="sat-frame">
+                <img id="sat-still" class="sat-still" alt="Locked satellite view of your property" width="960" height="624" draggable="false" hidden />
+                <div class="sat-scan" id="sat-scan" hidden aria-hidden="true">
+                  <div class="sat-scan-grid"></div>
+                  <div class="sat-scan-glow"></div>
+                  <div class="sat-scan-beam"></div>
+                  <span class="sat-scan-bracket sat-scan-bracket-tl"></span>
+                  <span class="sat-scan-bracket sat-scan-bracket-tr"></span>
+                  <span class="sat-scan-bracket sat-scan-bracket-bl"></span>
+                  <span class="sat-scan-bracket sat-scan-bracket-br"></span>
                 </div>
-                <div class="map-shell">
-                  <div id="leaflet-map" class="leaflet-map" role="application" aria-label="Satellite view of your property"></div>
-                  <p id="map-draw-prompt" class="map-draw-prompt" hidden>Tap points on the map to outline the area, then tap Done.</p>
-                  <div id="scan-overlay" class="scan-overlay" hidden>
-                    <div class="scan-beam" aria-hidden="true"></div>
-                    <p class="scan-label">Outlining your property…</p>
+              </div>
+              <figcaption class="sat-still-cap" id="sat-caption">Satellite view</figcaption>
+            </figure>
+
+            <div class="count-block" id="count-block">
+              <div class="count-steppers">
+                <div class="stepper">
+                  <span class="stepper-label" id="trees-step-label">How many trees?</span>
+                  <div class="stepper-ctrl" role="group" aria-labelledby="trees-step-label">
+                    <button type="button" class="step-btn" id="trees-minus" aria-label="Fewer trees">−</button>
+                    <output id="trees-count" for="trees-minus trees-plus" aria-live="polite">0</output>
+                    <button type="button" class="step-btn" id="trees-plus" aria-label="More trees">+</button>
+                  </div>
+                </div>
+                <div class="stepper">
+                  <span class="stepper-label" id="stumps-step-label">How many stumps?</span>
+                  <div class="stepper-ctrl" role="group" aria-labelledby="stumps-step-label">
+                    <button type="button" class="step-btn" id="stumps-minus" aria-label="Fewer stumps">−</button>
+                    <output id="stumps-count" for="stumps-minus stumps-plus" aria-live="polite">0</output>
+                    <button type="button" class="step-btn" id="stumps-plus" aria-label="More stumps">+</button>
                   </div>
                 </div>
               </div>
-
-              <div class="count-block" id="count-block">
-                <div class="count-steppers">
-                  <div class="stepper">
-                    <span class="stepper-label" id="trees-step-label">How many trees?</span>
-                    <div class="stepper-ctrl" role="group" aria-labelledby="trees-step-label">
-                      <button type="button" class="step-btn" id="trees-minus" aria-label="Fewer trees or limbs">−</button>
-                      <output id="trees-count" for="trees-minus trees-plus" aria-live="polite">0</output>
-                      <button type="button" class="step-btn" id="trees-plus" aria-label="More trees or limbs">+</button>
-                    </div>
-                  </div>
-                  <div class="stepper">
-                    <span class="stepper-label" id="stumps-step-label">How many stumps?</span>
-                    <div class="stepper-ctrl" role="group" aria-labelledby="stumps-step-label">
-                      <button type="button" class="step-btn" id="stumps-minus" aria-label="Fewer stumps">−</button>
-                      <output id="stumps-count" for="stumps-minus stumps-plus" aria-live="polite">0</output>
-                      <button type="button" class="step-btn" id="stumps-plus" aria-label="More stumps">+</button>
-                    </div>
-                  </div>
+              <fieldset class="job-types" id="job-types">
+                <legend class="job-types-label">Job type</legend>
+                <div class="job-type-row" role="radiogroup" aria-label="Job type">
+                  <label class="job-type"><input type="radio" name="job-type" value="limb" /> Limb cut</label>
+                  <label class="job-type"><input type="radio" name="job-type" value="removal" /> Whole tree removal</label>
+                  <label class="job-type"><input type="radio" name="job-type" value="stump" /> Stump grinding</label>
+                  <label class="job-type"><input type="radio" name="job-type" value="unsure" /> Not sure</label>
                 </div>
-                <fieldset class="job-types" id="job-types">
-                  <legend class="job-types-label">What kind of work?</legend>
-                  <div class="job-type-row" role="group" aria-label="Job type">
-                    <label class="job-type"><input type="checkbox" name="job-type" value="trim" /> Trimming / pruning</label>
-                    <label class="job-type"><input type="checkbox" name="job-type" value="removal" /> Tree removal</label>
-                    <label class="job-type"><input type="checkbox" name="job-type" value="stump" /> Stump grinding</label>
-                    <label class="job-type"><input type="checkbox" name="job-type" value="emergency" /> Storm cleanup</label>
-                    <label class="job-type"><input type="checkbox" name="job-type" value="clearing" /> Lot or land clearing</label>
-                    <label class="job-type"><input type="checkbox" name="job-type" value="grading" /> Grading or leveling</label>
-                    <label class="job-type"><input type="checkbox" name="job-type" value="pad" /> House pad or driveway pad</label>
-                    <label class="job-type"><input type="checkbox" name="job-type" value="drainage" /> Drainage or ditch work</label>
-                    <label class="job-type"><input type="checkbox" name="job-type" value="haul" /> Debris haul-off</label>
-                    <label class="job-type"><input type="checkbox" name="job-type" value="other" /> Other (describe)</label>
-                  </div>
-                </fieldset>
-                <fieldset class="tree-size" id="tree-size" hidden>
-                  <legend class="job-types-label">How big are the trees to trim?</legend>
-                  <p class="tree-size-note">Pick the closest. Mixed sizes? Pick the biggest one.</p>
-                  <div class="tree-size-row">
-                    <label class="tree-size-opt"><input type="radio" name="tree-size" value="small" /><svg viewBox="0 0 84 64" width="84" height="64" aria-hidden="true"><line x1="2" y1="61" x2="82" y2="61" stroke="#6b6b6b" stroke-width="2"/><path d="M8 42 L22 31 L36 42 Z" fill="#c9c9c9"/><rect x="11" y="42" width="22" height="19" fill="#c9c9c9"/><rect x="18" y="49" width="6" height="12" fill="#1a1a1a"/><rect x="59" y="38" width="5" height="23" fill="#8a5a2b"/><circle cx="61.5" cy="38" r="8" fill="#3fbf6a"/></svg><strong>Small</strong><span>About as tall as a one-story house</span></label>
-                    <label class="tree-size-opt"><input type="radio" name="tree-size" value="medium" /><svg viewBox="0 0 84 64" width="84" height="64" aria-hidden="true"><line x1="2" y1="61" x2="82" y2="61" stroke="#6b6b6b" stroke-width="2"/><path d="M8 42 L22 31 L36 42 Z" fill="#c9c9c9"/><rect x="11" y="42" width="22" height="19" fill="#c9c9c9"/><rect x="18" y="49" width="6" height="12" fill="#1a1a1a"/><rect x="59" y="25" width="5" height="36" fill="#8a5a2b"/><circle cx="61.5" cy="25" r="11" fill="#3fbf6a"/></svg><strong>Medium</strong><span>About as tall as a two-story house</span></label>
-                    <label class="tree-size-opt"><input type="radio" name="tree-size" value="large" /><svg viewBox="0 0 84 64" width="84" height="64" aria-hidden="true"><line x1="2" y1="61" x2="82" y2="61" stroke="#6b6b6b" stroke-width="2"/><path d="M8 42 L22 31 L36 42 Z" fill="#c9c9c9"/><rect x="11" y="42" width="22" height="19" fill="#c9c9c9"/><rect x="18" y="49" width="6" height="12" fill="#1a1a1a"/><rect x="59" y="17" width="5" height="44" fill="#8a5a2b"/><circle cx="61.5" cy="17" r="14" fill="#3fbf6a"/></svg><strong>Large</strong><span>Taller than a two-story house</span></label>
-                  </div>
-                </fieldset>
-                <div class="scope-panel" id="scope-panel" hidden>
-                  <p class="scope-lead">Trimming gets a ballpark range. For everything else, our team will call you back with a quote, so tell us a little about the job.</p>
-                  <label class="notes-label" id="scope-other-wrap" hidden for="scope-other">Other: what do you need?
-                    <input id="scope-other" type="text" maxlength="200" placeholder="e.g. Clear a fence line" />
-                  </label>
-                  <div class="scope-q scope-area-q" id="scope-area-q">
-                    <strong>How much land?</strong>
-                    <p class="scope-area" id="scope-area" aria-live="polite">We’ll use your whole lot.</p>
-                    <button type="button" class="scope-btn scope-outline-toggle" id="btn-scope-outline" aria-pressed="false">Just part of it? Tap to outline</button>
-                    <p class="scope-hint" id="scope-draw-hint" hidden><button type="button" class="linkish" id="btn-scope-lot">Use my whole lot instead</button></p>
-                    <input type="checkbox" id="scope-not-sure" hidden />
-                  </div>
-                  <fieldset class="scope-q"><legend>What’s on it?</legend>
-                    <label class="choice"><input type="checkbox" name="scope-cover" value="Grass" /> Grass</label>
-                    <label class="choice"><input type="checkbox" name="scope-cover" value="Brush" /> Brush</label>
-                    <label class="choice"><input type="checkbox" name="scope-cover" value="Small trees" /> Small trees</label>
-                    <label class="choice"><input type="checkbox" name="scope-cover" value="Big timber" /> Big timber</label>
-                  </fieldset>
-                  <div id="scope-clearing" hidden>
-                    <fieldset class="scope-q"><legend>Debris</legend>
-                      <label class="choice"><input type="radio" name="scope-debris" value="Haul off" /> Haul off</label>
-                      <label class="choice"><input type="radio" name="scope-debris" value="Burn on site" /> Burn on site</label>
-                    </fieldset>
-                    <fieldset class="scope-q"><legend>Stumps out?</legend>
-                      <label class="choice"><input type="radio" name="scope-stumps" value="Yes" /> Yes</label>
-                      <label class="choice"><input type="radio" name="scope-stumps" value="No" /> No</label>
-                    </fieldset>
-                    <fieldset class="scope-q"><legend>Leveling after?</legend>
-                      <label class="choice"><input type="radio" name="scope-level" value="Yes" /> Yes</label>
-                      <label class="choice"><input type="radio" name="scope-level" value="No" /> No</label>
-                    </fieldset>
-                  </div>
-                  <fieldset class="scope-q"><legend>Access</legend>
-                    <label class="scope-inline">Gate width
-                      <select id="scope-gate">
-                        <option value="">Pick one</option>
-                        <option>No gate / wide open</option>
-                        <option>Under 6 ft</option>
-                        <option>6 to 8 ft</option>
-                        <option>Over 8 ft</option>
-                        <option>Not sure</option>
-                      </select>
-                    </label>
-                    <span class="scope-sub">Can a skid steer get in?</span>
-                    <label class="choice"><input type="radio" name="scope-skid" value="Yes" /> Yes</label>
-                    <label class="choice"><input type="radio" name="scope-skid" value="No" /> No</label>
-                    <label class="choice"><input type="radio" name="scope-skid" value="Not sure" /> Not sure</label>
-                  </fieldset>
-                </div>
-                <label class="notes-label comments-label" for="work-comments">Anything we should know?
-                  <span>Optional — gates, pets, access, which trees. Never required.</span>
-                  <textarea id="work-comments" rows="3" placeholder="e.g. Gate code, dogs in the yard, the oak by the driveway"></textarea>
-                </label>
+              </fieldset>
+              <label class="notes-label" for="notes">Notes <span>Optional</span>
+                <textarea id="notes" rows="3" placeholder="Gates, pets, which trees, anything we should know"></textarea>
+              </label>
+              <div class="photo-field">
+                <p class="photo-label" id="photo-label-text">Photo
+                  <span>Optional. Add a picture of the trees or stumps.</span>
+                </p>
+                <input id="photos" class="sr" type="file" accept="image/*,video/*" multiple />
+                <label for="photos" class="btn btn-photos" id="btn-add-photos">Add photos</label>
               </div>
-
-              <details class="sv-panel">
-                <summary class="view-head">
-                  <strong>Street view</strong>
-                  <span>Optional</span>
-                </summary>
-                <div class="sv-frame">
-                  <iframe id="sv-frame" title="Street view of the property" loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
-                  <p id="sv-fallback" class="sv-fallback" hidden>No street-level photo at this pin. You can still set the tree and stump counts and add a photo next.</p>
-                </div>
-              </details>
+              <div class="photo-prev" id="photo-prev"></div>
+              <p class="photo-limit" id="photo-limit" hidden></p>
             </div>
-            <div class="totals" id="running-total" hidden>
-              <span id="marks-summary">No marks yet</span>
-              <strong id="running-price"></strong>
-            </div>
-
-            <label class="storm-toggle"><input type="checkbox" id="opt-storm" /> Storm damage / urgent?</label>
 
             <p class="form-status" id="property-status" role="status"></p>
             <button type="button" class="btn btn-block" id="btn-to-photos">Continue</button>
           </div>
 
-          <div class="q-step" data-step="3" id="step-photos" hidden>
-            <h2 class="step-title">Photos &amp; notes</h2>
-            <p class="sat-lead">Photos help us judge height, condition and access. Add as many as you’d like. Trimming jobs see a ballpark range; removals get a quote on the callback. We’ll confirm your real price when we call you back.</p>
-            <div class="photo-field">
-              <p class="photo-label" id="photo-label-text">Photos or a short video of the trees or stumps
-                <span>Add as many photos as you’d like. We’ll shrink them and attach as many as the 10 MB email limit allows. Tap the × to remove one.</span>
-              </p>
-              <input id="photos" class="sr" type="file" accept="image/*,video/*" multiple />
-              <label for="photos" class="btn btn-photos" id="btn-add-photos">Add photos</label>
-            </div>
-            <div class="photo-prev" id="photo-prev"></div>
-            <p class="photo-limit" id="photo-limit" hidden></p>
-            <label class="notes-label">Notes <span>Optional</span>
-              <textarea id="notes" rows="4" placeholder="Which trees, access, gates, pets, anything we should know…"></textarea>
-            </label>
-            <div class="step-nav">
-              <button type="button" class="btn-ghost" id="btn-back-property">Back</button>
-              <button type="button" class="btn" id="btn-to-contact">Continue</button>
-            </div>
-          </div>
-
-          <div class="q-step" data-step="4" id="step-contact" hidden>
+          <div class="q-step" data-step="3" id="step-contact" hidden>
             <h2 class="step-title">When should we call you?</h2>
-            <p class="sat-lead">Tell us when to call. For trimming we’ll show a ballpark price range; for removals we’ll call you with a quote.</p>
+            <p class="sat-lead">Tell us when to call. Blake’s a Louisiana Licensed Arborist and he’ll come check it out.</p>
             <div class="fields">
               <label>Name<input id="name" type="text" autocomplete="name" required /></label>
               <label>Mobile<input id="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="(318) 555-0123" required /></label>
@@ -368,7 +272,7 @@
               <p class="range-label" id="range-label"></p>
               <div class="price" id="range-price"></div>
               <ul class="breakdown" id="breakdown"></ul>
-              <p class="range-note" id="range-note">This is a ballpark, not a firm price. We’ll review your photos and a satellite view of your lot, and we’ll confirm your real price when we call you back.</p>
+              <p class="range-note" id="range-note">We’ll review your photo and the satellite view, and we’ll confirm your real price when we call you back.</p>
               <p class="range-disclaimer" id="range-disclaimer">Ballpark only; we’ll confirm your real price when we call you back.</p>
               <p class="thanks" id="thanks" hidden>Thanks, we got your info. We’ll confirm your real price when we call you back.</p>
             </div>
@@ -380,15 +284,15 @@
     <section class="how light-band" id="how">
       <div class="wrap">
         <p class="section-kicker">How it works</p>
-        <h2>A ballpark price up front, then a callback.</h2>
+        <h2>Tell us about the job. Blake comes to check it out.</h2>
         <div class="how-grid">
           <div><span class="n">1</span><strong>Enter your address</strong><p>Pick it from the list, then tap Start my quote.</p></div>
-          <div><span class="n">2</span><strong>Tell us about the job</strong><p>Pick the kind of work and how many trees. Add photos if you have them.</p></div>
-          <div><span class="n">3</span><strong>See a ballpark, then get a call</strong><p>Tell us the best time to call. Trimming jobs see a ballpark range right away; removals get a quote on the call. We review your photos and a satellite view of your lot, and we’ll confirm your real price when we call you back.</p></div>
+          <div><span class="n">2</span><strong>Tell us about the job</strong><p>How many trees, how many stumps, and the job type. Add a photo if you have one.</p></div>
+          <div><span class="n">3</span><strong>Pick a time to call</strong><p>Blake’s a Louisiana Licensed Arborist and he’ll come check it out. We’ll call you at the time you picked.</p></div>
         </div>
         <div class="ballpark-cta" aria-labelledby="ballpark-h">
-          <h3 id="ballpark-h">Get your ballpark range fast.</h3>
-          <p class="ballpark-lead">Tell us about the job or send a few photos and we’ll give you a price range. Then pick a good time and we’ll call you to talk it over. Many jobs can be quoted over the phone to get you on the schedule faster; if we need to see it first, we’ll come take a look.</p>
+          <h3 id="ballpark-h">Blake will come check it out.</h3>
+          <p class="ballpark-lead">Tell us about the job or send a photo. Blake’s a Louisiana Licensed Arborist and he’ll come check it out. Pick a good time and we’ll call you.</p>
           <div class="ballpark-cta-actions">
             <a class="btn" href="#top">Enter my address</a>
             <a class="btn btn-call" href="tel:+13187128733" aria-label="Call (318) 712-TREE, 318-712-8733">
@@ -566,7 +470,7 @@
         </div>
         <div>
           <h2>About the work</h2>
-          <p class="muted">We take on the big, tough jobs. Our owner, Blake Berry, is an LDAF licensed arborist for tree work, based in Pitkin, Louisiana. We also do skid steer dirt work and lot clearing. For trimming, you’ll see a ballpark price range here; removals, stumps and dirt work are call for a ballpark. We review your photos and a satellite view of your lot, and we’ll confirm your real price when we call you back. This page never books the job for you.</p>
+          <p class="muted">We take on the big, tough jobs. Our owner, Blake Berry, is an LDAF licensed arborist for tree work, based in Pitkin, Louisiana. We also do skid steer dirt work and lot clearing. Blake’s a Louisiana Licensed Arborist and he’ll come check it out. We’ll confirm your real price when we call you back. This page never books the job for you.</p>
         </div>
       </div>
     </section>
@@ -662,7 +566,7 @@
   <script src="js/pricing.js?v=20261111p"></script>
   <script src="js/engine.js?v=20261112s"></script>
   <script src="js/autocomplete.js?v=20261112qa16"></script>
-  <script src="js/app.js?v=20261112qa22"></script>
+  <script src="js/app.js?v=20261114scan1"></script>
   <script src="js/scope.js?v=20261112qa16"></script>
   <script src="js/media.js?v=20261111a"></script>
   <script src="js/lrl-credit.js?v=20261111-lrl2"></script>
