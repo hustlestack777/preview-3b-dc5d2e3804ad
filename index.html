@@ -601,10 +601,33 @@
     </div>
     <button type="button" class="gg-ask" id="gg-ask" hidden>Questions? Ask me</button>
     <button type="button" class="gg-stage" id="gg-launcher" aria-label="Chat with Camille" aria-expanded="false">
-      <picture>
-        <picture><source media="(min-width: 640px)" srcset="img/gg/gg-outdoor-auburn.webp" /><img class="gg-cutout" src="img/gg/gg-outdoor-auburn-sm.webp" width="253" height="520" alt="" decoding="async" /></picture>
-      </picture>
+      <img class="gg-cutout" id="gg-cutout" width="516" height="900" alt="" decoding="async" />
     </button>
+    <script>
+      (function () {
+        var looks = [
+          "img/gg/camille-chainsaw.webp",
+          "img/gg/camille-hardhat.webp",
+          "img/gg/camille-polesaw.webp",
+          "img/gg/camille-gloves.webp",
+          "img/gg/camille-rope.webp",
+          "img/gg/camille-pruner.webp"
+        ];
+        var key = "camilleLookIndex";
+        var i = 0;
+        try {
+          var n = parseInt(localStorage.getItem(key) || "0", 10);
+          if (isFinite(n)) i = n;
+        } catch (e) {}
+        i = ((i % looks.length) + looks.length) % looks.length;
+        var img = document.getElementById("gg-cutout");
+        if (img) {
+          img.src = looks[i];
+          img.setAttribute("data-look", looks[i]);
+        }
+        try { localStorage.setItem(key, String((i + 1) % looks.length)); } catch (e) {}
+      })();
+    </script>
   </div>
   <button type="button" class="gg-close" id="gg-close" aria-label="Close chat with Camille" hidden>&times;</button>
   <elevenlabs-convai agent-id="agent_2301m76zjc0dfm2afvx1y2z980k7"></elevenlabs-convai>
