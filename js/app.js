@@ -34,6 +34,26 @@
   const money = (n) =>
     new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(n);
 
+  // Street-level link for Blake's report only. The customer page never embeds it.
+  function streetViewLink(lat, lon) {
+    if (lat == null || lon == null || lat === "" || lon === "") return "";
+    return "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=" + lat + "," + lon;
+  }
+
+  async function satelliteJpegBlob() {
+    if (!state.satelliteUrl) return null;
+    try {
+      const res = await fetch(state.satelliteUrl);
+      if (!res.ok) return null;
+      const blob = await res.blob();
+      if (!blob || !blob.size || blob.size > 2.2 * 1024 * 1024) return null;
+      if (blob.type && blob.type !== "image/jpeg") return null;
+      return blob.type ? blob : new Blob([await blob.arrayBuffer()], { type: "image/jpeg" });
+    } catch (_) {
+      return null;
+    }
+  }
+
   const heroVideo = document.querySelector(".hero-video");
   if (heroVideo && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     heroVideo.pause();
@@ -80,6 +100,10 @@
       "Address: " + (payload.address || ""),
       "Geocode: " + (payload.geocode || ""),
       payload.lat && payload.lon ? "Map: https://maps.google.com/?q=" + payload.lat + "," + payload.lon : "",
+      (payload.streetViewUrl || streetViewLink(payload.lat, payload.lon))
+        ? "Street view: " + (payload.streetViewUrl || streetViewLink(payload.lat, payload.lon))
+        : "",
+      "Satellite: satellite.jpg is attached when the image could be fetched.",
       "Storm / urgent: " + (payload.stormUrgent ? "yes" : "no"),
       "Job types: " + ((payload.jobTypeLabels || []).join(", ") || "(none)"),
       "Ballpark shown: " + (payload.rangeLow ? "$" + payload.rangeLow + " – $" + payload.rangeHigh : "none (follow up)"),
@@ -110,6 +134,7 @@
     fd.append("address", payload.address || "");
     fd.append("geocode", payload.geocode || "");
     fd.append("map", payload.lat && payload.lon ? "https://maps.google.com/?q=" + payload.lat + "," + payload.lon : "");
+    fd.append("streetView", payload.streetViewUrl || streetViewLink(payload.lat, payload.lon));
     fd.append("stormUrgent", payload.stormUrgent ? "yes" : "no");
     fd.append("jobTypes", (payload.jobTypeLabels || []).join(", ") || "(none)");
     fd.append("ballparkShown", payload.rangeLow ? "$" + payload.rangeLow + " – $" + payload.rangeHigh : "none (follow up)");
@@ -143,6 +168,11 @@
       usedBytes += blob.size;
       attached += 1;
       fd.append("photo" + attached, blob, "photo-" + attached + ".jpg");
+    }
+    const satBlob = await satelliteJpegBlob();
+    if (satBlob && usedBytes + satBlob.size <= MAX_ATTACH_BYTES) {
+      usedBytes += satBlob.size;
+      fd.append("satellite", satBlob, "satellite.jpg");
     }
     if (window.BlakeScope && payload.scope && payload.scope.area) {
       const areaBlob = await window.BlakeScope.areaImageBlob();
@@ -182,14 +212,19 @@
   // Shared lead intake: saves the lead, emails the team, and emails the customer their copy.
   async function postLead(payload) {
     if (!defaults.leadApi) throw new Error("no lead api");
-    const images = (state.media || []).filter((m) => m && m.kind === "image" && m.file).slice(0, 6);
     const photos = [];
-    // Outlined work area (satellite + outline + acreage) goes first so the team sees it.
+    const satBlob = await satelliteJpegBlob();
+    if (satBlob) {
+      const satUrl = await blobToDataUrl(satBlob);
+      if (satUrl) photos.push({ name: "satellite.jpg", dataUrl: satUrl });
+    }
+    // Outlined work area stays available if a land scope was collected.
     if (window.BlakeScope && payload.scope && payload.scope.area) {
       const areaBlob = await window.BlakeScope.areaImageBlob();
       const areaUrl = areaBlob ? await blobToDataUrl(areaBlob) : null;
       if (areaUrl) photos.push({ name: "work-area-outline.jpg", dataUrl: areaUrl });
     }
+    const images = (state.media || []).filter((m) => m && m.kind === "image" && m.file).slice(0, Math.max(0, 6 - photos.length));
     for (const m of images) {
       const blob = await compressImage(m.file);
       if (!blob) continue;
@@ -276,6 +311,7 @@
     photos: [],
     media: [],
     notes: "",
+    satelliteUrl: "",
     step: 1,
     rangeShown: false,
     parcel: null
@@ -412,17 +448,10 @@
   bindStepper("#stumps-minus", "#stumps-plus", "stumpCount", MAX_STUMPS);
 
   const JOB_TYPE_LABELS = {
-    removal: "Tree removal",
-    trim: "Trimming",
-    emergency: "Storm cleanup",
+    limb: "Limb cut",
+    removal: "Whole tree removal",
     stump: "Stump grinding",
-    dirt: "Skid steer & dirt work",
-    clearing: "Lot or land clearing",
-    grading: "Grading or leveling",
-    pad: "House pad or driveway pad",
-    drainage: "Drainage or ditch work",
-    haul: "Debris haul-off",
-    other: "Other"
+    unsure: "Not sure"
   };
   const SIZE_HINTS = {
     small: "Small (about as tall as a one-story house)",
@@ -826,27 +855,79 @@
     });
   });
 
+  let scanGen = 0;
+  function showLockedSatellite(lat, lon) {
+    const img = $("#sat-still");
+    const cap = $("#sat-caption");
+    const wrap = $("#sat-still-wrap");
+    const scan = $("#sat-scan");
+    if (!img || lat == null || lon == null) return;
+    const gen = ++scanGen;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const SCAN_MS = 2000;
+    const url = Eng.esriExportUrl(lat, lon, 960, 150);
+    state.satelliteUrl = url;
+    img.draggable = false;
+    img.alt = "Locked satellite view of " + (state.displayName || "the property");
+    img.hidden = true;
+    if (wrap) wrap.classList.remove("is-settled", "is-scanning");
+    if (scan) {
+      scan.classList.remove("is-on");
+      scan.hidden = true;
+    }
+    if (cap) cap.textContent = "Pulling satellite view...";
+    let failed = false;
+    function finish() {
+      if (gen !== scanGen || failed) return;
+      if (wrap) {
+        wrap.classList.remove("is-scanning");
+        wrap.classList.add("is-settled");
+      }
+      if (scan) {
+        scan.classList.remove("is-on");
+        scan.hidden = true;
+      }
+      img.hidden = false;
+      if (cap) cap.textContent = "Satellite view";
+    }
+    function armScan() {
+      if (!scan || reduce) return;
+      scan.hidden = false;
+      scan.classList.remove("is-on");
+      void scan.offsetWidth;
+      scan.classList.add("is-on");
+    }
+    img.onload = () => {
+      if (gen !== scanGen) return;
+      img.hidden = false;
+      if (reduce) {
+        finish();
+        return;
+      }
+      if (wrap) wrap.classList.add("is-scanning");
+      if (cap) cap.textContent = "Pulling satellite view...";
+      armScan();
+      setTimeout(finish, SCAN_MS);
+    };
+    img.onerror = () => {
+      if (gen !== scanGen) return;
+      failed = true;
+      img.hidden = true;
+      state.satelliteUrl = "";
+      if (wrap) wrap.classList.remove("is-scanning", "is-settled");
+      if (scan) scan.hidden = true;
+      if (cap) cap.textContent = "Satellite photo unavailable. You can still tell us about the job.";
+    };
+    img.src = url;
+  }
+
   async function openQuote() {
     $("#quote").hidden = false;
     $("#addr-chip").textContent = state.displayName || state.address;
     goStep(2);
-    $("#quote").scrollIntoView({ behavior: "smooth", block: "start" });
-
-    initMap(state.lat, state.lon);
-    setStreetView(state.lat, state.lon);
-
-    // Don't block the satellite / parcel / tree circles on Overpass (often slow).
-    Eng.overpassContext(state.lat, state.lon, 90)
-      .then((ctx) => { state.context = ctx; })
-      .catch(() => { state.context = { buildings: [], power: [], error: true }; });
-    try {
-      await paintProperty(state.lat, state.lon);
-    } catch (err) {
-      console.warn("paintProperty failed", err);
-      const caption = document.getElementById("parcel-caption");
-      if (caption) caption.textContent = "Exact property line not in parish records here";
-      if (state.spottedTrees == null) applyDetectedCounts();
-    }
+    showLockedSatellite(state.lat, state.lon);
+    const card = $("#quote-card");
+    if (card) card.scrollIntoView({ behavior: "smooth", block: "start" });
 
     Eng.stormAlertsForPoint(state.lat, state.lon).then((storms) => {
       state.storms = storms;
@@ -963,7 +1044,7 @@
         if (rng) rng.hidden = true;
         renderEstimate();
       }
-      status.textContent = "Opening your property…";
+      status.textContent = "Pulling up the satellite view…";
       status.className = "form-status ok";
       startBtn.classList.remove("is-ready");
       await openQuote();
@@ -981,55 +1062,35 @@
   });
 
   function readComments() {
-    return ($("#work-comments") && $("#work-comments").value.trim()) || "";
-  }
-  function readDescribe() {
-    return ($("#work-describe") && $("#work-describe").value.trim()) || "";
+    return "";
   }
   function combinedPropertyNotes() {
-    return [readComments(), readDescribe()].filter(Boolean).join("\n\n");
+    return ($("#notes") && $("#notes").value.trim()) || "";
   }
 
   $("#btn-to-photos").addEventListener("click", () => {
     const status = $("#property-status");
     const types = state.jobTypes || [];
-    const need = !types.length
-      ? "Pick the kind of work you need."
-      : (types.includes("trim") || types.includes("removal")) && state.treeCount < 1
-        ? "Use + to tell us how many trees."
-        : types.includes("trim") && !state.treeSize
-          ? "Pick the tree size: small, medium or large."
-          : "";
-    if (need && status) {
-      status.textContent = need;
-      status.className = "form-status err";
-      status.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (!types.length) {
+      if (status) {
+        status.textContent = "Pick a job type.";
+        status.className = "form-status err";
+        status.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
       return;
     }
-    state.comments = readComments();
-    const combined = combinedPropertyNotes();
-    const notesEl = $("#notes");
-    if (notesEl && (!notesEl.value.trim() || notesEl.value.trim() === lastNotePrefill)) {
-      notesEl.value = combined;
-    }
-    lastNotePrefill = combined;
-    state.notes = (notesEl && notesEl.value.trim()) || combined;
+    state.comments = "";
+    state.notes = combinedPropertyNotes();
+    const townEl = $("#town");
+    if (townEl && !townEl.value.trim()) townEl.value = state.displayName || state.address || "";
     if (status) {
       status.textContent = "";
       status.className = "form-status";
     }
     goStep(3);
   });
-  $("#btn-back-property").addEventListener("click", () => goStep(2));
-  $("#btn-to-contact").addEventListener("click", () => {
-    const notesEl = $("#notes");
-    state.comments = readComments();
-    state.notes = (notesEl && notesEl.value.trim()) || combinedPropertyNotes();
-    const townEl = $("#town");
-    if (townEl && !townEl.value.trim()) townEl.value = state.displayName || state.address || "";
-    goStep(4);
-  });
-  $("#btn-back-photos").addEventListener("click", () => goStep(3));
+  const backToJob = $("#btn-back-photos");
+  if (backToJob) backToJob.addEventListener("click", () => goStep(2));
 
   function phoneDigits(value) {
     return String(value || "").replace(/\D/g, "").slice(0, 10);
@@ -1092,8 +1153,8 @@
     state.comments = readComments();
     state.notes = ($("#notes") && $("#notes").value.trim()) || combinedPropertyNotes();
     const quoted = quoteItems();
-    const scope = window.BlakeScope ? window.BlakeScope.collect() : null;
-    const scopeSummary = scope ? window.BlakeScope.summaryText(scope, JOB_TYPE_LABELS) : "";
+    const scope = $("#scope-panel") && window.BlakeScope ? window.BlakeScope.collect() : null;
+    const scopeSummary = scope && window.BlakeScope ? window.BlakeScope.summaryText(scope, JOB_TYPE_LABELS) : "";
     const payload = {
       business: "3 B's Tree Removal",
       to: defaults.leadEmailTo || "shaun.brasher@gmail.com",
@@ -1115,7 +1176,8 @@
       jobTypeLabels: jobTypeLabels(state.jobTypes || selectedJobTypes()),
       spottedTrees: state.spottedTrees,
       spottedStumps: state.spottedStumps,
-      comments: state.comments,
+      comments: "",
+      streetViewUrl: streetViewLink(state.lat, state.lon),
       marks: quoted,
       photoCount: state.photos.length,
       photoNames: state.photos.map((p) => p.name),
@@ -1126,9 +1188,9 @@
       breakdown: [],
       scope,
       scopeSummary,
-      // Lead server keeps notes as the description, so the scope answers ride along there.
+      // Lead server keeps notes as the description. Street view is a separate link, not part of the note.
       treeSize: state.treeSize || "",
-      notes: [state.treeSize && (state.jobTypes || []).includes("trim") ? "Tree size (trimming): " + SIZE_HINTS[state.treeSize] : "", scopeSummary, state.notes].filter(Boolean).join("\n\n"),
+      notes: [scopeSummary, state.notes].filter(Boolean).join("\n\n"),
       access: scope ? ["Gate: " + (scope.gateWidth || "?"), "Skid steer can get in: " + (scope.skidSteer || "?"), state.comments].filter(Boolean).join(" · ") : undefined,
       storms: state.storms,
       source: params.src,
@@ -1169,10 +1231,8 @@
       const rangeLead = typeBits.length ? typeBits.join(" · ") : (countBits.join(" · ") || "We'll review what you sent");
       $("#range-label").textContent = countBits.length && typeBits.length ? rangeLead + " · " + countBits.join(" · ") : rangeLead;
       const priceEl = $("#range-price");
-      if (!ballpark) {
-        priceEl.textContent = "We’ll go over your ballpark range when we call you back.";
-      } else if (ballpark.reason === "removal") {
-        priceEl.textContent = "We’ll give you a ballpark when we call you back.";
+      if (!ballpark || ballpark.reason === "removal" || !(ballpark.options && ballpark.options.length) && !ballpark.range) {
+        priceEl.textContent = "";
       } else if (ballpark.options && ballpark.options.length) {
         priceEl.textContent = "";
         ballpark.options.forEach((o) => {
@@ -1190,7 +1250,7 @@
           ? `${money(ballpark.range.low)} – ${money(ballpark.range.high)}, plus a larger tree we’ll quote on the call`
           : `${money(ballpark.range.low)} – ${money(ballpark.range.high)}`;
       } else {
-        priceEl.textContent = scope ? "Our team will call you back with a quote" : "We’ll give you a ballpark on the callback";
+        priceEl.textContent = "";
       }
       ((ballpark && ballpark.lines) || []).forEach((line) => {
         const li = document.createElement("li");
@@ -1200,11 +1260,6 @@
       if (ballpark && ballpark.addOns) {
         const li = document.createElement("li");
         li.textContent = "Add-ons like stump grinding are included on top. We’ll confirm on the call.";
-        ul.appendChild(li);
-      }
-      if (ballpark && ballpark.reason === "removal") {
-        const li = document.createElement("li");
-        li.textContent = "Removals, stumps and dirt work: call for a ballpark. We’ll go over it when we call you at the time you picked.";
         ul.appendChild(li);
       }
       if (state.notes) {
@@ -1219,9 +1274,7 @@
       status.textContent = "";
       const thanks = $("#thanks");
       thanks.hidden = false;
-      thanks.textContent = scope
-        ? "Thanks! Our team will review your satellite view and photos, and we’ll call you back at the time you picked to go over it. Bigger jobs may need a quick site visit."
-        : "Thanks, we got your info. We’ll review your photos and the satellite view, and we’ll confirm your real price when we call you back.";
+      thanks.textContent = "Thanks. Blake’s a Louisiana Licensed Arborist and he’ll come check it out. We’ll call you at the time you picked.";
       $("#range").scrollIntoView({ behavior: "smooth", block: "start" });
       const tt = $("#thanks-title");
       if (tt) tt.focus({ preventScroll: true });
@@ -1234,7 +1287,7 @@
     status.className = "form-status";
     requestBallpark({ name, phone })
       .then((bp) => {
-        if (bp && !isTrimOnly()) bp = Object.assign({}, bp, { range: null, options: null, lines: (bp.lines || []).map((l) => ({ label: l.label, callback: true })) });
+        if (bp && !isTrimOnly()) bp = Object.assign({}, bp, { range: null, options: null, lines: [] });
         ballpark = bp;
         payload.rangeLow = bp && bp.range ? bp.range.low : null;
         payload.rangeHigh = bp && bp.range ? bp.range.high : null;
