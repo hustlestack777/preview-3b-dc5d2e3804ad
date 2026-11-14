@@ -856,70 +856,263 @@
   });
 
   let scanGen = 0;
+  const SCAN_MS = 1250;
+
+  function wideEnough(bounds) {
+    const midLat = (bounds.north + bounds.south) / 2;
+    const midLon = (bounds.east + bounds.west) / 2;
+    const dLat = Math.max(1e-6, (bounds.north - bounds.south) / 2);
+    const cos = Math.cos((midLat * Math.PI) / 180) || 1;
+    const dLon = Math.max(1e-6, (bounds.east - bounds.west) / 2);
+    const ratio = (dLon * cos) / dLat;
+    if (ratio >= 1.7) return bounds;
+    const need = dLat * 1.7 / cos;
+    return { west: midLon - need, east: midLon + need, south: bounds.south, north: bounds.north };
+  }
+
+  function wideStrip(lat, lon) {
+    const b = Eng.boundsFromPoint(lat, lon, 80);
+    const midLat = (b.north + b.south) / 2;
+    const dLat = (b.north - b.south) / 2;
+    const dLon = (b.east - b.west) / 2;
+    return {
+      west: b.west - dLon * 0.45,
+      east: b.east + dLon * 0.45,
+      south: midLat - dLat * 0.62,
+      north: midLat + dLat * 0.62
+    };
+  }
+
+  function mercY(lat) {
+    return Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360));
+  }
+
+  function projectToView(lon, lat, bounds) {
+    const x = ((lon - bounds.west) / (bounds.east - bounds.west)) * 100;
+    const y = ((mercY(bounds.north) - mercY(lat)) / (mercY(bounds.north) - mercY(bounds.south))) * 100;
+    return x.toFixed(2) + "," + y.toFixed(2);
+  }
+
+  function drawOutline() {
+    const svg = $("#sat-outline");
+    const bounds = state.viewBounds;
+    if (!svg || !bounds) return;
+    if (state.parcelRing && state.parcelRing.length >= 4) {
+      const d = state.parcelRing.map((pt, i) => (i ? "L" : "M") + projectToView(pt[0], pt[1], bounds)).join(" ") + " Z";
+      svg.innerHTML = "<path d=\"" + d + "\" />";
+      state.outlineKind = "parcel";
+    } else {
+      svg.innerHTML = "<ellipse cx=\"50\" cy=\"50\" rx=\"18\" ry=\"24\" />";
+      state.outlineKind = "ring";
+    }
+    svg.classList.add("is-on");
+  }
+
+  function showPropertyQuestion() {
+    const check = $("#property-check");
+    const cap = $("#sat-caption");
+    if (check) check.hidden = false;
+    if (cap) cap.textContent = state.outlineKind === "parcel" ? "Lot line from parish records" : "Centered on your address";
+  }
+
+  function loadStill(bounds, gen, done) {
+    const img = $("#sat-still");
+    if (!img) return;
+    state.viewBounds = bounds;
+    const url = Eng.esriBBoxExportUrl(bounds, 960, 520);
+    state.satelliteUrl = url;
+    img.onload = () => {
+      if (gen !== scanGen) return;
+      img.hidden = false;
+      if (done) done();
+    };
+    img.onerror = () => {
+      if (gen !== scanGen) return;
+      img.hidden = true;
+      state.satelliteUrl = "";
+      const cap = $("#sat-caption");
+      if (cap) cap.textContent = "Satellite photo unavailable. You can still tell us about the job.";
+      const check = $("#property-check");
+      if (check) check.hidden = false;
+    };
+    if (img.getAttribute("src") === url) img.removeAttribute("src");
+    img.src = url;
+  }
+
+  function revealProperty(gen) {
+    if (gen !== scanGen) return;
+    const wrap = $("#sat-still-wrap");
+    const scan = $("#sat-scan");
+    const frame = document.querySelector(".sat-frame");
+    if (wrap) wrap.classList.remove("is-scanning");
+    if (scan) {
+      scan.classList.remove("is-on");
+      scan.hidden = true;
+    }
+    const parcel = state.parcel;
+    if (parcel && parcel.bounds && parcel.ring && parcel.ring.length >= 4) {
+      state.parcelRing = parcel.ring;
+      const fitted = Eng.expandToMinSize(Eng.padBounds(parcel.bounds, 0.28), 55);
+      const bounds = wideEnough(fitted);
+      if (frame) frame.classList.remove("is-zoomed");
+      loadStill(bounds, gen, () => {
+        if (gen !== scanGen) return;
+        drawOutline();
+        showPropertyQuestion();
+      });
+      return;
+    }
+    state.parcelRing = null;
+    if (frame) frame.classList.add("is-zoomed");
+    drawOutline();
+    showPropertyQuestion();
+  }
+
   function showLockedSatellite(lat, lon) {
     const img = $("#sat-still");
     const cap = $("#sat-caption");
     const wrap = $("#sat-still-wrap");
     const scan = $("#sat-scan");
+    const frame = document.querySelector(".sat-frame");
+    const check = $("#property-check");
+    const questions = $("#count-block");
+    const tools = $("#not-quite-tools");
+    const outline = $("#sat-outline");
     if (!img || lat == null || lon == null) return;
     const gen = ++scanGen;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const SCAN_MS = 2000;
-    const url = Eng.esriExportUrl(lat, lon, 960, 150);
-    state.satelliteUrl = url;
+    state.propertyConfirmed = false;
+    state.parcel = null;
+    state.parcelRing = null;
+    state.outlineKind = "";
     img.draggable = false;
     img.alt = "Locked satellite view of " + (state.displayName || "the property");
     img.hidden = true;
+    img.style.transform = "";
     if (wrap) wrap.classList.remove("is-settled", "is-scanning");
+    if (frame) frame.classList.remove("is-draggable", "is-zoomed");
     if (scan) {
       scan.classList.remove("is-on");
       scan.hidden = true;
     }
+    if (outline) {
+      outline.classList.remove("is-on");
+      outline.innerHTML = "";
+    }
+    if (check) check.hidden = true;
+    if (questions) questions.hidden = true;
+    if (tools) tools.hidden = true;
     if (cap) cap.textContent = "Pulling satellite view...";
-    let failed = false;
-    function finish() {
-      if (gen !== scanGen || failed) return;
-      if (wrap) {
-        wrap.classList.remove("is-scanning");
-        wrap.classList.add("is-settled");
-      }
-      if (scan) {
-        scan.classList.remove("is-on");
-        scan.hidden = true;
-      }
-      img.hidden = false;
-      if (cap) cap.textContent = "Satellite view";
-    }
-    function armScan() {
-      if (!scan || reduce) return;
-      scan.hidden = false;
-      scan.classList.remove("is-on");
-      void scan.offsetWidth;
-      scan.classList.add("is-on");
-    }
-    img.onload = () => {
+
+    const wide = wideStrip(lat, lon);
+    Eng.fetchParcel(lat, lon, state.displayName || state.address)
+      .then((parcel) => {
+        if (gen !== scanGen || state.propertyConfirmed || !parcel || !parcel.ring) return;
+        state.parcel = parcel;
+        if (state.outlineKind) revealProperty(gen);
+      })
+      .catch(() => {});
+
+    loadStill(wide, gen, () => {
       if (gen !== scanGen) return;
-      img.hidden = false;
       if (reduce) {
-        finish();
+        revealProperty(gen);
         return;
       }
       if (wrap) wrap.classList.add("is-scanning");
-      if (cap) cap.textContent = "Pulling satellite view...";
-      armScan();
-      setTimeout(finish, SCAN_MS);
-    };
-    img.onerror = () => {
-      if (gen !== scanGen) return;
-      failed = true;
-      img.hidden = true;
-      state.satelliteUrl = "";
-      if (wrap) wrap.classList.remove("is-scanning", "is-settled");
-      if (scan) scan.hidden = true;
-      if (cap) cap.textContent = "Satellite photo unavailable. You can still tell us about the job.";
-    };
-    img.src = url;
+      if (scan) {
+        scan.hidden = false;
+        scan.classList.remove("is-on");
+        void scan.offsetWidth;
+        scan.classList.add("is-on");
+      }
+      setTimeout(() => revealProperty(gen), SCAN_MS);
+    });
   }
+
+  function shiftView(dx, dy) {
+    const frame = document.querySelector(".sat-frame");
+    const bounds = state.viewBounds;
+    if (!frame || !bounds) return;
+    const rect = frame.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const zoom = frame.classList.contains("is-zoomed") ? 1.72 : 1;
+    const dLon = (dx / rect.width / zoom) * (bounds.east - bounds.west);
+    const dLat = (dy / rect.height / zoom) * (bounds.north - bounds.south);
+    state.lon -= dLon;
+    state.lat += dLat;
+    state.parcel = null;
+    state.parcelRing = null;
+    const gen = scanGen;
+    if (frame) frame.classList.remove("is-zoomed");
+    loadStill(wideStrip(state.lat, state.lon), gen, () => {
+      if (gen !== scanGen) return;
+      if (frame) frame.classList.add("is-zoomed");
+      drawOutline();
+      showPropertyQuestion();
+    });
+  }
+
+  (function bindPropertyConfirm() {
+    const frame = document.querySelector(".sat-frame");
+    const yep = $("#btn-yep");
+    const notQuite = $("#btn-not-quite");
+    const reenter = $("#btn-reenter");
+    let drag = null;
+    if (frame) {
+      frame.addEventListener("pointerdown", (e) => {
+        if (!frame.classList.contains("is-draggable") || e.button) return;
+        drag = { x: e.clientX, y: e.clientY, id: e.pointerId };
+        try { frame.setPointerCapture(e.pointerId); } catch (_) {}
+      });
+      frame.addEventListener("pointermove", (e) => {
+        if (!drag || e.pointerId !== drag.id) return;
+        const photo = $("#sat-still");
+        const zoom = frame.classList.contains("is-zoomed") ? " scale(1.72)" : "";
+        if (photo) photo.style.transform = "translate(" + (e.clientX - drag.x) + "px," + (e.clientY - drag.y) + "px)" + zoom;
+      });
+      const endDrag = (e) => {
+        if (!drag || e.pointerId !== drag.id) return;
+        const dx = e.clientX - drag.x;
+        const dy = e.clientY - drag.y;
+        drag = null;
+        const photo = $("#sat-still");
+        if (photo) photo.style.transform = "";
+        if (Math.hypot(dx, dy) < 8) return;
+        shiftView(dx, dy);
+      };
+      frame.addEventListener("pointerup", endDrag);
+      frame.addEventListener("pointercancel", endDrag);
+    }
+    if (yep) {
+      yep.addEventListener("click", () => {
+        state.propertyConfirmed = true;
+        if (frame) frame.classList.remove("is-draggable");
+        const check = $("#property-check");
+        const questions = $("#count-block");
+        if (check) check.hidden = true;
+        if (questions) {
+          questions.hidden = false;
+          questions.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+      });
+    }
+    if (notQuite) {
+      notQuite.addEventListener("click", () => {
+        if (frame) frame.classList.add("is-draggable");
+        const tools = $("#not-quite-tools");
+        if (tools) tools.hidden = false;
+        notQuite.setAttribute("aria-pressed", "true");
+      });
+    }
+    if (reenter) {
+      reenter.addEventListener("click", () => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        const input = $("#address");
+        if (input) setTimeout(() => input.focus(), 350);
+      });
+    }
+  })();
 
   async function openQuote() {
     $("#quote").hidden = false;
