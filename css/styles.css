@@ -2053,6 +2053,29 @@ body:not(.gg-chat-open) elevenlabs-convai {
 .foot .credit:hover,
 .foot .credit:focus-visible { color: #FFC089; }
 .foot a, .foot-phone .call-vanity { color: #FFFFFF; }
+.foot a.foot-social {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  margin: .7rem 0 .15rem;
+  border-radius: 12px;
+  background: #F86A02;
+  color: #0A0A0A;
+  text-decoration: none;
+}
+.foot a.foot-social:hover,
+.foot a.foot-social:focus-visible {
+  background: #FF8A2B;
+  color: #0A0A0A;
+}
+.foot a.foot-social:focus-visible {
+  outline: 2px solid #FFC089;
+  outline-offset: 3px;
+}
 .foot-phone .call-digits { color: #C8C8C8; }
 .cta .linkish { color: #FFC089; }
 .lrl-card { background: #111111; color: #F5F5F5; }
