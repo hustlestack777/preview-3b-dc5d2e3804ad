@@ -266,7 +266,7 @@
     a.click();
   }
 
-  if (variant.headline) $(".hero h1").textContent = variant.headline;
+  if (variant.headline) $(".hero .hero-lead").textContent = variant.headline;
   if (variant.subline) $(".hero .sub").textContent = variant.subline;
   if (variant.cta) $("#btn-start").textContent = variant.cta;
   document.querySelectorAll("[data-blake-link]").forEach((a) => {
