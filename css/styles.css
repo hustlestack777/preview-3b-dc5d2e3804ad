@@ -1414,6 +1414,29 @@ button, input { font: inherit; }
 .info .area { color: #FFFFFF; font-size: 1.02rem; }
 .info .muted { color: #C8C8C8; }
 
+.faq.light-band { padding: 0 0 3.5rem; }
+.faq-list {
+  display: grid;
+  gap: .85rem;
+  margin: 0;
+  padding: 0;
+}
+.faq-list article {
+  background: #1A1A1A;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 18px;
+  padding: 1.15rem 1.2rem 1.25rem;
+}
+.faq-list h3 {
+  margin: 0 0 .4rem;
+  font-family: var(--display);
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  color: #FFFFFF;
+}
+.faq-list p { margin: 0; color: #C8C8C8; font-size: 1.02rem; }
+
 .cta { padding: 0 0 4rem; background: #111111; }
 .cta-inner {
   background: #0A0A0A;
@@ -2035,7 +2058,7 @@ body:not(.gg-chat-open) elevenlabs-convai {
 .how,
 .cta { background: #111111; color: #FFFFFF; }
 .section-kicker { color: #F86A02; }
-.band-lead, .how-grid p, .svc-cards p, .info .muted { color: #C8C8C8; }
+.band-lead, .how-grid p, .svc-cards p, .info .muted, .faq-list p { color: #C8C8C8; }
 .signs-band,
 .cta-inner,
 .foot { background: #0A0A0A; color: #C8C8C8; }

@@ -50,7 +50,13 @@ const BALLPARK_ORIGINS = new Set([
 const SITE_HOST = "3bs.getpros.xyz";
 const CANONICAL_HOST = String(process.env.CANONICAL_HOST || SITE_HOST).trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
 const REDIRECT_ON = process.env.CANONICAL_REDIRECT !== "0";
-const indexHtml = readFileSync(join(__dirname, "index.html"), "utf8").split("https://" + SITE_HOST).join("https://" + CANONICAL_HOST);
+function hosted(file) {
+  return readFileSync(join(__dirname, file), "utf8").split("https://" + SITE_HOST).join("https://" + CANONICAL_HOST);
+}
+const indexHtml = hosted("index.html");
+const robotsTxt = hosted("robots.txt");
+const sitemapXml = hosted("sitemap.xml");
+const llmsTxt = hosted("llms.txt");
 let canonicalLive = false;
 let probeFails = 0;
 
@@ -172,6 +178,21 @@ app.post("/api/lrl-inquiry", async (req, res) => {
 app.get(["/", "/index.html", "/index"], (_req, res) => {
   res.set("Cache-Control", "no-cache");
   res.type("html").send(indexHtml);
+});
+
+app.get("/robots.txt", (_req, res) => {
+  res.set("Cache-Control", "no-cache");
+  res.type("text/plain; charset=utf-8").send(robotsTxt);
+});
+
+app.get("/llms.txt", (_req, res) => {
+  res.set("Cache-Control", "no-cache");
+  res.type("text/plain; charset=utf-8").send(llmsTxt);
+});
+
+app.get("/sitemap.xml", (_req, res) => {
+  res.set("Cache-Control", "no-cache");
+  res.type("application/xml; charset=utf-8").send(sitemapXml);
 });
 
 app.use(express.static(__dirname, { extensions: ["html"] }));
