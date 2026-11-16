@@ -63,6 +63,9 @@ test("the six looks are optimized transparent webp files", () => {
 });
 
 test("page copy still says Louisiana Licensed Arborist and never says free", () => {
-  assert.equal((html.match(/Louisiana Licensed Arborist/g) || []).length, 5);
+  const sentence = "Blake’s a Louisiana Licensed Arborist and he’ll come check it out.";
+  assert.ok((html.split(sentence).length - 1) >= 5);
   assert.doesNotMatch(html, /\bfree\b/i);
+  assert.doesNotMatch(html, /\binsured\b/i);
+  assert.doesNotMatch(html, /337[-.\s)?]*378[-.\s]?4046/);
 });

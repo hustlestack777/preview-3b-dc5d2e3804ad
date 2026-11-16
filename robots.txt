@@ -1,2 +1,36 @@
 User-agent: *
 Allow: /
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+# xAI / Grok. xAI has not published one official crawler token.
+# These are the names crawler directories and public robots.txt files use.
+User-agent: GrokBot
+Allow: /
+
+User-agent: xAI-SearchBot
+Allow: /
+
+User-agent: Grok
+Allow: /
+
+Sitemap: https://3bs.getpros.xyz/sitemap.xml
