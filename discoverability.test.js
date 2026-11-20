@@ -47,13 +47,37 @@ function meta(html, name) {
   return decode(match[1]);
 }
 
-test("public files omit the private cell, the words free and insured, and prices", () => {
+test("public files omit the private cell, the word free, and prices", () => {
   for (const [name, text] of Object.entries(PUBLIC)) {
     assert.doesNotMatch(text, /337[-.\s)?]*378[-.\s]?4046/, name);
     assert.doesNotMatch(text, /\bfree\b/i, name);
-    assert.doesNotMatch(text, /\binsured\b/i, name);
     assert.doesNotMatch(text, /\$\s?\d/, name);
   }
+});
+
+test("page and social descriptions say Louisiana licensed arborist and insured", () => {
+  const fields = [
+    meta(index, "description"),
+    decode(index.match(/property="og:description" content="([\s\S]*?)"/)[1]),
+    decode(index.match(/name="twitter:description" content="([\s\S]*?)"/)[1]),
+  ];
+  for (const text of fields) {
+    assert.match(text, /Louisiana licensed arborist/i);
+    assert.match(text, /\binsured\b/i);
+  }
+});
+
+test("link preview image is absolute, sized, described, and cache-busted", () => {
+  const image = "https://3bs.getpros.xyz/og-image.jpg?v=20261120";
+  assert.ok(index.includes(`property="og:image" content="${image}"`));
+  assert.match(index, /property="og:image:width" content="1200"/);
+  assert.match(index, /property="og:image:height" content="630"/);
+  const alt = decode(index.match(/property="og:image:alt" content="([\s\S]*?)"/)[1]);
+  assert.match(alt, /Louisiana licensed arborist/i);
+  assert.match(alt, /\binsured\b/i);
+  assert.ok(index.includes(`name="twitter:image" content="${image}"`));
+  assert.match(index, /rel="icon" href="favicon\.ico"/);
+  assert.match(index, /rel="apple-touch-icon" href="apple-touch-icon\.png"/);
 });
 
 test("titles and meta descriptions are present and unique", () => {
