@@ -2158,8 +2158,19 @@ details.sv-panel:not([open]) .sv-frame { display: none; }
   cursor: pointer;
 }
 .gg-close[hidden] { display: none !important; }
-@media (max-width: 479px) {
-  .gg-close { right: 10px; bottom: calc(min(560px, 85vh) - 54px); }
+@media (max-width: 639px) {
+  html, body { overflow-x: clip; max-width: 100%; }
+  body.gg-chat-open elevenlabs-convai {
+    left: 0 !important; right: 0 !important; top: 0 !important; bottom: 0 !important;
+    width: 100% !important; max-width: 100% !important; height: 100% !important;
+    overflow: hidden !important; transform: none !important;
+  }
+  .gg-close {
+    right: 12px;
+    left: auto;
+    bottom: auto;
+    top: calc(100dvh - var(--vv-bottom, 0px) - min(560px, calc(var(--vv-height, 100dvh) - env(safe-area-inset-top, 0px) - 8px)) + 8px);
+  }
 }
 
 /* Nov 12: tree size pick (trimming), job address list, clean thank-you */

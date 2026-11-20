@@ -1,7 +1,7 @@
 /* Camille chat for 3 B's. The conversation stays on the ElevenLabs agent; this file
-   handles the 64px launcher, the greeting, our own 44px close X, and restyles the
-   ElevenLabs sheet: 380x560 on desktop, full-width bottom sheet under 480px, and
-   no orb circle. */
+   handles the launcher, the greeting, our own 44px close X, and restyles the
+   ElevenLabs sheet: 300px card on desktop, a viewport-width bottom sheet on
+   phones, and no orb circle. */
 (function () {
   const TALK_DELAY_MS = 1500;
   const TALK_HOLD_MS = 5000;
@@ -37,14 +37,44 @@
         translate: none !important; transform: none !important;
       }
     }
+    /* Phones: the sheet is exactly as wide as the screen. A viewport-width unit is
+       avoided on purpose; iOS counts it wider than the visible page and that opens a sideways scroll. */
     @media (max-width: 639px) {
-      .sheet { right: 124px !important; max-width: calc(100vw - 140px) !important; width: 380px !important; }
-    }
-    @media (max-width: 479px) {
-      .sheet {
-        right: 0 !important; left: 0 !important; bottom: 0 !important;
-        width: 100% !important; max-width: none !important;
-        height: min(560px, 85dvh) !important; border-radius: 18px 18px 0 0 !important;
+      .sheet,
+      .sheet[data-variant],
+      [data-variant].sheet {
+        position: fixed !important;
+        left: 0 !important; right: 0 !important; top: auto !important;
+        bottom: var(--vv-bottom, 0px) !important;
+        width: 100% !important; max-width: 100% !important; min-width: 0 !important;
+        height: min(560px, calc(var(--vv-height, 100dvh) - env(safe-area-inset-top, 0px) - 8px)) !important;
+        max-height: var(--vv-height, 100dvh) !important;
+        margin: 0 !important; transform: none !important;
+        overflow: hidden !important; box-sizing: border-box !important;
+        border-radius: 18px 18px 0 0 !important;
+      }
+      .sheet::before {
+        top: 14px; left: 16px; right: 64px; width: auto;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
+      /* Title on the first line, "Chatting with AI Agent" on the line under it. */
+      .sheet .h-16.absolute.top-0.w-full { height: 84px !important; }
+      .sheet .h-4.absolute.top-16 { top: 84px !important; }
+      .sheet .h-16.absolute.flex {
+        top: 40px !important; height: 40px !important;
+        padding-right: 56px !important; min-width: 0 !important;
+      }
+      .sheet .overflow-y-auto { overflow-x: hidden !important; padding-top: 104px !important; }
+      .sheet textarea, .sheet input { font-size: 16px !important; }
+      .overlay {
+        overflow: hidden !important; max-width: 100% !important;
+        left: 0 !important; right: 0 !important; width: 100% !important;
+      }
+      .overlay > div[class*="max-w-"] {
+        position: fixed !important; left: 12px !important; right: 12px !important;
+        bottom: calc(12px + var(--vv-bottom, 0px)) !important; top: auto !important;
+        width: auto !important; max-width: none !important; margin: 0 !important;
+        transform: none !important;
       }
     }
     canvas, .rounded-full.bg-base-border, .rounded-full.overflow-hidden { display: none !important; }
@@ -141,24 +171,37 @@
     const sr = convai && convai.shadowRoot;
     const sheet = sr && sr.querySelector(".sheet");
     let r = sheet && sheet.getBoundingClientRect();
-    let above = false;
     if (!r || !r.width) {
-      // First open shows the Terms box (Cancel / Accept): put the X just above it.
+      // Terms box (Cancel / Accept) before the sheet exists: keep the X in its top-right.
       const terms = sr && sr.querySelector('.overlay > div[class*="max-w-"]');
       r = terms && terms.getBoundingClientRect();
-      above = true;
     }
     if (!r || !r.width) { closeBtn.style.top = ""; closeBtn.style.left = ""; closeBtn.style.bottom = ""; closeBtn.style.right = ""; return; }
+    const viewW = window.visualViewport ? window.visualViewport.width : window.innerWidth;
+    const edge = Math.min(r.right, viewW);
     closeBtn.style.bottom = "auto";
     closeBtn.style.right = "auto";
-    closeBtn.style.top = Math.round(above ? Math.max(8, r.top - 52) : r.top + 10) + "px";
-    closeBtn.style.left = Math.round(Math.min(r.right, window.innerWidth) - (above ? 44 : 54)) + "px";
+    closeBtn.style.top = Math.round(Math.max(8, r.top + 8)) + "px";
+    closeBtn.style.left = Math.round(Math.max(8, Math.min(edge - 54, viewW - 52))) + "px";
+  }
+  function syncViewport() {
+    const vv = window.visualViewport;
+    if (vv) {
+      const bottom = Math.max(0, Math.round(window.innerHeight - vv.height - vv.offsetTop));
+      document.documentElement.style.setProperty("--vv-bottom", bottom + "px");
+      document.documentElement.style.setProperty("--vv-height", Math.round(vv.height) + "px");
+    }
+    requestAnimationFrame(placeClose);
   }
   function placeCloseSoon() {
     [0, 120, 300, 600, 1200].forEach(function (t) { setTimeout(placeClose, t); });
   }
-  window.addEventListener("resize", placeClose);
-  if (window.visualViewport) window.visualViewport.addEventListener("resize", placeClose);
+  window.addEventListener("resize", syncViewport);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", syncViewport);
+    window.visualViewport.addEventListener("scroll", syncViewport);
+  }
+  syncViewport();
 
   function setOpen(open) {
     widget.classList.toggle("is-open", open);

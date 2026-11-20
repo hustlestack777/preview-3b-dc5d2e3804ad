@@ -68,3 +68,15 @@ test("page copy still says Louisiana Licensed Arborist and never says free", () 
   assert.doesNotMatch(html, /\bfree\b/i);
   assert.doesNotMatch(html, /337[-.\s)?]*378[-.\s]?4046/);
 });
+
+test("phone chat sheet cannot grow wider than the screen", () => {
+  const js = readFileSync(new URL("./js/gg-widget.js", import.meta.url), "utf8");
+  const css = readFileSync(new URL("./css/styles.css", import.meta.url), "utf8");
+  assert.match(js, /@media \(max-width: 639px\)/);
+  assert.match(js, /max-width: 100% !important/);
+  assert.match(js, /font-size: 16px !important/);
+  assert.doesNotMatch(js, /width: 380px/);
+  assert.doesNotMatch(js, /100vw/);
+  assert.match(css, /overflow-x: clip/);
+  assert.doesNotMatch(js, /webkitSpeechRecognition|speech-to-text/i);
+});
