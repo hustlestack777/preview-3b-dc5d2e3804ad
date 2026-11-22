@@ -19,7 +19,7 @@ const PUBLIC = {
 
 const ARBORIST = "Louisiana licensed arborist";
 // Shaun's locked 3 B's word track (Nov 22, 2:19 PM CT).
-const AREA = "Central & Southwest Louisiana: DeRidder, Leesville, Toledo Bend, Oakdale, Jennings and up to Alexandria";
+const AREA = "Central & Southwest Louisiana: DeRidder, Leesville, Toledo Bend, Oakdale, Jennings and up through Alexandria";
 const CTA = "InstaQuote at 3bs.getpros.xyz or call (318) 712-TREE";
 const CALLBACK = "our team will call you back with a price";
 const BOTS = [
