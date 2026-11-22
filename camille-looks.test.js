@@ -62,9 +62,14 @@ test("the six looks are optimized transparent webp files", () => {
   assert.match(html, /agent-id="agent_2301m76zjc0dfm2afvx1y2z980k7"/);
 });
 
-test("page copy still says Louisiana Licensed Arborist and never says free", () => {
-  const sentence = "Blake’s a Louisiana Licensed Arborist and he’ll come check it out.";
-  assert.ok((html.split(sentence).length - 1) >= 5);
+test("page copy uses the locked word track and never says free", () => {
+  // Shaun's locked 3 B's word track (Nov 22, 2:19 PM CT).
+  assert.ok((html.split("Louisiana licensed arborist").length - 1) >= 5);
+  assert.ok(html.includes("our team will call you back with a price"));
+  assert.doesNotMatch(html, /Blake (will )?calls? (you )?back|Blake looks over/i);
+  assert.ok(html.includes("InstaQuote at 3bs.getpros.xyz or call (318) 712-TREE"));
+  assert.ok(html.includes("DeRidder, Leesville, Toledo Bend, Oakdale, Jennings and up through Alexandria"));
+  assert.doesNotMatch(html, /LDAF|come check it out|Licensed Arborist/);
   assert.doesNotMatch(html, /\bfree\b/i);
   assert.doesNotMatch(html, /337[-.\s)?]*378[-.\s]?4046/);
 });

@@ -9,7 +9,9 @@
   const DEBOUNCE_MS = 280;
   const PROVIDER_MS = 2000;
   const LIMIT = 6;
-  // Louisiana only (3 B's serves Central & Southwest Louisiana).
+  // Louisiana-wide search box. The main marketing area (DeRidder to Alexandria) is NOT a gate:
+  // any Louisiana address, including the next parish over, still gets an InstaQuote and a lead
+  // (Shaun, Nov 22 2026). The lead service flags "Outside main area" for Blake.
   const EXTENT = { xmin: -94.05, ymin: 28.9, xmax: -88.8, ymax: 33.03 };
 
   function preferLocal(list) {
@@ -391,7 +393,7 @@
         open = list.length > 0;
         render();
         if (!list.length) {
-          setStatus("No matches yet — keep typing the city, like Lake Charles or Lafayette", false);
+          setStatus("No matches yet — keep typing the city, like DeRidder or Alexandria", false);
         } else {
           setStatus("Select your address from the list", false);
         }

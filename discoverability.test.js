@@ -17,7 +17,11 @@ const PUBLIC = {
   "sitemap.xml": sitemap,
 };
 
-const ARBORIST = "Blake’s a Louisiana Licensed Arborist and he’ll come check it out.";
+const ARBORIST = "Louisiana licensed arborist";
+// Shaun's locked 3 B's word track (Nov 22, 2:19 PM CT).
+const AREA = "Central & Southwest Louisiana: DeRidder, Leesville, Toledo Bend, Oakdale, Jennings and up through Alexandria";
+const CTA = "InstaQuote at 3bs.getpros.xyz or call (318) 712-TREE";
+const CALLBACK = "our team will call you back with a price";
 const BOTS = [
   "GPTBot",
   "OAI-SearchBot",
@@ -91,32 +95,31 @@ test("titles and meta descriptions are present and unique", () => {
   assert.ok(homeDesc.length > 50);
   assert.ok(privacyDesc.length > 40);
   assert.match(index, /<h1>Enter your address\.<\/h1>/);
-  assert.match(homeDesc, /Louisiana Licensed Arborist/);
+  assert.match(homeDesc, /Louisiana licensed arborist/);
+  assert.ok(homeDesc.includes(AREA), "locked area line");
+  assert.ok(homeDesc.includes(CTA), "locked CTA");
 });
 
-test("llms.txt repeats the published services, parishes, and public phone", () => {
+test("llms.txt repeats the published services, locked area, CTA, and public phone", () => {
   for (const fact of [
     "Hazardous tree removal",
-    "Professional trimming",
-    "Storm cleanup",
     "Stump grinding",
-    "Skid steer dirt work and lot clearing",
-    "Vernon",
-    "Beauregard",
-    "Rapides",
-    "Allen",
-    "Sabine",
-    "Calcasieu",
+    "Land clearing and dirt work",
+    "Professional trimming",
+    "Storm cleanup, also when weather hits",
+    AREA,
+    CTA,
     "Pitkin",
     "(318) 712-TREE",
     "318-712-8733",
     "+1-318-712-8733",
     "https://3bs.getpros.xyz/",
     ARBORIST,
+    "Insured",
   ]) {
     assert.ok(llms.includes(fact), fact);
   }
-  assert.doesNotMatch(llms, /Leesville|DeRidder|Alexandria|Toledo Bend|Lake Charles|Lafayette/);
+  assert.doesNotMatch(llms, /Lafayette|Lake Charles|Sulphur|Natchitoches|Vernon|Beauregard|Rapides|Sabine|LDAF|come check it out/);
 });
 
 test("robots.txt allows the named crawlers and points at the sitemap", () => {
@@ -149,23 +152,23 @@ test("JSON-LD matches the visible FAQ and published business facts", () => {
   assert.equal(business.telephone, "+1-318-712-8733");
   assert.equal(business.address.addressLocality, "Pitkin");
   assert.equal(business.address.addressRegion, "LA");
-  assert.ok(Array.isArray(business.areaServed) && business.areaServed.length >= 9);
+  assert.deepEqual(business.areaServed.map((a) => a.name), ["Central Louisiana", "Southwest Louisiana", "DeRidder", "Leesville", "Toledo Bend", "Oakdale", "Jennings", "Alexandria"]);
   assert.equal(business.employee.name, "Blake Berry");
-  assert.equal(business.employee.jobTitle, "Louisiana Licensed Arborist");
+  assert.equal(business.employee.jobTitle, "Louisiana licensed arborist");
   assert.match(business.employee.description, new RegExp(ARBORIST.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 
   const services = graph.filter((node) => node["@type"] === "Service");
   assert.deepEqual(services.map((service) => service.name), [
     "Hazardous tree removal",
+    "Stump grinding",
+    "Land clearing & dirt work",
     "Professional trimming",
     "Storm cleanup",
-    "Stump grinding",
-    "Skid steer & dirt work",
   ]);
   for (const service of services) {
     assert.ok(service.description);
     assert.equal(service.provider["@id"], "https://3bs.getpros.xyz/#business");
-    assert.ok(Array.isArray(service.areaServed) && service.areaServed.length >= 9);
+    assert.ok(Array.isArray(service.areaServed) && service.areaServed.length === 8);
   }
 
   const faq = graph.find((node) => node["@type"] === "FAQPage");
@@ -185,8 +188,13 @@ test("JSON-LD matches the visible FAQ and published business facts", () => {
 
   const blob = JSON.stringify(graph);
   assert.doesNotMatch(blob, /aggregateRating|reviewCount|ratingValue|priceRange|"price"/);
-  assert.doesNotMatch(blob, /Leesville|DeRidder|Alexandria|Toledo Bend|Lake Charles|Lafayette/);
-  for (const label of ["Hazardous tree removal", "Professional trimming", "Storm cleanup", "Stump grinding"]) {
+  assert.doesNotMatch(blob, /Lafayette|LDAF|come check it out/);
+  assert.ok(visible.some((item) => item.a.includes(CALLBACK)), "FAQ says our team will call you back with a price");
+  assert.ok(blob.includes(CALLBACK), "FAQ schema says our team will call you back with a price");
+  assert.doesNotMatch(blob, /Blake (will )?calls? (you )?back|Blake looks over/i);
+  assert.doesNotMatch(llms, /Blake (will )?calls? (you )?back|Blake looks over/i);
+  assert.match(visible.map((item) => item.a).join("\n"), new RegExp(CTA.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  for (const label of ["Hazardous tree removal", "Stump grinding", "Land clearing &amp; dirt work", "Professional trimming", "Storm cleanup"]) {
     assert.match(index, new RegExp(`<strong>${label}</strong>`));
   }
 });
