@@ -391,7 +391,7 @@
         open = list.length > 0;
         render();
         if (!list.length) {
-          setStatus("No matches yet — keep typing the city, like Lake Charles or Lafayette", false);
+          setStatus("No matches yet — keep typing the city, like Leesville or Alexandria", false);
         } else {
           setStatus("Select your address from the list", false);
         }

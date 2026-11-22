@@ -19,7 +19,7 @@ const PUBLIC = {
 
 const ARBORIST = "Louisiana licensed arborist";
 // Shaun's locked 3 B's word track (Nov 22, 2:19 PM CT).
-const AREA = "Central & Southwest Louisiana: Lake Charles, Sulphur, DeRidder, Leesville, Toledo Bend and up to Alexandria";
+const AREA = "Central & Southwest Louisiana: DeRidder, Leesville, Toledo Bend, Oakdale, Jennings and up to Alexandria";
 const CTA = "InstaQuote at 3bs.getpros.xyz or call (318) 712-TREE";
 const CALLBACK = "our team will call you back with a price";
 const BOTS = [
@@ -119,7 +119,7 @@ test("llms.txt repeats the published services, locked area, CTA, and public phon
   ]) {
     assert.ok(llms.includes(fact), fact);
   }
-  assert.doesNotMatch(llms, /Lafayette|Vernon|Beauregard|Rapides|Sabine|LDAF|come check it out/);
+  assert.doesNotMatch(llms, /Lafayette|Lake Charles|Sulphur|Natchitoches|Vernon|Beauregard|Rapides|Sabine|LDAF|come check it out/);
 });
 
 test("robots.txt allows the named crawlers and points at the sitemap", () => {
@@ -152,7 +152,7 @@ test("JSON-LD matches the visible FAQ and published business facts", () => {
   assert.equal(business.telephone, "+1-318-712-8733");
   assert.equal(business.address.addressLocality, "Pitkin");
   assert.equal(business.address.addressRegion, "LA");
-  assert.deepEqual(business.areaServed.map((a) => a.name), ["Central Louisiana", "Southwest Louisiana", "Lake Charles", "Sulphur", "DeRidder", "Leesville", "Toledo Bend", "Alexandria"]);
+  assert.deepEqual(business.areaServed.map((a) => a.name), ["Central Louisiana", "Southwest Louisiana", "DeRidder", "Leesville", "Toledo Bend", "Oakdale", "Jennings", "Alexandria"]);
   assert.equal(business.employee.name, "Blake Berry");
   assert.equal(business.employee.jobTitle, "Louisiana licensed arborist");
   assert.match(business.employee.description, new RegExp(ARBORIST.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));

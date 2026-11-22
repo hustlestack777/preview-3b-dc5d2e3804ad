@@ -14,7 +14,7 @@ The conversation backend is the ElevenLabs preview agent `agent_2301m76zjc0dfm2a
 Tree removal, stumps, land clearing and dirt work. Storm cleanup also when weather hits. Storm cleanup comes second unless they bring up storm damage.
 
 ## Service area
-Central & Southwest Louisiana: Lake Charles, Sulphur, DeRidder, Leesville, Toledo Bend and up to Alexandria. Anywhere else nearby: take their info and say we'll confirm on the callback.
+Central & Southwest Louisiana: DeRidder, Leesville, Toledo Bend, Oakdale, Jennings and up to Alexandria. Anywhere else nearby: take their info and say we'll confirm on the callback.
 
 ## The CTA (same words as the reel, Muse and the site)
 InstaQuote at 3bs.getpros.xyz or call (318) 712-TREE. In chat, paste the link (see the tagged-link rule below) instead of typing the bare domain.

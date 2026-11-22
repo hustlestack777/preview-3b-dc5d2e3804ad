@@ -68,7 +68,7 @@ test("page copy uses the locked word track and never says free", () => {
   assert.ok(html.includes("our team will call you back with a price"));
   assert.doesNotMatch(html, /Blake (will )?calls? (you )?back|Blake looks over/i);
   assert.ok(html.includes("InstaQuote at 3bs.getpros.xyz or call (318) 712-TREE"));
-  assert.ok(html.includes("Lake Charles, Sulphur, DeRidder, Leesville, Toledo Bend and up to Alexandria"));
+  assert.ok(html.includes("DeRidder, Leesville, Toledo Bend, Oakdale, Jennings and up to Alexandria"));
   assert.doesNotMatch(html, /LDAF|come check it out|Licensed Arborist/);
   assert.doesNotMatch(html, /\bfree\b/i);
   assert.doesNotMatch(html, /337[-.\s)?]*378[-.\s]?4046/);
