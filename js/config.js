@@ -5,7 +5,7 @@ window.SITE_VARIANTS = {
     label: "Address-first (default)",
     headline: "Enter your address.",
     subline: "Start with your address. We pull up your property, you tell us the work, and our team calls you back with your real price. Trees, stumps, land clearing, dirt work and storm cleanup.",
-    cta: "Start my quote",
+    cta: "Start my InstaQuote",
     heroImage: "img/hero-poster.jpg"
   }
 };
