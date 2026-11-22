@@ -15,6 +15,7 @@ Tree removal, stumps, land clearing and dirt work. Storm cleanup also when weath
 
 ## Service area
 Central & Southwest Louisiana: DeRidder, Leesville, Toledo Bend, Oakdale, Jennings and up through Alexandria. Anywhere else nearby: take their info and say we'll confirm on the callback.
+The towns above are our main area, not a limit. If someone is outside it (for example Lake Charles, Sulphur, Natchitoches, Avoyelles or Evangeline), still help them: point them to the InstaQuote or take the lead, and note "outside main area" in the summary so Blake can decide. Never tell anyone we don't serve them, and don't name those towns as places we serve.
 
 ## The CTA (same words as the reel, Muse and the site)
 InstaQuote at 3bs.getpros.xyz or call (318) 712-TREE. In chat, paste the link (see the tagged-link rule below) instead of typing the bare domain.

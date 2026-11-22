@@ -1276,7 +1276,7 @@
         }
       }
       if (window.inLouisiana && !window.inLouisiana(geo.lat, geo.lon)) {
-        status.textContent = "We serve Central & Southwest Louisiana. Pick a Louisiana address from the list.";
+        status.textContent = "Pick a Louisiana address from the list, or call (318) 712-TREE and our team will help.";
         status.className = "form-status err";
         return;
       }
@@ -1573,7 +1573,7 @@
         mailtoFallback(payload);
         showRange();
         const thanks = $("#thanks");
-        thanks.textContent = "If your email app opened, please hit send so we get your info. Then we’ll confirm your real price when we call you back.";
+        thanks.textContent = "If your email app opened, please hit send so we get your info. Then our team will call you back with a price.";
 
       })
       .finally(() => {
