@@ -1543,7 +1543,7 @@
       status.textContent = "";
       const thanks = $("#thanks");
       thanks.hidden = false;
-      thanks.textContent = "Thanks. Blake’s a Louisiana Licensed Arborist and he’ll come check it out. We’ll call you at the time you picked.";
+      thanks.textContent = "Thanks. Blake calls you back with a price at the time you picked.";
       $("#range").scrollIntoView({ behavior: "smooth", block: "start" });
       const tt = $("#thanks-title");
       if (tt) tt.focus({ preventScroll: true });
