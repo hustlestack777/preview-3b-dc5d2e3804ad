@@ -21,7 +21,7 @@ const ARBORIST = "Louisiana licensed arborist";
 // Shaun's locked 3 B's word track (Nov 22, 2:19 PM CT).
 const AREA = "Central & Southwest Louisiana: Lake Charles, Sulphur, DeRidder, Leesville, Toledo Bend and up to Alexandria";
 const CTA = "InstaQuote at 3bs.getpros.xyz or call (318) 712-TREE";
-const CALLBACK = "Blake calls you back with a price";
+const CALLBACK = "our team will call you back with a price";
 const BOTS = [
   "GPTBot",
   "OAI-SearchBot",
@@ -189,6 +189,10 @@ test("JSON-LD matches the visible FAQ and published business facts", () => {
   const blob = JSON.stringify(graph);
   assert.doesNotMatch(blob, /aggregateRating|reviewCount|ratingValue|priceRange|"price"/);
   assert.doesNotMatch(blob, /Lafayette|LDAF|come check it out/);
+  assert.ok(visible.some((item) => item.a.includes(CALLBACK)), "FAQ says our team will call you back with a price");
+  assert.ok(blob.includes(CALLBACK), "FAQ schema says our team will call you back with a price");
+  assert.doesNotMatch(blob, /Blake (will )?calls? (you )?back|Blake looks over/i);
+  assert.doesNotMatch(llms, /Blake (will )?calls? (you )?back|Blake looks over/i);
   assert.match(visible.map((item) => item.a).join("\n"), new RegExp(CTA.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   for (const label of ["Hazardous tree removal", "Stump grinding", "Land clearing &amp; dirt work", "Professional trimming", "Storm cleanup"]) {
     assert.match(index, new RegExp(`<strong>${label}</strong>`));

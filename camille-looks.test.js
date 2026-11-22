@@ -65,7 +65,8 @@ test("the six looks are optimized transparent webp files", () => {
 test("page copy uses the locked word track and never says free", () => {
   // Shaun's locked 3 B's word track (Nov 22, 2:19 PM CT).
   assert.ok((html.split("Louisiana licensed arborist").length - 1) >= 5);
-  assert.ok(html.includes("Blake calls you back with a price"));
+  assert.ok(html.includes("our team will call you back with a price"));
+  assert.doesNotMatch(html, /Blake (will )?calls? (you )?back|Blake looks over/i);
   assert.ok(html.includes("InstaQuote at 3bs.getpros.xyz or call (318) 712-TREE"));
   assert.ok(html.includes("Lake Charles, Sulphur, DeRidder, Leesville, Toledo Bend and up to Alexandria"));
   assert.doesNotMatch(html, /LDAF|come check it out|Licensed Arborist/);
