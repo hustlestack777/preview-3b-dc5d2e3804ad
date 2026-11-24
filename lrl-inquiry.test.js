@@ -30,9 +30,9 @@ test("recipients default to Shaun only and never include Justin", () => {
 
 test("env lists are used but client inboxes are stripped", () => {
   const mixed = lrlInquiryRecipients(
-    `${JUSTIN}, shaun.brasher@gmail.com, shaun@lagniapperealmlabs.com, ${JUSTIN}`,
+    `${JUSTIN}, shaun.brasher@gmail.com, shaun@swampfiregrowth.com, ${JUSTIN}`,
   );
-  assert.deepEqual(mixed, ["shaun.brasher@gmail.com", "shaun@lagniapperealmlabs.com"]);
+  assert.deepEqual(mixed, ["shaun.brasher@gmail.com", "shaun@swampfiregrowth.com"]);
   assert.deepEqual(lrlInquiryRecipients(JUSTIN), ["shaun.brasher@gmail.com"]);
 });
 
