@@ -32,24 +32,27 @@ test("junk in the URL is stripped", () => {
   assert.ok(!/[<>"]/.test(v.page_src));
 });
 
-test("apply() sets dynamic-variables on the convai element and keeps existing keys", () => {
-  const attrs = { "dynamic-variables": '{"keep":"1"}' };
-  const el = { getAttribute: (k) => attrs[k], setAttribute: (k, v) => { attrs[k] = v; } };
+test("apply() records page_src on the chat panel", () => {
+  const attrs = {};
+  const el = { setAttribute: (k, v) => { attrs[k] = v; } };
   const store = {};
-  const doc = { querySelector: (s) => (s === "elevenlabs-convai" ? el : null) };
+  const doc = { getElementById: (id) => (id === "gg-panel" ? el : null) };
   const win = { location: { search: "?src=fbreel1122", pathname: "/" }, SITE_DEFAULTS: { source: "lrl" },
     sessionStorage: { getItem: (k) => store[k] || null, setItem: (k, v) => { store[k] = v; } } };
-  apply(doc, win);
-  const dv = JSON.parse(attrs["dynamic-variables"]);
-  assert.equal(dv.page_src, "fbreel1122");
-  assert.equal(dv.keep, "1");
+  const vars = apply(doc, win);
+  assert.equal(vars.page_src, "fbreel1122");
+  assert.equal(attrs["data-page-src"], "fbreel1122");
   assert.equal(JSON.parse(store[KEY]).page_src, "fbreel1122");
 });
 
-test("index.html loads camille-src.js after the widget tag and before the ElevenLabs script", () => {
+test("index.html loads camille-src.js after the chat panel and before the widget, with no ElevenLabs script", () => {
   const html = readFileSync(new URL("./index.html", import.meta.url), "utf8");
-  const a = html.indexOf("<elevenlabs-convai"), b = html.indexOf("js/camille-src.js"), c = html.indexOf("convai-widget-embed");
-  assert.ok(a > 0 && a < b && b < c);
+  const panel = html.indexOf('id="gg-panel"');
+  const src = html.indexOf("js/camille-src.js");
+  const widget = html.indexOf("js/gg-widget.js");
+  assert.ok(panel > 0 && panel < src && src < widget);
+  assert.equal(html.includes("elevenlabs"), false);
+  assert.equal(html.includes("convai-widget-embed"), false);
 });
 
 test("InstaQuote naming on the preview", () => {

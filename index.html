@@ -1114,7 +1114,7 @@
   <script src="js/scope.js?v=20261112qa16"></script>
   <script src="js/media.js?v=20261111a"></script>
   <script src="js/lrl-credit.js?v=20261111-lrl2"></script>
-  <!-- Camille, the 3 B's AI chat assistant (text-only ElevenLabs preview agent) -->
+  <!-- Camille, the 3 B's AI chat assistant -->
   <div id="gg-widget" class="gg-widget">
     <div class="gg-talk" id="gg-talk" hidden>
       <button type="button" class="gg-talk-x" id="gg-talk-dismiss" aria-label="Dismiss greeting">&times;</button>
@@ -1156,9 +1156,17 @@
     </script>
   </div>
   <button type="button" class="gg-close" id="gg-close" aria-label="Close chat with Camille" hidden>&times;</button>
-  <elevenlabs-convai agent-id="agent_2301m76zjc0dfm2afvx1y2z980k7"></elevenlabs-convai>
-  <script src="js/camille-src.js?v=20261122src"></script>
-  <script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
-  <script src="js/gg-widget.js?v=20261120sheet" defer></script>
+  <section class="gg-panel" id="gg-panel" hidden aria-label="Chat with Camille">
+    <header class="gg-panel-head">Camille · 3 B’s Tree Removal</header>
+    <div class="gg-log" id="gg-log" role="log" aria-live="polite">
+      <p class="gg-msg gg-msg-assistant">Hi, I’m Camille. Enter your address up top for an InstaQuote, or ask me anything.</p>
+    </div>
+    <form class="gg-compose" id="gg-compose">
+      <input id="gg-input" name="message" type="text" maxlength="1000" autocomplete="off" aria-label="Message Camille" placeholder="Ask about your trees" />
+      <button type="submit" class="gg-send">Send</button>
+    </form>
+  </section>
+  <script src="js/camille-src.js?v=20261124grok"></script>
+  <script src="js/gg-widget.js?v=20261124grok" defer></script>
 </body>
 </html>

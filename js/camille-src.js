@@ -1,7 +1,7 @@
-/* Camille chat attribution. Runs right after <elevenlabs-convai> and BEFORE the widget
+/* Camille chat attribution. Runs right after the chat panel and BEFORE the widget
    script, so the chat starts with the same src / utm tags the quote form sends
    (src=fbreel1122 organic reel, src=fbboost1122 paid boost, etc.).
-   The ElevenLabs agent reads these as dynamic variables:
+   The chat request sends these to this site's server:
      page_src            e.g. "fbreel1122" (defaults to SITE_DEFAULTS.source, like the form)
      page_variant        e.g. "a"
      page_utm            e.g. "utm_source=facebook&utm_medium=paid_social&utm_campaign=blake_reel_nov22" ("" if none)
@@ -36,18 +36,18 @@
     return { page_src: src, page_variant: variant, page_utm: utmStr, page_path: path, page_source_detail: detail };
   }
 
+  const api = { buildDynamicVars, KEY, current: null };
   function apply(doc, win) {
-    const el = doc.querySelector("elevenlabs-convai");
-    if (!el) return null;
     let saved = null;
     try { saved = JSON.parse(win.sessionStorage.getItem(KEY) || "null"); } catch (e) { saved = null; }
     const vars = buildDynamicVars(win.location.search, win.location.pathname, win.SITE_DEFAULTS, saved);
     try { win.sessionStorage.setItem(KEY, JSON.stringify(vars)); } catch (e) { /* private mode */ }
-    let existing = {};
-    try { existing = JSON.parse(el.getAttribute("dynamic-variables") || "{}"); } catch (e) { existing = {}; }
-    el.setAttribute("dynamic-variables", JSON.stringify(Object.assign({}, existing, vars)));
+    const el = doc.getElementById ? doc.getElementById("gg-panel") : null;
+    if (el) el.setAttribute("data-page-src", vars.page_src);
+    api.current = vars;
     return vars;
   }
+  api.apply = apply;
 
-  return { buildDynamicVars, apply, KEY };
+  return api;
 });

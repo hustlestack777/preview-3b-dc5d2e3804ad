@@ -59,7 +59,8 @@ test("the six looks are optimized transparent webp files", () => {
   }
   assert.doesNotMatch(html, /gg-outdoor-auburn/);
   assert.match(html, /id="gg-launcher"/);
-  assert.match(html, /agent-id="agent_2301m76zjc0dfm2afvx1y2z980k7"/);
+  assert.match(html, /id="gg-panel"/);
+  assert.doesNotMatch(html, /elevenlabs|agent_2301|convai-widget-embed/i);
 });
 
 test("page copy uses the locked word track and never says free", () => {
@@ -77,9 +78,11 @@ test("page copy uses the locked word track and never says free", () => {
 test("phone chat sheet cannot grow wider than the screen", () => {
   const js = readFileSync(new URL("./js/gg-widget.js", import.meta.url), "utf8");
   const css = readFileSync(new URL("./css/styles.css", import.meta.url), "utf8");
-  assert.match(js, /@media \(max-width: 639px\)/);
-  assert.match(js, /max-width: 100% !important/);
-  assert.match(js, /font-size: 16px !important/);
+  const sheet = css.slice(css.indexOf("Camille's own sheet"), css.indexOf("Leave room at the very bottom"));
+  assert.match(sheet, /@media \(max-width: 639px\)/);
+  assert.match(sheet, /max-width: 100%/);
+  assert.match(sheet, /font-size: 16px !important/);
+  assert.doesNotMatch(sheet, /100vw/);
   assert.doesNotMatch(js, /width: 380px/);
   assert.doesNotMatch(js, /100vw/);
   assert.match(css, /overflow-x: clip/);

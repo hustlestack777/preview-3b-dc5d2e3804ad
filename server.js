@@ -5,6 +5,7 @@ import { dirname, join } from "node:path";
 import { readFileSync } from "node:fs";
 import { buildLrlInquiryEmail, lrlInquiryRecipients, validateLrlInquiry } from "./lrl-inquiry.js";
 import { computeBallpark, loadPricing, rangeMarkup, sizeMarkups } from "./ballpark.js";
+import { camilleChatMode, registerCamilleChat } from "./camille-chat.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -85,7 +86,7 @@ app.use((req, res, next) => {
 
 // Server-only files are never served as static pages.
 app.use((req, res, next) => {
-  if (/^\/(server|ballpark|lrl-inquiry(\.test)?)\.js$|^\/package(-lock)?\.json$|^\/\.env|^\/node_modules\//i.test(req.path)) {
+  if (/^\/(server|ballpark|lrl-inquiry|camille-chat)(\.test)?\.js$|^\/gg-chat-persona\.md$|^\/package(-lock)?\.json$|^\/\.env|^\/node_modules\//i.test(req.path)) {
     return res.status(404).type("text/plain").send("Not found");
   }
   return next();
@@ -175,6 +176,8 @@ app.post("/api/lrl-inquiry", async (req, res) => {
   return res.json({ ok: true });
 });
 
+registerCamilleChat(app);
+
 app.get(["/", "/index.html", "/index"], (_req, res) => {
   res.set("Cache-Control", "no-cache");
   res.type("html").send(indexHtml);
@@ -199,4 +202,5 @@ app.use(express.static(__dirname, { extensions: ["html"] }));
 
 app.listen(port, "0.0.0.0", () => {
   console.log(`LRL credit preview listening on ${port}`);
+  console.log(camilleChatMode());
 });

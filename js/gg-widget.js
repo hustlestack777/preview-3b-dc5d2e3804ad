@@ -1,182 +1,45 @@
-/* Camille chat for 3 B's. The conversation stays on the ElevenLabs agent; this file
-   handles the launcher, the greeting, our own 44px close X, and restyles the
-   ElevenLabs sheet: 300px card on desktop, a viewport-width bottom sheet on
-   phones, and no orb circle. */
+/* Camille chat for 3 B's. The conversation is our own panel, backed by
+   POST /api/camille-chat on this site. This file handles the launcher,
+   the greeting, the 44px close X, and the sheet placement. */
 (function () {
   const TALK_DELAY_MS = 1500;
   const TALK_HOLD_MS = 5000;
   const TALK_FADE_MS = 450;
+  const GREETING = "Hi, I’m Camille. Enter your address up top for an InstaQuote, or ask me anything.";
   const widget = document.getElementById("gg-widget");
   const talk = document.getElementById("gg-talk");
   const ask = document.getElementById("gg-ask");
   const launcher = document.getElementById("gg-launcher");
   const dismiss = document.getElementById("gg-talk-dismiss");
   const closeBtn = document.getElementById("gg-close");
-  const convai = document.querySelector("elevenlabs-convai");
+  const panel = document.getElementById("gg-panel");
+  const log = document.getElementById("gg-log");
+  const form = document.getElementById("gg-compose");
+  const input = document.getElementById("gg-input");
   if (!widget || !launcher) return;
 
-  const SHEET_CSS = `
-    .sheet {
-      position: fixed !important; top: auto !important; left: auto !important;
-      right: 16px !important; bottom: 16px !important;
-      width: 300px !important; max-width: 300px !important;
-      height: min(560px, calc(100dvh - 32px)) !important; max-height: none !important;
-      border-radius: 18px !important; box-shadow: 0 18px 50px rgba(0,0,0,.45) !important;
-      pointer-events: auto !important;
-      margin: 0 !important; translate: none !important; scale: none !important; transform: none !important;
-    }
-    .sheet::before {
-      content: "Camille \\00B7  3 B\\2019s Tree Removal"; position: absolute; top: 20px; left: 18px; z-index: 30;
-      font: 700 15px/1.2 "DM Sans", system-ui, sans-serif; color: #1A1A1A;
-    }
-    /* Desktop: chat and its Terms box open inside Camille's own column, never over the form. */
-    @media (min-width: 640px) {
-      .overlay > div[class*="max-w-"] {
-        position: fixed !important; right: 16px !important; bottom: 16px !important; left: auto !important; top: auto !important;
-        width: 300px !important; max-width: 300px !important; margin: 0 !important; pointer-events: auto !important;
-        translate: none !important; transform: none !important;
-      }
-    }
-    /* Phones: the sheet is exactly as wide as the screen. A viewport-width unit is
-       avoided on purpose; iOS counts it wider than the visible page and that opens a sideways scroll. */
-    @media (max-width: 639px) {
-      .sheet,
-      .sheet[data-variant],
-      [data-variant].sheet {
-        position: fixed !important;
-        left: 0 !important; right: 0 !important; top: auto !important;
-        bottom: var(--vv-bottom, 0px) !important;
-        width: 100% !important; max-width: 100% !important; min-width: 0 !important;
-        height: min(560px, calc(var(--vv-height, 100dvh) - env(safe-area-inset-top, 0px) - 8px)) !important;
-        max-height: var(--vv-height, 100dvh) !important;
-        margin: 0 !important; transform: none !important;
-        overflow: hidden !important; box-sizing: border-box !important;
-        border-radius: 18px 18px 0 0 !important;
-      }
-      .sheet::before {
-        top: 14px; left: 16px; right: 64px; width: auto;
-        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-      }
-      /* Title on the first line, "Chatting with AI Agent" on the line under it. */
-      .sheet .h-16.absolute.top-0.w-full { height: 84px !important; }
-      .sheet .h-4.absolute.top-16 { top: 84px !important; }
-      .sheet .h-16.absolute.flex {
-        top: 40px !important; height: 40px !important;
-        padding-right: 56px !important; min-width: 0 !important;
-      }
-      .sheet .overflow-y-auto { overflow-x: hidden !important; padding-top: 104px !important; }
-      .sheet textarea, .sheet input { font-size: 16px !important; }
-      .overlay {
-        overflow: hidden !important; max-width: 100% !important;
-        left: 0 !important; right: 0 !important; width: 100% !important;
-      }
-      .overlay > div[class*="max-w-"] {
-        position: fixed !important; left: 12px !important; right: 12px !important;
-        bottom: calc(12px + var(--vv-bottom, 0px)) !important; top: auto !important;
-        width: auto !important; max-width: none !important; margin: 0 !important;
-        transform: none !important;
-      }
-    }
-    canvas, .rounded-full.bg-base-border, .rounded-full.overflow-hidden { display: none !important; }
-    button[aria-label="Expand widget"], button[aria-label="Collapse"], .rounded-compact-sheet { display: none !important; }
-    .overlay { pointer-events: none !important; transform: none !important; filter: none !important; contain: none !important; will-change: auto !important; }
-    .overlay > p { display: none !important; }
-  `;
+  const history = [{ role: "assistant", content: GREETING }];
+  let sending = false;
 
-
-  // ElevenLabs injects a shadow <style> that starts with :host/:root variables
-  // and only then @imports Inter. Chrome ignores that @import (not at the top)
-  // and flags it as an Issue on this page. Hoist any late @import to the top
-  // of the same stylesheet so the rule is valid and the Issue goes away.
-  function hoistSheetImports(root) {
-    if (!root) return;
-    root.querySelectorAll("style").forEach(function (el) {
-      if (el.getAttribute("data-gg-import-fixed")) return;
-      var text = el.textContent || "";
-      var imports = text.match(/@import\s+[^;]+;/gi);
-      if (!imports) {
-        if (text.length > 80) el.setAttribute("data-gg-import-fixed", "1");
-        return;
-      }
-      // A late @import is ignored by Chrome. Even hoisted to the top, an @import
-      // of an invalid Google Fonts URL (Inter wght@400,500) returns HTML and is
-      // ORB-blocked. Drop the @import and load the same family via a <link>.
-      imports.forEach(function (rule) {
-        var m = rule.match(/url\((['"]?)([^)'"]+)\1\)|['"]([^'"]+)['"]/i);
-        var href = m && (m[2] || m[3]);
-        if (!href) return;
-        href = href.replace(/wght@([0-9]+),([0-9]+)/, "wght@$1;$2");
-        if (!document.querySelector('link[data-gg-font][href="' + href.replace(/"/g, "") + '"]')) {
-          var link = document.createElement("link");
-          link.rel = "stylesheet";
-          link.href = href;
-          link.setAttribute("data-gg-font", "1");
-          document.head.appendChild(link);
-        }
-      });
-      el.textContent = text.replace(/@import\s+[^;]+;/gi, "");
-      el.setAttribute("data-gg-import-fixed", "1");
-    });
-  }
-  function watchConvaiStyles() {
-    if (!convai) return;
-    function hook() {
-      hoistSheetImports(convai.shadowRoot);
-      if (convai.shadowRoot && !convai.shadowRoot._ggImportObs) {
-        var obs = new MutationObserver(function () { hoistSheetImports(convai.shadowRoot); });
-        obs.observe(convai.shadowRoot, { childList: true, subtree: true, characterData: true });
-        convai.shadowRoot._ggImportObs = obs;
-      }
-    }
-    hook();
-    if (typeof MutationObserver === "function") {
-      new MutationObserver(hook).observe(convai, { childList: true, subtree: true });
-    }
-    var n = 0;
-    var t = window.setInterval(function () {
-      hook();
-      if ((convai.shadowRoot && convai.shadowRoot.querySelector("style")) || ++n > 40) {
-        window.clearInterval(t);
-      }
-    }, 250);
+  function pageSrc() {
+    const src = window.CamilleSrc && window.CamilleSrc.current && window.CamilleSrc.current.page_src;
+    if (src) return src;
+    return (panel && panel.getAttribute("data-page-src")) || "";
   }
 
-  function styleShadow() {
-    const sr = convai && convai.shadowRoot;
-    hoistSheetImports(sr);
-    if (!sr || sr.getElementById("gg-sheet-style")) return !!sr;
-    const st = document.createElement("style");
-    st.id = "gg-sheet-style";
-    st.textContent = SHEET_CSS;
-    sr.appendChild(st);
-    let raf = 0;
-    new MutationObserver(function () {
-      if (raf) return;
-      raf = requestAnimationFrame(function () { raf = 0; placeClose(); });
-    }).observe(sr, { childList: true, subtree: true });
-    return true;
+  function addLine(role, text) {
+    if (!log) return;
+    const p = document.createElement("p");
+    p.className = "gg-msg " + (role === "user" ? "gg-msg-user" : "gg-msg-assistant");
+    p.textContent = text;
+    log.appendChild(p);
+    log.scrollTop = log.scrollHeight;
   }
 
-  function sheetOpen() {
-    const sr = convai && convai.shadowRoot;
-    const sheet = sr && sr.querySelector(".sheet");
-    if (!sheet) return false;
-    const r = sheet.getBoundingClientRect();
-    return r.width > 0 && r.height > 0;
-  }
-
-  // Pin our 44px X to the sheet's top-right corner, wherever the sheet ends up.
   function placeClose() {
-    if (!closeBtn || closeBtn.hidden) return;
-    const sr = convai && convai.shadowRoot;
-    const sheet = sr && sr.querySelector(".sheet");
-    let r = sheet && sheet.getBoundingClientRect();
-    if (!r || !r.width) {
-      // Terms box (Cancel / Accept) before the sheet exists: keep the X in its top-right.
-      const terms = sr && sr.querySelector('.overlay > div[class*="max-w-"]');
-      r = terms && terms.getBoundingClientRect();
-    }
-    if (!r || !r.width) { closeBtn.style.top = ""; closeBtn.style.left = ""; closeBtn.style.bottom = ""; closeBtn.style.right = ""; return; }
+    if (!closeBtn || closeBtn.hidden || !panel) return;
+    const r = panel.getBoundingClientRect();
+    if (!r || !r.width) return;
     const viewW = window.visualViewport ? window.visualViewport.width : window.innerWidth;
     const edge = Math.min(r.right, viewW);
     closeBtn.style.bottom = "auto";
@@ -207,8 +70,13 @@
     widget.classList.toggle("is-open", open);
     document.body.classList.toggle("gg-chat-open", open);
     launcher.setAttribute("aria-expanded", open ? "true" : "false");
+    if (panel) panel.hidden = !open;
     if (closeBtn) closeBtn.hidden = !open;
-    if (open) { hideTalk(); placeCloseSoon(); }
+    if (open) {
+      hideTalk();
+      placeCloseSoon();
+      if (input) setTimeout(function () { input.focus({ preventScroll: true }); }, 50);
+    }
   }
 
   let talkTimer = 0;
@@ -237,22 +105,9 @@
     talkTimer = window.setTimeout(fadeTalk, TALK_HOLD_MS);
   }
 
-  function findConvaiButton() {
-    const sr = convai && convai.shadowRoot;
-    if (!sr) return null;
-    return sr.querySelector("button[aria-label], button, [role='button']");
-  }
-
   function openAgent() {
-    styleShadow();
     setOpen(true);
-    if (sheetOpen()) return; // already expanded; don't toggle it shut
-    const btn = findConvaiButton();
-    if (btn && typeof btn.click === "function") btn.click();
-    setTimeout(styleShadow, 300);
-    placeCloseSoon();
   }
-
   function closeAgent() {
     setOpen(false);
     launcher.focus({ preventScroll: true });
@@ -266,6 +121,40 @@
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape" && widget.classList.contains("is-open")) closeAgent();
   });
+
+  if (form) {
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      const text = input ? input.value.trim() : "";
+      if (!text || sending) return;
+      if (input) input.value = "";
+      history.push({ role: "user", content: text });
+      addLine("user", text);
+      sending = true;
+      if (input) input.disabled = true;
+      fetch("/api/camille-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: history.slice(-16), pageSrc: pageSrc() }),
+      }).then(function (res) {
+        return res.json().catch(function () { return {}; });
+      }).then(function (data) {
+        const reply = (data && data.reply) || "Call (318) 712-TREE or start your InstaQuote up top.";
+        history.push({ role: "assistant", content: reply });
+        addLine("assistant", reply);
+      }).catch(function () {
+        const reply = "Sorry, chat's having trouble. Call (318) 712-TREE or start your InstaQuote up top.";
+        history.push({ role: "assistant", content: reply });
+        addLine("assistant", reply);
+      }).then(function () {
+        sending = false;
+        if (input) {
+          input.disabled = false;
+          input.focus({ preventScroll: true });
+        }
+      });
+    });
+  }
 
   if (dismiss) {
     dismiss.addEventListener("click", function (event) {
@@ -297,8 +186,6 @@
     });
   });
 
-  // Greeting bubble is desktop-only (phones just get the small launcher).
-  // Fade it after about 5 seconds, or as soon as the visitor scrolls past the hero.
   if (window.matchMedia("(min-width: 640px)").matches) {
     window.setTimeout(showTalk, TALK_DELAY_MS);
     function onScrollPast() { if (pastHero()) fadeTalk(); }
@@ -312,9 +199,6 @@
     }
   }
 
-  // Phones (<=767px): hide Camille on property, photos, and contact so no
-  // control sits under her. On the thank-you screen a small "Questions? Ask me"
-  // bubble comes back. No fade-on-intersect (it would flicker).
   function quotePhase() {
     const quote = document.getElementById("quote");
     if (!quote || quote.hidden) return "hero";
@@ -336,14 +220,12 @@
     document.body.classList.toggle("gg-thanks", thanks);
     document.body.setAttribute("data-quote-phase", on ? phase : "hero");
     const card = document.getElementById("quote-card");
-    const panel = document.getElementById("scope-panel");
+    const scope = document.getElementById("scope-panel");
     if (card) card.style.paddingRight = "";
-    if (panel) { panel.style.paddingRight = ""; panel.style.marginRight = ""; }
+    if (scope) { scope.style.paddingRight = ""; scope.style.marginRight = ""; }
     if (ask) ask.hidden = !thanks;
     if (steps && widget.classList.contains("is-open")) closeAgent();
   }
-  // The greeting bubble pokes out left of her column; tuck it away while the quote tool is
-  // on screen so it never sits over a quote button.
   const quoteCard = document.getElementById("quote-card");
   if (quoteCard && "IntersectionObserver" in window) {
     new IntersectionObserver(function (entries) {
@@ -362,13 +244,4 @@
     }
   });
   syncFunnel();
-
-  if (convai) {
-    watchConvaiStyles();
-    if (!styleShadow()) {
-      customElements.whenDefined("elevenlabs-convai").then(function () {
-        window.setTimeout(function () { styleShadow(); watchConvaiStyles(); }, 300);
-      });
-    }
-  }
 })();
