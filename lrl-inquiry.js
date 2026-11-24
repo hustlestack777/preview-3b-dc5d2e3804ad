@@ -1,6 +1,6 @@
 export const SHAUN_INQUIRY_EMAILS = [
   "shaun.brasher@gmail.com",
-  "shaun@lagniapperealmlabs.com",
+  "shaun@swampfiregrowth.com",
 ];
 
 export const BLOCKED_INQUIRY_EMAILS = [
