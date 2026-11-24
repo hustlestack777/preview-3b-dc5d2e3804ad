@@ -135,7 +135,7 @@ export function buildLrlInquiryEmail(inquiry) {
 <p style="margin:0 0 4px;color:#666;font-size:12px;letter-spacing:.04em;text-transform:uppercase"><b>LRL inquiry</b> — not a client lead</p>
 <h2 style="margin:0 0 12px">Someone reached out from the site credit</h2>
 <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%">${table}</table>
-<p style="margin:16px 0 0;color:#555">This came from the Lagniappe Realm Labs credit on ${esc(inquiry.sourceSite)}. It was not added to a client lead inbox.</p>
+<p style="margin:16px 0 0;color:#555">This came from the Swampfire Growth credit on ${esc(inquiry.sourceSite)}. It was not added to a client lead inbox.</p>
 </div>`;
 
   const text = [
